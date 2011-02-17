@@ -94,46 +94,52 @@ static void _desk_show(E_Desk *desk);
   if ((lbd->desk != bd->desk) || (lbd->zone != bd->zone)) \
     continue;
 
-#define TILE_LOOP_CHECKS(lbd)             ((_G.tinfo && eina_list_data_find(_G.tinfo->floating_windows, lbd) == lbd) || \
-                                           (lbd->visible == 0) ||                                                       \
-                                           (!tiling_g.config->tile_dialogs &&                                           \
-                                            ((lbd->client.icccm.transient_for != 0) ||                                  \
-                                             (lbd->client.netwm.type == ECORE_X_WINDOW_TYPE_DIALOG))))
+#define TILE_LOOP_CHECKS(lbd)                                              \
+((_G.tinfo && eina_list_data_find(_G.tinfo->floating_windows, lbd) == lbd) \
+ || (lbd->visible == 0)                                                    \
+ || (!tiling_g.config->tile_dialogs                                        \
+     && ((lbd->client.icccm.transient_for != 0)                            \
+         || (lbd->client.netwm.type == ECORE_X_WINDOW_TYPE_DIALOG))))      \
 
-#define ORIENT_BOTTOM(x)                  ((x == E_GADCON_ORIENT_CORNER_BL) || \
-                                           (x == E_GADCON_ORIENT_CORNER_BR) || \
-                                           (x == E_GADCON_ORIENT_BOTTOM))
+#define ORIENT_BOTTOM(x)                \
+((x == E_GADCON_ORIENT_CORNER_BL)       \
+ || (x == E_GADCON_ORIENT_CORNER_BR)    \
+ || (x == E_GADCON_ORIENT_BOTTOM))
 
-#define ORIENT_TOP(x)                     ((x == E_GADCON_ORIENT_CORNER_TL) || \
-                                           (x == E_GADCON_ORIENT_CORNER_TR) || \
-                                           (x == E_GADCON_ORIENT_TOP))
+#define ORIENT_TOP(x)                   \
+((x == E_GADCON_ORIENT_CORNER_TL)       \
+ || (x == E_GADCON_ORIENT_CORNER_TR)    \
+ || (x == E_GADCON_ORIENT_TOP))
 
-#define ORIENT_LEFT(x)                    ((x == E_GADCON_ORIENT_CORNER_LB) || \
-                                           (x == E_GADCON_ORIENT_CORNER_LT) || \
-                                           (x == E_GADCON_ORIENT_LEFT))
+#define ORIENT_LEFT(x)                  \
+((x == E_GADCON_ORIENT_CORNER_LB)       \
+ || (x == E_GADCON_ORIENT_CORNER_LT)    \
+ || (x == E_GADCON_ORIENT_LEFT))
 
-#define ORIENT_RIGHT(x)                   ((x == E_GADCON_ORIENT_CORNER_RB) || \
-                                           (x == E_GADCON_ORIENT_CORNER_RT) || \
-                                           (x == E_GADCON_ORIENT_RIGHT))
+#define ORIENT_RIGHT(x)                 \
+((x == E_GADCON_ORIENT_CORNER_RB)       \
+ || (x == E_GADCON_ORIENT_CORNER_RT)    \
+ || (x == E_GADCON_ORIENT_RIGHT))
 
-#define ACTION_ADD(_act, _cb, _title)                                            \
-{                                                                                \
-   E_Action *_action = _act;                                                     \
-   const char _name = _value;                                                    \
-   if ((_action = e_action_add(_name)))                                          \
-     {                                                                           \
-        _act2->func.go = _cb;                                                    \
-        e_action_predef_name_set(D_("Tiling"), D_(title), _name, NULL, NULL, 0); \
-     }                                                                           \
+#define ACTION_ADD(_act, _cb, _title, _value)                                \
+{                                                                            \
+   E_Action *_action = _act;                                                 \
+   const char *_name = _value;                                               \
+   if ((_action = e_action_add(_name)))                                      \
+     {                                                                       \
+        _action->func.go = _cb;                                              \
+        e_action_predef_name_set(D_("Tiling"), D_(_title), _name,            \
+                                 NULL, NULL, 0);                             \
+     }                                                                       \
 }
 #define ACTION_ADD2(_act, _cb, _title, _value, _params, _example, _editable) \
 {                                                                            \
    E_Action *_action = _act;                                                 \
-   const char _name = _value;                                                \
+   const char *_name = _value;                                               \
    if ((_action = e_action_add(_name)))                                      \
      {                                                                       \
-        _act2->func.go = _cb;                                                \
-        e_action_predef_name_set(D_("Tiling"), D_(title), _name, _params,    \
+        _action->func.go = _cb;                                              \
+        e_action_predef_name_set(D_("Tiling"), D_(_title), _name, _params,   \
                                _example, _editable);                         \
      }                                                                       \
 }
@@ -1109,13 +1115,21 @@ e_modapi_init(E_Module *m)
                                                  _e_module_tiling_desk_set, NULL);
 
    /* Module's actions */
-   ACTION_ADD(_G.act_toggletiling, _e_mod_action_toggle_tiling_cb, "Toggle tiling", "toggle_tiling");
-   ACTION_ADD(_G.act_togglefloat, _e_mod_action_toggle_floating_cb, "Toggle floating", "toggle_floating");
-   ACTION_ADD(_G.act_switchtiling, _e_mod_action_switch_tiling_cb, "Switch tiling mode", "switch_tiling");
-   ACTION_ADD(_G.act_moveleft, _e_mod_action_move_left, "Move window to the left", "tiling_move_left");
-   ACTION_ADD(_G.act_moveright, _e_mod_action_move_right, "Move window to the right", "tiling_move_right");
-   ACTION_ADD(_G.act_movebottom, _e_mod_action_move_top, "Move window to the bottom", "tiling_move_bottom");
-   ACTION_ADD(_G.act_movetop, _e_mod_action_move_bottom, "Move window to the top", "tiling_move_top");
+   ACTION_ADD(_G.act_toggletiling, _e_mod_action_toggle_tiling_cb,
+              "Toggle tiling", "toggle_tiling");
+   ACTION_ADD(_G.act_togglefloat, _e_mod_action_toggle_floating_cb,
+              "Toggle floating", "toggle_floating");
+   ACTION_ADD2(_G.act_switchtiling, _e_mod_action_switch_tiling_cb,
+              "Switch tiling mode", "switch_tiling",
+              NULL, "syntax: all or desktop", 1);
+   ACTION_ADD(_G.act_moveleft, _e_mod_action_move_left,
+              "Move window to the left", "tiling_move_left");
+   ACTION_ADD(_G.act_moveright, _e_mod_action_move_right,
+              "Move window to the right", "tiling_move_right");
+   ACTION_ADD(_G.act_movebottom, _e_mod_action_move_top,
+              "Move window to the bottom", "tiling_move_bottom");
+   ACTION_ADD(_G.act_movetop, _e_mod_action_move_bottom,
+              "Move window to the top", "tiling_move_top");
 
    /* Configuration entries */
    snprintf(buf, sizeof(buf), "%s/e-module-tiling.edj", e_module_dir_get(m));
