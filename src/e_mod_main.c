@@ -63,31 +63,28 @@ static struct
    .act_movebottom = NULL,
 };
 
-static void      _e_mod_action_toggle_tiling_cb(E_Object   *obj,
-                                                const char *params);
-static void      _e_mod_action_toggle_floating_cb(E_Object   *obj,
-                                                  const char *params);
-static void      _e_mod_action_switch_tiling_cb(E_Object   *obj,
-                                                const char *params);
-static void      _e_mod_action_move_left(E_Object   *obj,
-                                         const char *params);
-static void      _e_mod_action_move_right(E_Object   *obj,
-                                          const char *params);
-static void      _e_mod_action_move_top(E_Object   *obj,
-                                        const char *params);
-static void      _e_mod_action_move_bottom(E_Object   *obj,
+static void _e_mod_action_toggle_tiling_cb(E_Object   *obj,
                                            const char *params);
+static void _e_mod_action_toggle_floating_cb(E_Object   *obj,
+                                             const char *params);
+static void _e_mod_action_switch_tiling_cb(E_Object   *obj,
+                                           const char *params);
+static void _e_mod_action_move_left(E_Object   *obj,
+                                    const char *params);
+static void _e_mod_action_move_right(E_Object   *obj,
+                                     const char *params);
+static void _e_mod_action_move_top(E_Object   *obj,
+                                   const char *params);
+static void _e_mod_action_move_bottom(E_Object   *obj,
+                                      const char *params);
 static E_Border *get_first_window(E_Border *exclude,
                                   E_Desk   *desk);
-static void
- toggle_floating(E_Border *bd);
-static int
- check_for_too_big_windows(int      width,
-                          int       height,
-                          E_Border *bd);
-static void
-            rearrange_windows(E_Border *bd,
-                  int                   remove_bd);
+static void toggle_floating(E_Border *bd);
+static int check_for_too_big_windows(int      width,
+                                     int       height,
+                                     E_Border *bd);
+static void rearrange_windows(E_Border *bd,
+                              int       remove_bd);
 static void _desk_show(E_Desk *desk);
 
 #define TILE_LOOP_DESKCHECK                               \
@@ -839,18 +836,19 @@ _e_mod_action_move_bottom(E_Object   *obj,
                           const char *params)
 {
    E_Border *bd = e_border_focused_get();
-   if (!bd) return;
 
-   switch (layout_for_desk(bd->desk))
-   {
-    case TILE_BIGMAIN:
+   if (!bd)
+      return;
+
+   switch (layout_for_desk(bd->desk)) {
+     case TILE_BIGMAIN:
       if (border_move_to_right(bd, 1))
-        rearrange_windows(bd, 0);
+         rearrange_windows(bd, 0);
       break;
 
-    case TILE_GRID:
+     case TILE_GRID:
       if (border_move_to_right(bd, tiling_g.config->grid_rows))
-        rearrange_windows(bd, 0);
+         rearrange_windows(bd, 0);
       break;
    }
 }
