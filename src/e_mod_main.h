@@ -88,4 +88,3 @@ EAPI void
 e_mod_tiling_rearrange();
 
 #endif
-/* vim:set ts=8 sw=3 sts=3 expandtab cino=>5n-2f0^-2{2(0W1st0 :*/

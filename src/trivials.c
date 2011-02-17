@@ -111,5 +111,3 @@ shelf_show_on_desk(E_Shelf *sh,
      }
    return 0;
 }
-
-/* vim:set ts=8 sw=3 sts=3 expandtab cino=>5n-2f0^-2{2(0W1st0 :*/

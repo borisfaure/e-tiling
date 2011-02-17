@@ -401,5 +401,3 @@ _basic_apply_data(E_Config_Dialog      *cfd,
 
    return 1;
 }
-
-/* vim:set ts=8 sw=3 sts=3 expandtab cino=>5n-2f0^-2{2(0W1st0 :*/
