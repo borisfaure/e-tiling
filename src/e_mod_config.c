@@ -26,7 +26,7 @@ get_vdesk(E_Config_Dialog_Data *cfdata,
           int y,
           int zone_num)
 {
-    for (Eina_List *l = cfdata->vdesks; l; l = l->next) {
+    for (Eina_List *l = cfdata->config.vdesks; l; l = l->next) {
         struct _E_Config_vdesk *vd = l->data;
 
         if (!vd)
@@ -80,11 +80,11 @@ _create_data(E_Config_Dialog *cfd)
     memcpy(cfdata, tiling_g.config, sizeof(Config));
 
     /* Handle things which can't be easily memcpy'd */
-    cfdata->tiling_border = tiling_g.config->tiling_border
+    cfdata->config.tiling_border = tiling_g.config->tiling_border
         ? strdup(tiling_g.config->tiling_border) : NULL;
-    cfdata->floating_border = tiling_g.config->floating_border
+    cfdata->config.floating_border = tiling_g.config->floating_border
         ? strdup(tiling_g.config->floating_border) : NULL;
-    cfdata->vdesks = NULL;
+    cfdata->config.vdesks = NULL;
 
     for (Eina_List *l = tiling_g.config->vdesks; l; l = l->next) {
         struct _E_Config_vdesk *vd = l->data;
@@ -99,7 +99,7 @@ _create_data(E_Config_Dialog *cfd)
         newvd->zone_num = vd->zone_num;
         newvd->layout = vd->layout;
 
-        cfdata->vdesks = eina_list_append(cfdata->vdesks, newvd);
+        cfdata->config.vdesks = eina_list_append(cfdata->config.vdesks, newvd);
     }
 
     return cfdata;
@@ -144,10 +144,10 @@ _fill_zone_config(E_Zone               *zone,
             vd->zone_num = zone->num;
             vd->layout = TILE_NONE;
 
-            cfdata->vdesks = eina_list_append(cfdata->vdesks, vd);
+            cfdata->config.vdesks = eina_list_append(cfdata->config.vdesks, vd);
         }
 
-        rg = e_widget_radio_group_new(&(vd->layout));
+        rg = e_widget_radio_group_new(&vd->layout);
         radiolist = e_widget_list_add(evas, 0, 1);
 
         LIST_ADD(radiolist, e_widget_label_add(evas, desk->name));
@@ -195,9 +195,9 @@ _cb_tiling_border_change(void        *data,
     if (!cfdata)
         return;
 
-    if (cfdata->tiling_border)
-        free(cfdata->tiling_border);
-    cfdata->tiling_border = strdup(e_widget_ilist_selected_label_get(obj));
+    if (cfdata->config.tiling_border)
+        free(cfdata->config.tiling_border);
+    cfdata->config.tiling_border = strdup(e_widget_ilist_selected_label_get(obj));
 }
 
 static void
@@ -209,9 +209,9 @@ _cb_floating_border_change(void        *data,
     if (!cfdata)
         return;
 
-    if (cfdata->floating_border)
-        free(cfdata->floating_border);
-    cfdata->floating_border = strdup(e_widget_ilist_selected_label_get(obj));
+    if (cfdata->config.floating_border)
+        free(cfdata->config.floating_border);
+    cfdata->config.floating_border = strdup(e_widget_ilist_selected_label_get(obj));
 }
 
 static void
@@ -223,7 +223,8 @@ _cb_leave_space_change(void        *data,
     if (!cfdata)
         return;
 
-    recursively_set_disabled(cfdata->o_space_between, !cfdata->space_between);
+    recursively_set_disabled(cfdata->o_space_between,
+                             !cfdata->config.space_between);
 }
 
 static Evas_Object *
@@ -245,42 +246,42 @@ _basic_create_widgets(E_Config_Dialog      *cfd,
     of = e_widget_framelist_add(evas, D_("General"), 0);
     e_widget_framelist_object_append(of,
       e_widget_check_add(evas, D_("Enable tiling"),
-                         &cfdata->tiling_enabled));
+                         &cfdata->config.tiling_enabled));
     e_widget_framelist_object_append(of,
       e_widget_check_add(evas, D_("Don't change window borders"),
-                         &cfdata->dont_touch_borders));
+                         &cfdata->config.dont_touch_borders));
     e_widget_framelist_object_append(of,
       e_widget_check_add(evas, D_("Tile dialog windows aswell"),
-                         &cfdata->tile_dialogs));
+                         &cfdata->config.tile_dialogs));
     e_widget_framelist_object_append(of,
       e_widget_check_add(evas, D_("Set too big windows floating automatically"),
-                         &cfdata->float_too_big_windows));
+                         &cfdata->config.float_too_big_windows));
 
     osf = e_widget_list_add(evas, 0, 0);
     ob = e_widget_check_add(evas, D_("Leave space between windows:"),
-                            &cfdata->space_between);
+                            &cfdata->config.space_between);
     e_widget_on_change_hook_set(ob, _cb_leave_space_change, cfdata);
     e_widget_framelist_object_append(of, ob);
 
     ossf = e_widget_list_add(evas, 0, 1);
     LIST_ADD(ossf, e_widget_label_add(evas, D_("Horizontal:")));
     LIST_ADD(ossf, e_widget_slider_add(evas, 1, 0, D_("%1.0f px"), 0.0, 50.0,
-                                       1.0, 0, NULL, &cfdata->between_x, 200));
+                                       1.0, 0, NULL, &cfdata->config.between_x, 200));
     LIST_ADD(osf, ossf);
     ossf = e_widget_list_add(evas, 0, 1);
     LIST_ADD(ossf, e_widget_label_add(evas, D_("Vertical:")));
     LIST_ADD(ossf, e_widget_slider_add(evas, 1, 0, D_("%1.0f px"), 0.0, 50.0,
-                                       1.0, 0, NULL, &cfdata->between_y, 200));
+                                       1.0, 0, NULL, &cfdata->config.between_y, 200));
     LIST_ADD(osf, ossf);
     cfdata->o_space_between = osf;
-    recursively_set_disabled(osf, !cfdata->space_between);
+    recursively_set_disabled(osf, !cfdata->config.space_between);
     e_widget_framelist_object_append(of, osf);
     e_widget_table_object_append(ot, of, 0, 0, 1, 2, 1, 1, 1, 1);
 
 
     /* Virtual desktop settings */
     of = e_widget_framelist_add(evas, D_("Virtual Desktops"), 0);
-    rg = e_widget_radio_group_new(&cfdata->tiling_mode);
+    rg = e_widget_radio_group_new(&cfdata->config.tiling_mode);
     e_widget_framelist_object_append(of, RADIO("Don't tile by default", TILE_NONE, rg));
     e_widget_framelist_object_append(of, RADIO("Bigmain: Main window left, small windows right", TILE_BIGMAIN, rg));
     e_widget_framelist_object_append(of, RADIO("Grid: Distribute windows equally", TILE_GRID, rg));
@@ -322,17 +323,17 @@ _basic_create_widgets(E_Config_Dialog      *cfd,
 
     /* Grid mode settings */
     of = e_widget_framelist_add(evas, D_("Grid mode settings"), 0);
-    rg = e_widget_radio_group_new(&(cfdata->grid_distribute_equally));
+    rg = e_widget_radio_group_new(&cfdata->config.grid_distribute_equally);
     e_widget_framelist_object_append(of, RADIO("Distribute space equally", 1, rg));
     e_widget_framelist_object_append(of, RADIO("Use this number of rows:", 0, rg));
-    e_widget_framelist_object_append(of, e_widget_slider_add(evas, 1, 0, D_("%1.0f"), 1.0, 12.0, 1.0, 0, NULL, &(cfdata->grid_rows), 100));
+    e_widget_framelist_object_append(of, e_widget_slider_add(evas, 1, 0, D_("%1.0f"), 1.0, 12.0, 1.0, 0, NULL, &cfdata->config.grid_rows, 100));
     e_widget_table_object_append(ot, of, 1, 0, 1, 1, 1, 1, 1, 1);
 
 
     /* Bigmain settings */
     of = e_widget_framelist_add(evas, D_("Bigmain settings"), 0);
     e_widget_framelist_object_append(of, e_widget_label_add(evas, D_("Big win takes percent of screen:")));
-    e_widget_framelist_object_append(of, e_widget_slider_add(evas, 1, 0, D_("%.2f"), 0.1, 1.0, 0.01, 0, &(cfdata->big_perc), NULL, 100));
+    e_widget_framelist_object_append(of, e_widget_slider_add(evas, 1, 0, D_("%.2f"), 0.1, 1.0, 0.01, 0, &cfdata->config.big_perc, NULL, 100));
     e_widget_table_object_append(ot, of, 1, 1, 1, 1, 1, 1, 1, 1);
 
 
@@ -347,7 +348,8 @@ _basic_create_widgets(E_Config_Dialog      *cfd,
     c = 0;
     for (l = e_theme_border_list(); l; l = l->next, c++) {
         e_widget_ilist_append(ob, NULL, l->data, NULL, NULL, NULL);
-        if (cfdata->tiling_border && !strcmp(l->data, cfdata->tiling_border))
+        if (cfdata->config.tiling_border
+        && !strcmp(l->data, cfdata->config.tiling_border))
             sel = c;
     }
     if (sel != -1)
@@ -366,7 +368,8 @@ _basic_create_widgets(E_Config_Dialog      *cfd,
     c = 0;
     for (Eina_List *l = e_theme_border_list(); l; l = l->next, c++) {
         e_widget_ilist_append(ob, NULL, l->data, NULL, NULL, NULL);
-        if (cfdata->floating_border && !strcmp(l->data, cfdata->floating_border))
+        if (cfdata->config.floating_border
+        && !strcmp(l->data, cfdata->config.floating_border))
             sel = c;
     }
     if (sel != -1)
@@ -393,25 +396,24 @@ _basic_apply_data(E_Config_Dialog      *cfd,
 
     if (!need_rearrangement)
     {
-        if (cfdata->tiling_border && tiling_g.config->tiling_border)
-            need_rearrangement = strcmp(cfdata->tiling_border, tiling_g.config->tiling_border);
-        else if (cfdata->tiling_border || tiling_g.config->tiling_border)
+        if (cfdata->config.tiling_border && tiling_g.config->tiling_border)
+            need_rearrangement = strcmp(cfdata->config.tiling_border, tiling_g.config->tiling_border);
+        else if (cfdata->config.tiling_border || tiling_g.config->tiling_border)
             need_rearrangement = 1;
     }
 
     if (!need_rearrangement)
     {
-        if (cfdata->floating_border && tiling_g.config->floating_border)
-            need_rearrangement = strcmp(cfdata->floating_border, tiling_g.config->floating_border);
-        else if (cfdata->floating_border || tiling_g.config->floating_border)
+        if (cfdata->config.floating_border && tiling_g.config->floating_border)
+            need_rearrangement = strcmp(cfdata->config.floating_border, tiling_g.config->floating_border);
+        else if (cfdata->config.floating_border || tiling_g.config->floating_border)
             need_rearrangement = 1;
     }
 
     if (!need_rearrangement)
     {
         /* Check if the layout for one of the vdesks has changed */
-        Eina_List *l;
-        for (l = tiling_g.config->vdesks; l; l = l->next)
+        for (Eina_List *l = tiling_g.config->vdesks; l; l = l->next)
         {
             struct _E_Config_vdesk *vd = l->data,
                                    *newvd;
@@ -435,9 +437,9 @@ _basic_apply_data(E_Config_Dialog      *cfd,
         free(tiling_g.config->tiling_border);
     memcpy(tiling_g.config, cfdata, sizeof(Config));
 
-    cfdata->floating_border = NULL;
-    cfdata->tiling_border = NULL;
-    cfdata->vdesks = NULL;
+    cfdata->config.floating_border = NULL;
+    cfdata->config.tiling_border = NULL;
+    cfdata->config.vdesks = NULL;
 
     e_config_save_queue();
 

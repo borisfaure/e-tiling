@@ -13,20 +13,7 @@ struct _E_Config_vdesk
 
 struct _E_Config_Dialog_Data
 {
-   int          tiling_enabled;
-   int          tiling_mode;
-   int          dont_touch_borders;
-   int          tile_dialogs;
-   int          float_too_big_windows;
-   int          grid_rows;
-   int          grid_distribute_equally;
-   int          space_between;
-   int          between_x;
-   int          between_y;
-   double       big_perc;
-   Eina_List   *vdesks;
-   char        *tiling_border;
-   char        *floating_border;
+   struct _Config config;
    Evas_Object *o_zonelist;
    Evas_Object *o_desklist;
    Evas_Object *o_deskscroll;
