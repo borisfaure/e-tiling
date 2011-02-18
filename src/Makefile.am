@@ -1,5 +1,4 @@
 MAINTAINERCLEANFILES = Makefile.in
-AM_CFLAGS=-D_POSIX_C_SOURCE=200112L
 INCLUDES = -I. \
 	   -I$(top_srcdir) \
 	   -I$(includedir) \
