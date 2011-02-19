@@ -394,36 +394,39 @@ _basic_apply_data(E_Config_Dialog      *cfd,
     need_rearrangement = memcmp(cfdata, tiling_g.config,
             sizeof(Config) - (sizeof(char *) * 2) - sizeof(Eina_List *));
 
-    if (!need_rearrangement)
-    {
+    if (!need_rearrangement) {
         if (cfdata->config.tiling_border && tiling_g.config->tiling_border)
-            need_rearrangement = strcmp(cfdata->config.tiling_border, tiling_g.config->tiling_border);
-        else if (cfdata->config.tiling_border || tiling_g.config->tiling_border)
+            need_rearrangement = strcmp(cfdata->config.tiling_border,
+                                        tiling_g.config->tiling_border);
+        else
+        if (cfdata->config.tiling_border || tiling_g.config->tiling_border)
             need_rearrangement = 1;
     }
 
-    if (!need_rearrangement)
-    {
+    if (!need_rearrangement) {
         if (cfdata->config.floating_border && tiling_g.config->floating_border)
-            need_rearrangement = strcmp(cfdata->config.floating_border, tiling_g.config->floating_border);
-        else if (cfdata->config.floating_border || tiling_g.config->floating_border)
+            need_rearrangement = strcmp(cfdata->config.floating_border,
+                                        tiling_g.config->floating_border);
+        else
+        if (cfdata->config.floating_border || tiling_g.config->floating_border)
             need_rearrangement = 1;
     }
 
-    if (!need_rearrangement)
-    {
+    if (!need_rearrangement) {
         /* Check if the layout for one of the vdesks has changed */
-        for (Eina_List *l = tiling_g.config->vdesks; l; l = l->next)
-        {
+        for (Eina_List *l = tiling_g.config->vdesks; l; l = l->next) {
             struct _E_Config_vdesk *vd = l->data,
                                    *newvd;
-            if (!vd || !(newvd = get_vdesk(cfdata, vd->x, vd->y, vd->zone_num))) continue;
-            if (newvd->layout != vd->layout)
-            {
-                E_Zone *zone = e_zone_current_get(e_container_current_get(e_manager_current_get()));
+
+            if (!vd || !(newvd = get_vdesk(cfdata, vd->x, vd->y, vd->zone_num)))
+                continue;
+            if (newvd->layout != vd->layout) {
+                E_Zone *zone = e_zone_current_get(e_container_current_get(
+                        e_manager_current_get()));
                 E_Desk *desk = e_desk_current_get(zone);
-                if (desk->x == vd->x && desk->y == vd->y && zone->num == vd->zone_num)
-                {
+
+                if (desk->x == vd->x && desk->y == vd->y
+                && zone->num == vd->zone_num) {
                     need_rearrangement = 1;
                     break;
                 }
