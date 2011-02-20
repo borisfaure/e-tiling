@@ -16,7 +16,7 @@ EXTRA_DIST = module.desktop.in \
 	     e-module-tiling.edc \
 	     images/module_icon.png
 
-%.edj:  %.edc
+e-module-tiling.edj:  e-module-tiling.edc
 	$(EDJE_CC) $(EDJE_FLAGS) $< $@
 
 clean-local:
