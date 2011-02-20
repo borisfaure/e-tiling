@@ -360,6 +360,7 @@ _basic_create_widgets(E_Config_Dialog      *cfd,
     LIST_ADD(osf, of);
 
     of = e_widget_framelist_add(evas, D_("Floating border"), 0);
+    ob = e_widget_ilist_add(evas, 0, 0, NULL);
     e_widget_ilist_multi_select_set(ob, 0);
     e_widget_size_min_set(ob, 100, 75);
     e_widget_on_change_hook_set(ob, _cb_tiling_border_change, cfdata);
