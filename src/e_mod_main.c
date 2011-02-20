@@ -185,13 +185,13 @@ get_vdesk(int x,
     return NULL;
 }
 
-static int
+static E_Tiling_Type
 layout_for_desk(E_Desk *desk)
 {
-    if (tiling_g.config->tiling_mode == TILE_INDIVIDUAL) {
+    if (tiling_g.config->tiling_mode == E_TILING_INDIVIDUAL) {
         struct _Config_vdesk *vd = get_vdesk(desk->x, desk->y, desk->zone->num);
 
-        return vd ? vd->layout : TILE_NONE;
+        return vd ? vd->layout : E_TILING_NONE;
     }
     return tiling_g.config->tiling_mode;
 }
@@ -605,7 +605,7 @@ rearrange_windows(E_Border *bd,
     E_Border *lbd;
     E_Shelf *sh;
     int window_count;
-    int layout;
+    E_Tiling_Type layout;
 
     if (!bd || !_G.tinfo || !tiling_g.config->tiling_enabled)
         return;
@@ -648,10 +648,10 @@ rearrange_windows(E_Border *bd,
 
     window_count = (remove_bd ? 0 : 1);
     layout = layout_for_desk(bd->desk);
-    if (layout == TILE_NONE) {
+    if (layout == E_TILING_NONE) {
         return;
     }
-    if (layout == TILE_BIGMAIN) {
+    if (layout == E_TILING_BIGMAIN) {
         if (remove_bd && (bd == _G.tinfo->mainbd))
             /* If the main border is getting removed, we need to find another
              * one */
@@ -723,11 +723,11 @@ rearrange_windows(E_Border *bd,
     }
 
     switch (layout) {
-      case TILE_GRID:
+      case E_TILING_GRID:
         rearrange_windows_grid(bd, remove_bd, window_count);
         break;
 
-      case TILE_BIGMAIN:
+      case E_TILING_BIGMAIN:
         rearrange_windows_bigmain(bd, remove_bd, window_count);
         break;
     }
@@ -815,22 +815,28 @@ _e_mod_action_toggle_floating_cb(E_Object   *obj,
 }
 
 static void
-toggle_layout(int *layout)
+toggle_layout(E_Tiling_Type *layout)
 {
-    if (*layout == TILE_GRID)
-        *layout = TILE_BIGMAIN;
-    else if (*layout == TILE_BIGMAIN)
-        *layout = TILE_NONE;
-    else if (*layout == TILE_NONE)
-        *layout = TILE_GRID;
+    switch(*layout) {
+      case E_TILING_NONE:
+      case E_TILING_INDIVIDUAL:
+        *layout = E_TILING_GRID;
+        break;
+      case E_TILING_GRID:
+        *layout = E_TILING_BIGMAIN;
+        break;
+      case E_TILING_BIGMAIN:
+        *layout = E_TILING_NONE;
+        break;
+    }
 }
 
 static void
 _e_mod_action_switch_tiling_cb(E_Object   *obj,
                                const char *params)
 {
-    if (tiling_g.config->tiling_mode != TILE_INDIVIDUAL) {
-        toggle_layout(&(tiling_g.config->tiling_mode));
+    if (tiling_g.config->tiling_mode != E_TILING_INDIVIDUAL) {
+        toggle_layout(&tiling_g.config->tiling_mode);
     } else {
         E_Desk *desk = get_current_desk();
         struct _Config_vdesk *vd;
@@ -850,7 +856,7 @@ _e_mod_action_switch_tiling_cb(E_Object   *obj,
             tiling_g.config->vdesks =
                 eina_list_append(tiling_g.config->vdesks, vd);
         }
-        toggle_layout(&(vd->layout));
+        toggle_layout(&vd->layout);
     }
 
     e_mod_tiling_rearrange();
@@ -868,15 +874,18 @@ _e_mod_action_move_left(E_Object   *obj,
        return;
 
    switch (layout_for_desk(bd->desk)) {
-     case TILE_BIGMAIN:
+     case E_TILING_NONE:
+     case E_TILING_INDIVIDUAL:
+       break;
+     case E_TILING_GRID:
+       if (border_move_to_left(bd, 1))
+           rearrange_windows(bd, 0);
+       break;
+     case E_TILING_BIGMAIN:
        _G.tinfo->mainbd = bd;
        rearrange_windows(bd, 0);
        break;
 
-     case TILE_GRID:
-       if (border_move_to_left(bd, 1))
-           rearrange_windows(bd, 0);
-       break;
    }
 }
 
@@ -900,15 +909,18 @@ _e_mod_action_move_top(E_Object   *obj,
         return;
 
     switch (layout_for_desk(bd->desk)) {
-      case TILE_BIGMAIN:
+     case E_TILING_NONE:
+     case E_TILING_INDIVIDUAL:
+       break;
+      case E_TILING_GRID:
+        if (border_move_to_left(bd, tiling_g.config->grid_rows))
+            rearrange_windows(bd, 0);
+        break;
+      case E_TILING_BIGMAIN:
         if (border_move_to_left(bd, 1))
             rearrange_windows(bd, 0);
         break;
 
-      case TILE_GRID:
-        if (border_move_to_left(bd, tiling_g.config->grid_rows))
-            rearrange_windows(bd, 0);
-        break;
     }
 }
 
@@ -922,13 +934,15 @@ _e_mod_action_move_bottom(E_Object   *obj,
       return;
 
    switch (layout_for_desk(bd->desk)) {
-     case TILE_BIGMAIN:
-      if (border_move_to_right(bd, 1))
+     case E_TILING_NONE:
+     case E_TILING_INDIVIDUAL:
+       break;
+     case E_TILING_GRID:
+      if (border_move_to_right(bd, tiling_g.config->grid_rows))
          rearrange_windows(bd, 0);
       break;
-
-     case TILE_GRID:
-      if (border_move_to_right(bd, tiling_g.config->grid_rows))
+     case E_TILING_BIGMAIN:
+      if (border_move_to_right(bd, 1))
          rearrange_windows(bd, 0);
       break;
    }
@@ -955,19 +969,18 @@ _e_module_tiling_cb_hook(void *data,
 
     /* If the border changes size, we maybe want to adjust the layout */
     if (_G.tinfo && bd->changes.size) {
-        switch (layout_for_desk(bd->desk)) {
+        if (layout_for_desk(bd->desk) == E_TILING_BIGMAIN) {
             double x;
 
-          case TILE_BIGMAIN:
             /* Only the mainbd-window is resizable */
             if (bd != _G.tinfo->mainbd || _G.tinfo->mainbd_width == -1)
-                break;
+                goto next;
             /* Don't take the size of a maximized window */
             if (bd->maximized)
-                break;
+                goto next;
             /* If the difference is too small, do nothing */
             if (between(_G.tinfo->mainbd_width, (bd->w - 2), (bd->w + 2)))
-                break;
+                goto next;
 #ifdef TILING_DEBUG
             printf("TILING_DEBUG: trying to change the tinfo->mainbd width"
                    "to %d (it should be: %d), big_perc atm is %f\n",
@@ -981,9 +994,9 @@ _e_module_tiling_cb_hook(void *data,
                    x, bd->w / x / bd->desk->zone->w);
 #endif
             _G.tinfo->big_perc = bd->w / x / bd->desk->zone->w;
-            break;
         }
     }
+next:
     rearrange_windows(bd, 0);
 }
 
@@ -1282,7 +1295,7 @@ e_modapi_init(E_Module *m)
     tiling_g.config = e_config_domain_load("module.tiling", _G.config_edd);
     if (!tiling_g.config) {
         tiling_g.config = E_NEW(Config, 1);
-        tiling_g.config->tiling_mode = TILE_BIGMAIN;
+        tiling_g.config->tiling_mode = E_TILING_BIGMAIN;
         tiling_g.config->float_too_big_windows = 1;
         tiling_g.config->big_perc = 0.5;
         tiling_g.config->grid_rows = 2;
@@ -1303,7 +1316,8 @@ e_modapi_init(E_Module *m)
 
     E_CONFIG_LIMIT(tiling_g.config->tiling_enabled, 0, 1);
     E_CONFIG_LIMIT(tiling_g.config->dont_touch_borders, 0, 1);
-    E_CONFIG_LIMIT(tiling_g.config->tiling_mode, TILE_GRID, TILE_INDIVIDUAL);
+    E_CONFIG_LIMIT(tiling_g.config->tiling_mode, E_TILING_GRID,
+                                                 E_TILING_INDIVIDUAL);
     E_CONFIG_LIMIT(tiling_g.config->tile_dialogs, 0, 1);
     E_CONFIG_LIMIT(tiling_g.config->float_too_big_windows, 0, 1);
     E_CONFIG_LIMIT(tiling_g.config->grid_rows, 1, 12);

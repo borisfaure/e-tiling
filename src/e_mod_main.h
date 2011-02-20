@@ -3,10 +3,13 @@
 #include <libintl.h>
 #define D_(str) dgettext(PACKAGE, str)
 
-#define TILE_GRID       0
-#define TILE_BIGMAIN    1
-#define TILE_NONE       2
-#define TILE_INDIVIDUAL 3
+typedef enum _E_Tiling_Type
+{
+    E_TILING_NONE = 0,
+    E_TILING_INDIVIDUAL,
+    E_TILING_GRID,
+    E_TILING_BIGMAIN,
+} E_Tiling_Type;
 
 typedef struct _Config      Config;
 typedef struct _Tiling_Info Tiling_Info;
@@ -20,27 +23,27 @@ extern struct tiling_g tiling_g;
 
 struct _Config_vdesk
 {
-   int x, y;
-   int zone_num;
-   int layout;
+   int           x, y;
+   int           zone_num;
+   E_Tiling_Type layout;
 };
 
 struct _Config
 {
-   int        tiling_enabled;
-   int        tiling_mode;
-   int        dont_touch_borders;
-   int        tile_dialogs;
-   int        float_too_big_windows;
-   int        grid_rows;
-   int        grid_distribute_equally;
-   int        space_between;
-   int        between_x;
-   int        between_y;
-   double     big_perc;
-   Eina_List *vdesks;
-   char      *tiling_border;
-   char      *floating_border;
+   int            tiling_enabled;
+   E_Tiling_Type  tiling_mode;
+   int            dont_touch_borders;
+   int            tile_dialogs;
+   int            float_too_big_windows;
+   int            grid_rows;
+   int            grid_distribute_equally;
+   int            space_between;
+   int            between_x;
+   int            between_y;
+   double         big_perc;
+   Eina_List     *vdesks;
+   char          *tiling_border;
+   char          *floating_border;
 };
 
 struct _Tiling_Info

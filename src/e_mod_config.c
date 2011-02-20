@@ -142,7 +142,7 @@ _fill_zone_config(E_Zone               *zone,
             vd->x = desk->x;
             vd->y = desk->y;
             vd->zone_num = zone->num;
-            vd->layout = TILE_NONE;
+            vd->layout = E_TILING_NONE;
 
             cfdata->config.vdesks = eina_list_append(cfdata->config.vdesks, vd);
         }
@@ -151,9 +151,9 @@ _fill_zone_config(E_Zone               *zone,
         radiolist = e_widget_list_add(evas, 0, 1);
 
         LIST_ADD(radiolist, e_widget_label_add(evas, desk->name));
-        LIST_ADD(radiolist, RADIO("None", TILE_NONE, rg));
-        LIST_ADD(radiolist, RADIO("Bigmain", TILE_BIGMAIN, rg));
-        LIST_ADD(radiolist, RADIO("Grid", TILE_GRID, rg));
+        LIST_ADD(radiolist, RADIO("None", E_TILING_NONE, rg));
+        LIST_ADD(radiolist, RADIO("Bigmain", E_TILING_BIGMAIN, rg));
+        LIST_ADD(radiolist, RADIO("Grid", E_TILING_GRID, rg));
         LIST_ADD(cfdata->o_desklist, radiolist);
     }
 
@@ -281,11 +281,11 @@ _basic_create_widgets(E_Config_Dialog      *cfd,
 
     /* Virtual desktop settings */
     of = e_widget_framelist_add(evas, D_("Virtual Desktops"), 0);
-    rg = e_widget_radio_group_new(&cfdata->config.tiling_mode);
-    e_widget_framelist_object_append(of, RADIO("Don't tile by default", TILE_NONE, rg));
-    e_widget_framelist_object_append(of, RADIO("Bigmain: Main window left, small windows right", TILE_BIGMAIN, rg));
-    e_widget_framelist_object_append(of, RADIO("Grid: Distribute windows equally", TILE_GRID, rg));
-    e_widget_framelist_object_append(of, RADIO("Individual modes:", TILE_INDIVIDUAL, rg));
+    rg = e_widget_radio_group_new((int *)&cfdata->config.tiling_mode);
+    e_widget_framelist_object_append(of, RADIO("Don't tile by default", E_TILING_NONE, rg));
+    e_widget_framelist_object_append(of, RADIO("Bigmain: Main window left, small windows right", E_TILING_BIGMAIN, rg));
+    e_widget_framelist_object_append(of, RADIO("Grid: Distribute windows equally", E_TILING_GRID, rg));
+    e_widget_framelist_object_append(of, RADIO("Individual modes:", E_TILING_INDIVIDUAL, rg));
 
     osf = e_widget_list_add(evas, 0, 1);
 
