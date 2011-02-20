@@ -449,5 +449,5 @@ _basic_apply_data(E_Config_Dialog      *cfd,
     if (need_rearrangement)
         e_mod_tiling_rearrange();
 
-    return 1;
+    return EINA_TRUE;
 }

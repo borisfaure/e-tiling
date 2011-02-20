@@ -55,9 +55,9 @@ struct _Tiling_Info
      * as soon as there are more windows */
     E_Border  *single_win;
 
-    /* The desk for which this _Tiling_Info is used. Needed because (for example)
-     * on e restart all desks are shown on all zones but no change events are
-     * triggered */
+    /* The desk for which this _Tiling_Info is used. Needed because
+     * (for example) on e restart all desks are shown on all zones but no
+     * change events are triggered */
     E_Desk    *desk;
 
     /* List of windows which were toggled floating */
@@ -66,9 +66,9 @@ struct _Tiling_Info
     /* List of windows in our own sorting */
     Eina_List *client_list;
 
-    /* big_perc (percentage of the screen which the mainbd-border will get) has
-     * to be stored individually for each desk, the one in Tiling_Config is only
-     * the default */
+    /* big_perc (percentage of the screen which the mainbd-border will get)
+     * has to be stored individually for each desk, the one in Tiling_Config
+     * is only the default */
     double     big_perc;
 
     /* When sending a border to another desktop, it has to be updated as soon
@@ -79,12 +79,9 @@ struct _Tiling_Info
 EAPI extern E_Module_Api e_modapi;
 
 EAPI void *e_modapi_init(E_Module *m);
-EAPI int
-           e_modapi_shutdown(E_Module *m);
-EAPI int
-           e_modapi_save(E_Module *m);
+EAPI int   e_modapi_shutdown(E_Module *m);
+EAPI int   e_modapi_save(E_Module *m);
 
-EAPI void
-e_mod_tiling_rearrange();
+EAPI void e_mod_tiling_rearrange();
 
 #endif
