@@ -20,14 +20,16 @@ static int _basic_apply_data(E_Config_Dialog      *cfd,
 #define LIST_ADD(list, object) \
   e_widget_list_object_append(list, object, 1, 1, 0.5)
 
-static struct _E_Config_vdesk *
-get_vdesk(E_Config_Dialog_Data *cfdata,
+struct _Config_vdesk *
+get_vdesk(Eina_List *vdesks,
           int x,
           int y,
           int zone_num)
 {
-    for (Eina_List *l = cfdata->config.vdesks; l; l = l->next) {
-        struct _E_Config_vdesk *vd = l->data;
+    DBG("getting vdesk x %d / y %d / zone_num %d\n", x, y, zone_num);
+
+    for (Eina_List *l = tiling_g.config->vdesks; l; l = l->next) {
+        struct _Config_vdesk *vd = l->data;
 
         if (!vd)
             continue;
@@ -36,7 +38,7 @@ get_vdesk(E_Config_Dialog_Data *cfdata,
             return vd;
     }
 
-   return NULL;
+    return NULL;
 }
 
 E_Config_Dialog *
@@ -87,13 +89,13 @@ _create_data(E_Config_Dialog *cfd)
     cfdata->config.vdesks = NULL;
 
     for (Eina_List *l = tiling_g.config->vdesks; l; l = l->next) {
-        struct _E_Config_vdesk *vd = l->data;
-        struct _E_Config_vdesk *newvd;
+        struct _Config_vdesk *vd = l->data;
+        struct _Config_vdesk *newvd;
 
         if (!vd)
             continue;
 
-        newvd = malloc(sizeof(struct _E_Config_vdesk));
+        newvd = malloc(sizeof(struct _Config_vdesk));
         newvd->x = vd->x;
         newvd->y = vd->y;
         newvd->zone_num = vd->zone_num;
@@ -130,15 +132,15 @@ _fill_zone_config(E_Zone               *zone,
 
     for (int i = 0; i < zone->desk_y_count * zone->desk_x_count; i++) {
         E_Desk *desk = zone->desks[i];
-        struct _E_Config_vdesk *vd;
+        struct _Config_vdesk *vd;
         Evas_Object *radiolist;
 
         if (!desk)
             continue;
 
-        vd = get_vdesk(cfdata, desk->x, desk->y, zone->num);
+        vd = get_vdesk(cfdata->config.vdesks, desk->x, desk->y, zone->num);
         if (!vd) {
-            vd = malloc(sizeof(struct _E_Config_vdesk));
+            vd = malloc(sizeof(struct _Config_vdesk));
             vd->x = desk->x;
             vd->y = desk->y;
             vd->zone_num = zone->num;
@@ -147,7 +149,7 @@ _fill_zone_config(E_Zone               *zone,
             cfdata->config.vdesks = eina_list_append(cfdata->config.vdesks, vd);
         }
 
-        rg = e_widget_radio_group_new(&vd->layout);
+        rg = e_widget_radio_group_new((int*)&vd->layout);
         radiolist = e_widget_list_add(evas, 0, 1);
 
         LIST_ADD(radiolist, e_widget_label_add(evas, desk->name));
@@ -416,11 +418,13 @@ _basic_apply_data(E_Config_Dialog      *cfd,
     if (!need_rearrangement) {
         /* Check if the layout for one of the vdesks has changed */
         for (Eina_List *l = tiling_g.config->vdesks; l; l = l->next) {
-            struct _E_Config_vdesk *vd = l->data,
+            struct _Config_vdesk *vd = l->data,
                                    *newvd;
 
-            if (!vd || !(newvd = get_vdesk(cfdata, vd->x, vd->y, vd->zone_num)))
+            if (!vd || !(newvd = get_vdesk(cfdata->config.vdesks,
+                                           vd->x, vd->y, vd->zone_num)))
                 continue;
+
             if (newvd->layout != vd->layout) {
                 E_Zone *zone = e_zone_current_get(e_container_current_get(
                         e_manager_current_get()));

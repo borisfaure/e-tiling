@@ -165,31 +165,14 @@ desk_hash_key(E_Desk *desk)
     return buffer;
 }
 
-static struct _Config_vdesk *
-get_vdesk(int x,
-          int y,
-          int zone_num)
-{
-    DBG("getting vdesk x %d / y %d / zone_num %d\n", x, y, zone_num);
-
-    for (Eina_List *l = tiling_g.config->vdesks; l; l = l->next) {
-        struct _Config_vdesk *vd = l->data;
-
-        if (!vd)
-            continue;
-
-        if (vd->x == x && vd->y == y && vd->zone_num == zone_num)
-            return vd;
-    }
-
-    return NULL;
-}
-
 static E_Tiling_Type
 layout_for_desk(E_Desk *desk)
 {
     if (tiling_g.config->tiling_mode == E_TILING_INDIVIDUAL) {
-        struct _Config_vdesk *vd = get_vdesk(desk->x, desk->y, desk->zone->num);
+        struct _Config_vdesk *vd;
+
+        vd = get_vdesk(tiling_g.config->vdesks, desk->x, desk->y,
+                       desk->zone->num);
 
         return vd ? vd->layout : E_TILING_NONE;
     }
@@ -773,7 +756,7 @@ _desk_show(E_Desk *desk)
     _G.tinfo = eina_hash_find(_G.info_hash, desk_hash_key(desk));
     if (!_G.tinfo) {
         /* We need to add a new Tiling_Info, so we weren't on that desk before.
-         * As e doesn't call call the POST_EVAL-hook (or e_desk_show which then
+         * As e doesn't call the POST_EVAL-hook (or e_desk_show which then
          * indirectly calls the POST_EVAL) for each window on that desk but only
          * for the focused, we need to get all borders on that desk. */
         DBG("need new info for %s\n", desk->name);
@@ -844,7 +827,8 @@ _e_mod_action_switch_tiling_cb(E_Object   *obj,
         if (!desk)
             return;
 
-        vd = get_vdesk(desk->x, desk->y, desk->zone->num);
+        vd = get_vdesk(tiling_g.config->vdesks, desk->x, desk->y,
+                       desk->zone->num);
         if (!vd) {
             /* There was no config entry. Probably the vdesk-configuration
              * changed but the user didn't open the tiling config yet. */

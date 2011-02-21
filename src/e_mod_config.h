@@ -4,13 +4,6 @@
 #define E_MOD_CONFIG_H
 #include "e_mod_main.h"
 
-struct _E_Config_vdesk
-{
-   int x, y;
-   int zone_num;
-   int layout;
-};
-
 struct _E_Config_Dialog_Data
 {
    struct _Config config;
@@ -23,5 +16,13 @@ struct _E_Config_Dialog_Data
 
 E_Config_Dialog *e_int_config_tiling_module(E_Container *con,
                                             const char  *params);
+
+struct _Config_vdesk *
+get_vdesk(Eina_List *vdesks,
+          int x,
+          int y,
+          int zone_num);
+
+
 #endif
 #endif
