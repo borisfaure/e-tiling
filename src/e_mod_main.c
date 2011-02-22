@@ -24,10 +24,10 @@ static struct
    E_Border_Hook       *hook;
    int                  currently_switching_desktop;
    Ecore_Event_Handler *handler_hide,
-   *handler_desk_show,
-   *handler_desk_before_show,
-   *handler_mouse_move,
-   *handler_desk_set;
+                       *handler_desk_show,
+                       *handler_desk_before_show,
+                       *handler_mouse_move,
+                       *handler_desk_set;
    E_Zone              *current_zone;
    Tiling_Info         *tinfo;
 
@@ -35,12 +35,12 @@ static struct
    Eina_Hash           *info_hash;
 
    E_Action            *act_toggletiling,
-   *act_togglefloat,
-   *act_switchtiling,
-   *act_moveleft,
-   *act_moveright,
-   *act_movetop,
-   *act_movebottom;
+                       *act_togglefloat,
+                       *act_switchtiling,
+                       *act_moveleft,
+                       *act_moveright,
+                       *act_movetop,
+                       *act_movebottom;
 } tiling_mod_main_g = {
 #define _G tiling_mod_main_g
    .hook = NULL,
@@ -1233,9 +1233,8 @@ e_modapi_init(E_Module *m)
                "Toggle tiling", "toggle_tiling");
     ACTION_ADD(_G.act_togglefloat, _e_mod_action_toggle_floating_cb,
                "Toggle floating", "toggle_floating");
-    ACTION_ADD2(_G.act_switchtiling, _e_mod_action_switch_tiling_cb,
-                "Switch tiling mode", "switch_tiling",
-                NULL, "syntax: all or desktop", 1);
+    ACTION_ADD(_G.act_switchtiling, _e_mod_action_switch_tiling_cb,
+                "Switch tiling mode", "switch_tiling");
     ACTION_ADD(_G.act_moveleft, _e_mod_action_move_left,
                "Move window to the left", "tiling_move_left");
     ACTION_ADD(_G.act_moveright, _e_mod_action_move_right,
