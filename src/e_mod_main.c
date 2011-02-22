@@ -81,7 +81,7 @@ static E_Border *get_first_window(E_Border *exclude,
                                   E_Desk   *desk);
 static void toggle_floating(E_Border *bd);
 static void rearrange_windows(E_Border *bd,
-                              int       remove_bd);
+                              Eina_Bool remove_bd);
 static void _desk_show(E_Desk *desk);
 
 #define TILE_LOOP_DESKCHECK                               \
@@ -301,7 +301,7 @@ toggle_floating(E_Border *bd)
         }
 
         e_border_idler_before();
-        rearrange_windows(bd, 0);
+        rearrange_windows(bd, EINA_FALSE);
     } else {
         int w = bd->w,
             h = bd->h;
@@ -582,7 +582,7 @@ rearrange_windows_bigmain(E_Border *bd,
  * moved/resized */
 static void
 rearrange_windows(E_Border *bd,
-                  int       remove_bd)
+                  Eina_Bool remove_bd)
 {
     Eina_List *l;
     E_Border *lbd;
@@ -767,7 +767,7 @@ _desk_show(E_Desk *desk)
 
             DBG("need_rearrange\n");
             if ((first = get_first_window(NULL, desk)))
-                rearrange_windows(first, 0);
+                rearrange_windows(first, EINA_FALSE);
             _G.tinfo->need_rearrange = 0;
         }
     }
@@ -863,11 +863,11 @@ _e_mod_action_move_left(E_Object   *obj,
        break;
      case E_TILING_GRID:
        if (border_move_to_left(bd, 1))
-           rearrange_windows(bd, 0);
+           rearrange_windows(bd, EINA_FALSE);
        break;
      case E_TILING_BIGMAIN:
        _G.tinfo->mainbd = bd;
-       rearrange_windows(bd, 0);
+       rearrange_windows(bd, EINA_FALSE);
        break;
 
    }
@@ -880,7 +880,7 @@ _e_mod_action_move_right(E_Object   *obj,
    E_Border *bd = e_border_focused_get();
 
    if (border_move_to_right(bd, 1))
-       rearrange_windows(bd, 0);
+       rearrange_windows(bd, EINA_FALSE);
 }
 
 static void
@@ -898,11 +898,11 @@ _e_mod_action_move_top(E_Object   *obj,
        break;
       case E_TILING_GRID:
         if (border_move_to_left(bd, tiling_g.config->grid_rows))
-            rearrange_windows(bd, 0);
+            rearrange_windows(bd, EINA_FALSE);
         break;
       case E_TILING_BIGMAIN:
         if (border_move_to_left(bd, 1))
-            rearrange_windows(bd, 0);
+            rearrange_windows(bd, EINA_FALSE);
         break;
 
     }
@@ -923,11 +923,11 @@ _e_mod_action_move_bottom(E_Object   *obj,
        break;
      case E_TILING_GRID:
       if (border_move_to_right(bd, tiling_g.config->grid_rows))
-         rearrange_windows(bd, 0);
+         rearrange_windows(bd, EINA_FALSE);
       break;
      case E_TILING_BIGMAIN:
       if (border_move_to_right(bd, 1))
-         rearrange_windows(bd, 0);
+         rearrange_windows(bd, EINA_FALSE);
       break;
    }
 }
@@ -981,7 +981,7 @@ _e_module_tiling_cb_hook(void *data,
         }
     }
 next:
-    rearrange_windows(bd, 0);
+    rearrange_windows(bd, EINA_FALSE);
 }
 
 static Eina_Bool
@@ -993,7 +993,7 @@ _e_module_tiling_hide_hook(void *data,
     E_Event_Border_Hide *ev = event;
 
     DBG("hide-hook\n");
-    rearrange_windows(ev->border, 1);
+    rearrange_windows(ev->border, EINA_TRUE);
 
     if (_G.currently_switching_desktop)
         return EINA_TRUE;
@@ -1082,7 +1082,7 @@ _clear_bd_from_info_hash(const Eina_Hash *hash,
             E_Border *first;
 
             if ((first = get_first_window(NULL, ti->desk)))
-                rearrange_windows(first, 0);
+                rearrange_windows(first, EINA_FALSE);
         }
     }
 
@@ -1163,7 +1163,7 @@ e_mod_tiling_rearrange()
                     E_Border *first;
 
                     if ((first = get_first_window(NULL, desk)))
-                        rearrange_windows(first, 0);
+                        rearrange_windows(first, EINA_FALSE);
                 }
             }
         }
