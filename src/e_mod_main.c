@@ -10,7 +10,6 @@
 /* Use TILING_DEBUG-define to toggle displaying lots of debugmessages */
 #define TILING_DEBUG
 
-/***************************************************************************/
 /* actual module specifics */
 
 struct tiling_g tiling_g = {
@@ -116,6 +115,8 @@ static void _desk_show(E_Desk *desk);
  || (x == E_GADCON_ORIENT_RIGHT))
 
 
+/* Utils {{{ */
+
 /* Generates a unique identifier for the given desk to be used in info_hash */
 static char *
 desk_hash_key(E_Desk *desk)
@@ -171,6 +172,60 @@ print_borderlist()
 
 #endif
 
+/* Returns the first window from focus-stack (or NULL), avoiding *exclude if specified */
+static E_Border *
+get_first_window(E_Border *exclude,
+                 E_Desk   *desk)
+{
+    Eina_List *l;
+    E_Border *lbd;
+
+    EINA_LIST_FOREACH(e_border_focus_stack_get(), l, lbd) {
+        if (exclude
+            && ((lbd == exclude) || (lbd->desk != exclude->desk)))
+            continue;
+        if (!exclude && desk && (lbd->desk != desk))
+            continue;
+        if (TILE_LOOP_CHECKS(lbd))
+            continue;
+        return lbd;
+    }
+
+    return NULL;
+}
+
+/* Checks for windows which are bigger than width/height in their min_w/min_h-
+ * attributes and therefore need to be set to floating
+ *
+ * returns True if the given border was affected */
+static Eina_Bool
+check_for_too_big_windows(int       width,
+                          int       height,
+                          E_Border *bd)
+{
+    Eina_List *l;
+    E_Border *lbd;
+
+    EINA_LIST_FOREACH(e_border_focus_stack_get(), l, lbd) {
+        TILE_LOOP_DESKCHECK;
+
+        if (TILE_LOOP_CHECKS(lbd))
+            continue;
+
+        if (lbd->client.icccm.min_w > width || lbd->client.icccm.min_h > height) {
+            toggle_floating(lbd);
+            /* If this was the window this call was about,
+             * we don't need to change anything */
+            if (bd && (lbd == bd))
+                return EINA_TRUE;
+        }
+    }
+    return EINA_FALSE;
+}
+
+
+/* }}} */
+/* Move {{{ */
 /* Moves the nth list-entry to the left */
 static Eina_Bool
 border_move_to_left(E_Border *bd,
@@ -225,27 +280,8 @@ border_move_to_right(E_Border *bd,
     return EINA_TRUE;
 }
 
-/* Returns the first window from focus-stack (or NULL), avoiding *exclude if specified */
-static E_Border *
-get_first_window(E_Border *exclude,
-                 E_Desk   *desk)
-{
-    Eina_List *l;
-    E_Border *lbd;
-
-    EINA_LIST_FOREACH(e_border_focus_stack_get(), l, lbd) {
-        if (exclude
-            && ((lbd == exclude) || (lbd->desk != exclude->desk)))
-            continue;
-        if (!exclude && desk && (lbd->desk != desk))
-            continue;
-        if (TILE_LOOP_CHECKS(lbd))
-            continue;
-        return lbd;
-    }
-
-    return NULL;
-}
+/* }}} */
+/* Toggle Floating {{{ */
 
 static void
 toggle_floating(E_Border *bd)
@@ -288,34 +324,8 @@ toggle_floating(E_Border *bd)
     }
 }
 
-/* Checks for windows which are bigger than width/height in their min_w/min_h-
- * attributes and therefore need to be set to floating
- *
- * returns True if the given border was affected */
-static Eina_Bool
-check_for_too_big_windows(int       width,
-                          int       height,
-                          E_Border *bd)
-{
-    Eina_List *l;
-    E_Border *lbd;
-
-    EINA_LIST_FOREACH(e_border_focus_stack_get(), l, lbd) {
-        TILE_LOOP_DESKCHECK;
-
-        if (TILE_LOOP_CHECKS(lbd))
-            continue;
-
-        if (lbd->client.icccm.min_w > width || lbd->client.icccm.min_h > height) {
-            toggle_floating(lbd);
-            /* If this was the window this call was about,
-             * we don't need to change anything */
-            if (bd && (lbd == bd))
-                return EINA_TRUE;
-        }
-    }
-    return EINA_FALSE;
-}
+/* }}} */
+/* Rearrange {{{ */
 
 static void
 rearrange_windows_grid(E_Border *bd,
@@ -682,6 +692,7 @@ rearrange_windows(E_Border *bd,
     }
     DBG("rearrange done\n\n");
 }
+/* }}} */
 
 static Tiling_Info *
 _initialize_tinfo(E_Desk *desk)
@@ -744,9 +755,7 @@ _desk_show(E_Desk *desk)
 #endif
 }
 
-/***************************************************************************/
 /* Action callbacks {{{*/
-/***************************************************************************/
 
 static void
 _e_mod_action_toggle_tiling_cb(E_Object   *obj,
@@ -898,10 +907,7 @@ _e_mod_action_move_bottom(E_Object   *obj,
    }
 }
 /* }}} */
-
-/***************************************************************************/
 /* Hooks {{{*/
-/***************************************************************************/
 
 static void
 _e_module_tiling_cb_hook(void *data,
@@ -1108,10 +1114,7 @@ _e_module_tiling_mouse_move(void *data,
     return EINA_TRUE;
 }
 /* }}} */
-
-/***************************************************************************/
-/* Exported functions                                                   {{{*/
-/***************************************************************************/
+/* Exported functions {{{*/
 
 EAPI void
 e_mod_tiling_rearrange()
@@ -1139,10 +1142,7 @@ e_mod_tiling_rearrange()
     }
 }
 /* }}} */
-
-/***************************************************************************/
-/* Module setup                                                         {{{*/
-/***************************************************************************/
+/* Module setup {{{*/
 
 static Eina_Bool
 _clear_info_hash(const Eina_Hash *hash,
