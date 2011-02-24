@@ -20,7 +20,7 @@ struct tiling_g tiling_g = {
 static struct
 {
    E_Config_DD         *config_edd,
-   *vdesk_edd;
+                       *vdesk_edd;
    E_Border_Hook       *hook;
    int                  currently_switching_desktop;
    Ecore_Event_Handler *handler_hide,
@@ -593,11 +593,12 @@ rearrange_windows(E_Border *bd,
     if (!bd || !_G.tinfo || !tiling_g.config->tiling_enabled)
         return;
     if (_G.tinfo->desk && (bd->desk != _G.tinfo->desk)) {
+        E_Desk *desk = get_current_desk();
         /* We need to verify this because when having multiple zones (xinerama)
          * it's possible that tinfo is initialized for zone 1 even though
          * it should be zone 0 */
-        if (get_current_desk() != _G.tinfo->desk)
-            _desk_show(get_current_desk());
+        if (desk != _G.tinfo->desk)
+            _desk_show(desk);
         else
             return;
     }
@@ -948,8 +949,11 @@ _e_module_tiling_cb_hook(void *data,
         && (eina_list_data_find(_G.tinfo->client_list, bd) == bd)))
         return;
 
-    DBG("cb-Hook for %p / %s / %s, size.changes = %d, position.changes = %d\n", bd,
-        bd->client.icccm.title, bd->client.netwm.name, bd->changes.size, bd->changes.pos);
+    DBG("cb-Hook for %p / %s / %s, size.changes = %d, position.changes = %d"
+        " g:%dx%d+%d+%d bdname:%s\n",
+        bd, bd->client.icccm.title, bd->client.netwm.name,
+        bd->changes.size, bd->changes.pos,
+        bd->x, bd->y, bd->w, bd->h, bd->bordername);
 
     /* If the border changes size, we maybe want to adjust the layout */
     if (_G.tinfo && bd->changes.size) {
