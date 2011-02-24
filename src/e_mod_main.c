@@ -29,8 +29,8 @@ static struct
                        *handler_mouse_move,
                        *handler_desk_set;
    E_Zone              *current_zone;
-   Tiling_Info         *tinfo;
 
+   Tiling_Info         *tinfo;
    /* This hash holds the Tiling_Info-pointers for each desktop */
    Eina_Hash           *info_hash;
 
@@ -115,47 +115,12 @@ static void _desk_show(E_Desk *desk);
  || (x == E_GADCON_ORIENT_CORNER_RT)    \
  || (x == E_GADCON_ORIENT_RIGHT))
 
-#define ACTION_ADD(_act, _cb, _title, _value)                                \
-{                                                                            \
-   E_Action *_action = _act;                                                 \
-   const char *_name = _value;                                               \
-   if ((_action = e_action_add(_name)))                                      \
-     {                                                                       \
-        _action->func.go = _cb;                                              \
-        e_action_predef_name_set(D_("Tiling"), D_(_title), _name,            \
-                                 NULL, NULL, 0);                             \
-     }                                                                       \
-}
-#define ACTION_ADD2(_act, _cb, _title, _value, _params, _example, _editable) \
-{                                                                            \
-   E_Action *_action = _act;                                                 \
-   const char *_name = _value;                                               \
-   if ((_action = e_action_add(_name)))                                      \
-     {                                                                       \
-        _action->func.go = _cb;                                              \
-        e_action_predef_name_set(D_("Tiling"), D_(_title), _name, _params,   \
-                               _example, _editable);                         \
-     }                                                                       \
-}
-
-#define ACTION_DEL(act, title, value)                   \
-if (act)                                                \
-  {                                                     \
-     e_action_predef_name_del(D_("Tiling"), D_(title)); \
-     e_action_del(value);                               \
-     act = NULL;                                        \
-  }
-#define FREE_HANDLER(x)          \
-if (x)                           \
-  {                              \
-     ecore_event_handler_del(x); \
-     x = NULL;                   \
-  }
 
 /* Generates a unique identifier for the given desk to be used in info_hash */
 static char *
 desk_hash_key(E_Desk *desk)
 {
+    /* TODO: can't we use the pointer as a hash? */
     /* I think 64 chars should be enough for all localizations of "desk" */
     static char buffer[64];
 
@@ -1232,6 +1197,18 @@ e_modapi_init(E_Module *m)
     _G.handler_desk_set = ecore_event_handler_add(E_EVENT_BORDER_DESK_SET,
                                               _e_module_tiling_desk_set, NULL);
 
+#define ACTION_ADD(_act, _cb, _title, _value)                                \
+{                                                                            \
+   E_Action *_action = _act;                                                 \
+   const char *_name = _value;                                               \
+   if ((_action = e_action_add(_name)))                                      \
+     {                                                                       \
+        _action->func.go = _cb;                                              \
+        e_action_predef_name_set(D_("Tiling"), D_(_title), _name,            \
+                                 NULL, NULL, 0);                             \
+     }                                                                       \
+}
+
     /* Module's actions */
     ACTION_ADD(_G.act_toggletiling, _e_mod_action_toggle_tiling_cb,
                "Toggle tiling", "toggle_tiling");
@@ -1247,6 +1224,7 @@ e_modapi_init(E_Module *m)
                "Move window to the bottom", "tiling_move_bottom");
     ACTION_ADD(_G.act_movetop, _e_mod_action_move_bottom,
                "Move window to the top", "tiling_move_top");
+#undef ACTION_ADD
 
     /* Configuration entries */
     snprintf(buf, sizeof(buf), "%s/e-module-tiling.edj", e_module_dir_get(m));
@@ -1327,12 +1305,25 @@ e_modapi_shutdown(E_Module *m)
         _G.hook = NULL;
     }
 
+#define FREE_HANDLER(x)          \
+if (x) {                         \
+     ecore_event_handler_del(x); \
+     x = NULL;                   \
+}
     FREE_HANDLER(_G.handler_hide);
     FREE_HANDLER(_G.handler_desk_show);
     FREE_HANDLER(_G.handler_desk_before_show);
     FREE_HANDLER(_G.handler_mouse_move);
     FREE_HANDLER(_G.handler_desk_set);
+#undef FREE_HANDLER
 
+
+#define ACTION_DEL(act, title, value)                   \
+if (act) {                                              \
+     e_action_predef_name_del(D_("Tiling"), D_(title)); \
+     e_action_del(value);                               \
+     act = NULL;                                        \
+}
     ACTION_DEL(_G.act_toggletiling, "Toggle tiling", "toggle_tiling");
     ACTION_DEL(_G.act_togglefloat, "Toggle floating", "toggle_floating");
     ACTION_DEL(_G.act_switchtiling, "Switch tiling mode", "switch_tiling");
@@ -1340,6 +1331,7 @@ e_modapi_shutdown(E_Module *m)
     ACTION_DEL(_G.act_moveright, "Move window to the right", "tiling_move_right");
     ACTION_DEL(_G.act_movebottom, "Move window to the bottom", "tiling_move_bottom");
     ACTION_DEL(_G.act_movetop, "Move window to the top", "tiling_move_top");
+#undef ACTION_DEL
 
     e_configure_registry_item_del("windows/tiling");
     e_configure_registry_category_del("windows");
