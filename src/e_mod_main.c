@@ -6,6 +6,7 @@
 #include "e_border.h"
 #include "e_shelf.h"
 #include <math.h>
+#include <stdbool.h>
 
 /* Use TILING_DEBUG-define to toggle displaying lots of debugmessages */
 #define TILING_DEBUG
@@ -76,12 +77,12 @@ static void _e_mod_action_move_top(E_Object   *obj,
                                    const char *params);
 static void _e_mod_action_move_bottom(E_Object   *obj,
                                       const char *params);
-static E_Border *get_first_window(E_Border *exclude,
-                                  E_Desk   *desk);
+static E_Border *get_first_window(const E_Border *exclude,
+                                  const E_Desk   *desk);
 static void toggle_floating(E_Border *bd);
 static void rearrange_windows(E_Border *bd,
                               Eina_Bool remove_bd);
-static void _desk_show(E_Desk *desk);
+static void _desk_show(const E_Desk *desk);
 
 #define TILE_LOOP_DESKCHECK                               \
   if ((lbd->desk != bd->desk) || (lbd->zone != bd->zone)) \
@@ -119,7 +120,7 @@ static void _desk_show(E_Desk *desk);
 
 /* Generates a unique identifier for the given desk to be used in info_hash */
 static char *
-desk_hash_key(E_Desk *desk)
+desk_hash_key(const E_Desk *desk)
 {
     /* TODO: can't we use the pointer as a hash? */
     /* I think 64 chars should be enough for all localizations of "desk" */
@@ -129,6 +130,59 @@ desk_hash_key(E_Desk *desk)
         return NULL;
     snprintf(buffer, sizeof(buffer), "%d%s", desk->zone->num, desk->name);
     return buffer;
+}
+
+static Tiling_Info *
+_initialize_tinfo(const E_Desk *desk)
+{
+    Eina_List *l;
+    Tiling_Info *res;
+    E_Border *lbd;
+
+    res = E_NEW(Tiling_Info, 1);
+    res->mainbd_width = -1;
+    res->desk = desk;
+    res->big_perc = tiling_g.config->big_perc;
+    res->need_rearrange = 0;
+    eina_hash_add(_G.info_hash, desk_hash_key(desk), res);
+
+    EINA_LIST_FOREACH(e_border_client_list(), l, lbd) {
+        if (lbd->desk == desk)
+            res->client_list = eina_list_append(res->client_list, lbd);
+    }
+
+    return res;
+}
+
+static void
+check_tinfo(const E_Border *bd)
+{
+    if (!_G.tinfo || _G.tinfo->desk != bd->desk) {
+        _G.tinfo = eina_hash_find(_G.info_hash, desk_hash_key(bd->desk));
+        if (!_G.tinfo) {
+            /* We need to add a new Tiling_Info, so we weren't on that desk before.
+             * As e doesn't call the POST_EVAL-hook (or e_desk_show which then
+             * indirectly calls the POST_EVAL) for each window on that desk but only
+             * for the focused, we need to get all borders on that desk. */
+            DBG("need new info for %s\n", bd->desk->name);
+            _G.tinfo = _initialize_tinfo(bd->desk);
+        }
+    }
+}
+
+static int
+is_floating_window(const E_Border *bd)
+{
+    check_tinfo(bd);
+    return (eina_list_data_find(_G.tinfo->floating_windows, bd) == bd);
+}
+
+static int
+is_untilable_dialog(E_Border *bd)
+{
+    return (!tiling_g.config->tile_dialogs
+    && ((bd->client.icccm.transient_for != 0)
+         || (bd->client.netwm.type == ECORE_X_WINDOW_TYPE_DIALOG)));
 }
 
 static E_Tiling_Type
@@ -174,8 +228,8 @@ print_borderlist()
 
 /* Returns the first window from focus-stack (or NULL), avoiding *exclude if specified */
 static E_Border *
-get_first_window(E_Border *exclude,
-                 E_Desk   *desk)
+get_first_window(const E_Border *exclude,
+                 const E_Desk   *desk)
 {
     Eina_List *l;
     E_Border *lbd;
@@ -374,6 +428,7 @@ rearrange_windows_grid(E_Border *bd,
 
     offset_left = alloca(sizeof(int) * windows_per_row);
     bzero(offset_left, sizeof(int) * windows_per_row);
+
     sub_space_x = (tiling_g.config->space_between ? tiling_g.config->between_x : 0);
     sub_space_y = (tiling_g.config->space_between ? tiling_g.config->between_y : 0);
 
@@ -694,30 +749,8 @@ rearrange_windows(E_Border *bd,
 }
 /* }}} */
 
-static Tiling_Info *
-_initialize_tinfo(E_Desk *desk)
-{
-    Eina_List *l;
-    Tiling_Info *res;
-    E_Border *lbd;
-
-    res = E_NEW(Tiling_Info, 1);
-    res->mainbd_width = -1;
-    res->desk = desk;
-    res->big_perc = tiling_g.config->big_perc;
-    res->need_rearrange = 0;
-    eina_hash_add(_G.info_hash, desk_hash_key(desk), res);
-
-    EINA_LIST_FOREACH(e_border_client_list(), l, lbd) {
-        if (lbd->desk == desk)
-            res->client_list = eina_list_append(res->client_list, lbd);
-    }
-
-    return res;
-}
-
 static void
-_desk_before_show(E_Desk *desk)
+_desk_before_show(const E_Desk *desk)
 {
     if (_G.tinfo->desk == desk) {
         DBG("desk before show: %s \n", desk->name);
@@ -728,7 +761,7 @@ _desk_before_show(E_Desk *desk)
 }
 
 static void
-_desk_show(E_Desk *desk)
+_desk_show(const E_Desk *desk)
 {
     _G.tinfo = eina_hash_find(_G.info_hash, desk_hash_key(desk));
     if (!_G.tinfo) {
@@ -915,7 +948,14 @@ _e_module_tiling_cb_hook(void *data,
 {
     E_Border *bd = border;
 
-    if (!bd || TILE_LOOP_CHECKS(bd)
+    if (!bd || !bd->visible)
+        return;
+    if (is_floating_window(bd))
+        return;
+    if (is_untilable_dialog(bd))
+        return;
+
+    if (TILE_LOOP_CHECKS(bd)
     || (!bd->changes.size && !bd->changes.pos
         && (eina_list_data_find(_G.tinfo->client_list, bd) == bd)))
         return;

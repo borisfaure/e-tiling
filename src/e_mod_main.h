@@ -61,7 +61,7 @@ struct _Tiling_Info
     /* The desk for which this _Tiling_Info is used. Needed because
      * (for example) on e restart all desks are shown on all zones but no
      * change events are triggered */
-    E_Desk    *desk;
+    const E_Desk    *desk;
 
     /* List of windows which were toggled floating */
     Eina_List *floating_windows;
