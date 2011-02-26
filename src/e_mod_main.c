@@ -147,8 +147,12 @@ _initialize_tinfo(const E_Desk *desk)
     eina_hash_add(_G.info_hash, desk_hash_key(desk), res);
 
     EINA_LIST_FOREACH(e_border_client_list(), l, lbd) {
-        if (lbd->desk == desk)
-            res->client_list = eina_list_append(res->client_list, lbd);
+        if (lbd->desk == desk) {
+            if (res->master_list)
+                res->slave_list = eina_list_append(res->slave_list, lbd);
+            else
+                res->master_list = eina_list_append(res->master_list, lbd);
+        }
     }
 
     return res;
@@ -210,16 +214,23 @@ print_borderlist()
 
     printf("\n\nTILING_DEBUG: Tiling-Borderlist for \"%s\":\n",
            desk_hash_key(_G.tinfo->desk));
-    for (Eina_List *l = _G.tinfo->client_list; l; l = l->next, wc++) {
+    for (Eina_List *l = _G.tinfo->master_list; l; l = l->next, wc++) {
         E_Border *lbd = l->data;
 
-        printf("  #%d = %p, %s, %s, %s, desk %s)\n",
+        printf("  #M:%d = %p, %s, %s, %s, desk %s)\n",
                wc, lbd, lbd->client.icccm.name,
                lbd->client.icccm.title, lbd->client.netwm.name,
                desk_hash_key(lbd->desk));
         printf("  current = %p, next = %p, prev = %p\n", l, l->next, l->prev);
-        if (_G.tinfo->mainbd == lbd)
-            printf("this is tinfo->mainbd!\n");
+    }
+    for (Eina_List *l = _G.tinfo->slave_list; l; l = l->next, wc++) {
+        E_Border *lbd = l->data;
+
+        printf("  #S:%d = %p, %s, %s, %s, desk %s)\n",
+               wc, lbd, lbd->client.icccm.name,
+               lbd->client.icccm.title, lbd->client.netwm.name,
+               desk_hash_key(lbd->desk));
+        printf("  current = %p, next = %p, prev = %p\n", l, l->next, l->prev);
     }
     printf("TILING_DEBUG: End of Borderlist\n\n");
 }
@@ -285,6 +296,7 @@ static Eina_Bool
 border_move_to_left(E_Border *bd,
                     int       times)
 {
+    /* TODO
     Eina_List *n, *p;
     void *data;
 
@@ -303,6 +315,7 @@ border_move_to_left(E_Border *bd,
     _G.tinfo->client_list = eina_list_remove_list(_G.tinfo->client_list, n);
     _G.tinfo->client_list = eina_list_prepend_relative_list(
         _G.tinfo->client_list, data, p);
+    */
 
     return EINA_TRUE;
 }
@@ -312,6 +325,7 @@ static Eina_Bool
 border_move_to_right(E_Border *bd,
                      int       times)
 {
+    /* TODO
     Eina_List *n, *p;
     void *data;
 
@@ -330,6 +344,7 @@ border_move_to_right(E_Border *bd,
     _G.tinfo->client_list = eina_list_remove_list(_G.tinfo->client_list, n);
     _G.tinfo->client_list = eina_list_append_relative_list(
         _G.tinfo->client_list, data, p);
+    */
 
     return EINA_TRUE;
 }
@@ -510,6 +525,7 @@ rearrange_windows_grid(E_Border *bd,
                                   bd))
         return;
 
+    /* TODO:
     EINA_LIST_FOREACH(_G.tinfo->client_list, l, lbd) {
         int row_horiz,
             row_vert;
@@ -534,6 +550,7 @@ rearrange_windows_grid(E_Border *bd,
                     wf, hf);
         wc++;
     }
+    */
 }
 static void
 rearrange_windows_bigmain(E_Border *bd,
@@ -590,6 +607,7 @@ rearrange_windows_bigmain(E_Border *bd,
         return;
 
     /* Handle Small windows */
+    /* TODO:
     EINA_LIST_FOREACH(_G.tinfo->client_list, l, lbd) {
         TILE_LOOP_DESKCHECK;
         if (TILE_LOOP_CHECKS(lbd))
@@ -601,6 +619,7 @@ rearrange_windows_bigmain(E_Border *bd,
                     (wc * hf) + offset_top + (wc * sub_space_y), smallw, hf);
         wc++;
     }
+    */
 
     if (_G.tinfo->mainbd) {
         _G.tinfo->mainbd_width = bigw;
@@ -639,6 +658,7 @@ rearrange_windows(E_Border *bd,
 #endif
 
     /* Take care of our own tinfo->client_list */
+    /* TODO
     if (eina_list_data_find(_G.tinfo->client_list, bd) != bd) {
         if (!remove_bd)
             _G.tinfo->client_list = eina_list_append(_G.tinfo->client_list, bd);
@@ -646,6 +666,7 @@ rearrange_windows(E_Border *bd,
         if (remove_bd)
             _G.tinfo->client_list = eina_list_remove(_G.tinfo->client_list, bd);
     }
+    */
 
     /* Check if the window is set floating */
     if (eina_list_data_find(_G.tinfo->floating_windows, bd) == bd) {
@@ -955,9 +976,9 @@ _e_module_tiling_cb_hook(void *data,
     if (is_untilable_dialog(bd))
         return;
 
-    if (TILE_LOOP_CHECKS(bd)
-    || (!bd->changes.size && !bd->changes.pos
-        && (eina_list_data_find(_G.tinfo->client_list, bd) == bd)))
+    if (!bd->changes.size && !bd->changes.pos
+    && (eina_list_data_find(_G.tinfo->master_list, bd) == bd
+        || eina_list_data_find(_G.tinfo->slave_list, bd) == bd))
         return;
 
     DBG("cb-Hook for %p / %s / %s, size.changes = %d, position.changes = %d"
@@ -1033,12 +1054,14 @@ _e_module_tiling_hide_hook(void *data,
                                                   desk_hash_key(desk))))
                         continue;
 
+                    /* TODO
                     if (eina_list_data_find(_tinfo->client_list, ev->border)
                         == ev->border)
                     {
                         _tinfo->client_list =
                             eina_list_remove(_tinfo->client_list, ev->border);
                     }
+                    */
                 }
             }
         }
@@ -1091,6 +1114,7 @@ _clear_bd_from_info_hash(const Eina_Hash *hash,
         return EINA_TRUE;
     }
 
+    /* TODO
     if (eina_list_data_find(ti->client_list, ev->border) == ev->border) {
         ti->client_list = eina_list_remove(ti->client_list, ev->border);
         if (ti->desk == get_current_desk()) {
@@ -1100,6 +1124,7 @@ _clear_bd_from_info_hash(const Eina_Hash *hash,
                 rearrange_windows(first, EINA_FALSE);
         }
     }
+    */
 
     if (ti->mainbd == ev->border)
         ti->mainbd = get_first_window(NULL, ti->desk);
@@ -1193,7 +1218,8 @@ _clear_info_hash(const Eina_Hash *hash,
     Tiling_Info *ti = data;
 
     eina_list_free(ti->floating_windows);
-    eina_list_free(ti->client_list);
+    eina_list_free(ti->master_list);
+    eina_list_free(ti->slave_list);
     E_FREE(ti);
 
     return 1;

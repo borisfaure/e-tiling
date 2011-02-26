@@ -66,8 +66,10 @@ struct _Tiling_Info
     /* List of windows which were toggled floating */
     Eina_List *floating_windows;
 
-    /* List of windows in our own sorting */
-    Eina_List *client_list;
+    /* List of windows in our own sorting: slave */
+    Eina_List *slave_list;
+    /* List of windows in our own sorting: master */
+    Eina_List *master_list;
 
     /* big_perc (percentage of the screen which the mainbd-border will get)
      * has to be stored individually for each desk, the one in Tiling_Config
