@@ -1439,8 +1439,8 @@ e_modapi_init(E_Module *m)
 
     E_CONFIG_LIMIT(tiling_g.config->tiling_enabled, 0, 1);
     E_CONFIG_LIMIT(tiling_g.config->dont_touch_borders, 0, 1);
-    E_CONFIG_LIMIT(tiling_g.config->tiling_mode, E_TILING_GRID,
-                                                 E_TILING_INDIVIDUAL);
+    E_CONFIG_LIMIT(tiling_g.config->tiling_mode, E_TILING_NONE,
+                                                 E_TILING_BIGMAIN);
     E_CONFIG_LIMIT(tiling_g.config->tile_dialogs, 0, 1);
     E_CONFIG_LIMIT(tiling_g.config->float_too_big_windows, 0, 1);
     E_CONFIG_LIMIT(tiling_g.config->grid_rows, 1, 12);
