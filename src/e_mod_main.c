@@ -15,6 +15,8 @@
 
 struct tiling_g tiling_g = {
    .module = NULL,
+   .config = NULL,
+   .log_domain = -1,
 };
 
 static struct
@@ -979,24 +981,30 @@ _e_module_tiling_cb_hook(void *data,
     bool is_master = false,
          is_slave = false;
 
-    DBG("cb-Hook");
-    if (!bd || !bd->visible)
+    DBG("cb-Hook\n");
+    if (!bd || !bd->visible) {
+        DBG("cb-Hook\n");
         return;
-    if (is_floating_window(bd))
+    }
+    if (is_floating_window(bd)) {
         return;
-    if (is_untilable_dialog(bd))
+    }
+    if (is_untilable_dialog(bd)) {
         return;
+    }
 
     if (!tiling_g.config->tiling_enabled
-    || layout_for_desk(bd->desk) == E_TILING_NONE)
+    || layout_for_desk(bd->desk) == E_TILING_NONE) {
         return;
+    }
 
     is_master = eina_list_data_find(_G.tinfo->master_list, bd) == bd;
     is_slave = eina_list_data_find(_G.tinfo->slave_list, bd) == bd;
 
     if (!bd->changes.size && !bd->changes.pos
-    && (is_master || is_slave))
+    && (is_master || is_slave)) {
         return;
+    }
 
     DBG("cb-Hook for %p / %s / %s, changes(size=%d, position=%d, border=%d)"
         " g:%dx%d+%d+%d bdname:%s (%c)\n",
@@ -1303,7 +1311,17 @@ EAPI void *
 e_modapi_init(E_Module *m)
 {
     char buf[PATH_MAX];
+    E_Desk *desk;
+
     tiling_g.module = m;
+
+    if (tiling_g.log_domain < 0) {
+        tiling_g.log_domain = eina_log_domain_register("tiling", NULL);
+        if (tiling_g.log_domain < 0) {
+            EINA_LOG_CRIT("could not register log domain 'tiling'");
+        }
+    }
+
 
     snprintf(buf, sizeof(buf), "%s/locale", e_module_dir_get(m));
     bindtextdomain(PACKAGE, buf);
@@ -1430,16 +1448,24 @@ e_modapi_init(E_Module *m)
     E_CONFIG_LIMIT(tiling_g.config->big_perc, 0.1, 1);
     E_CONFIG_LIMIT(tiling_g.config->space_between, 0, 1);
 
-    E_Desk *desk = get_current_desk();
+    desk = get_current_desk();
     _G.current_zone = desk->zone;
     _G.tinfo = _initialize_tinfo(desk);
 
+    DBG("initialized");
     return m;
 }
 
 EAPI int
 e_modapi_shutdown(E_Module *m)
 {
+
+    if (tiling_g.log_domain >= 0) {
+        DBG("shutdown!");
+        eina_log_domain_unregister(tiling_g.log_domain);
+        tiling_g.log_domain = -1;
+    }
+
     if (_G.hook) {
         e_border_hook_del(_G.hook);
         _G.hook = NULL;

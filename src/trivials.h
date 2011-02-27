@@ -14,8 +14,6 @@ move_resize(E_Border *bd,
 void
      recursively_set_disabled(Evas_Object *obj,
                          int               disabled);
-void DBG(const char *fmt,
-          ...);
 int
 max(int a,
     int b);

@@ -34,20 +34,6 @@ recursively_set_disabled(Evas_Object *obj,
    e_widget_disabled_set(obj, disabled);
 }
 
-void
-DBG(const char *fmt,
-    ...)
-{
-#ifdef TILING_DEBUG
-   va_list ap;
-   va_start(ap, fmt);
-   char buf[4096];
-   snprintf(buf, 4096, "TILING_DEBUG: %s", fmt);
-   vprintf(buf, ap);
-   va_end(ap);
-#endif
-}
-
 /* Returns the bigger one. Needed to avoid SIGFPE */
 int
 max(int a,
