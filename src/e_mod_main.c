@@ -1408,18 +1408,18 @@ e_modapi_init(E_Module *m)
     E_CONFIG_VAL(_G.config_edd, Config, float_too_big_windows, INT);
     E_CONFIG_VAL(_G.config_edd, Config, grid_rows, INT);
     E_CONFIG_VAL(_G.config_edd, Config, grid_distribute_equally, INT);
-    E_CONFIG_VAL(_G.config_edd, Config, big_perc, DOUBLE);
-    E_CONFIG_VAL(_G.config_edd, Config, floating_border, STR);
-    E_CONFIG_VAL(_G.config_edd, Config, tiling_border, STR);
     E_CONFIG_VAL(_G.config_edd, Config, space_between, INT);
     E_CONFIG_VAL(_G.config_edd, Config, between_x, INT);
     E_CONFIG_VAL(_G.config_edd, Config, between_y, INT);
+    E_CONFIG_VAL(_G.config_edd, Config, floating_border, STR);
+    E_CONFIG_VAL(_G.config_edd, Config, tiling_border, STR);
+    E_CONFIG_VAL(_G.config_edd, Config, big_perc, DOUBLE);
 
     E_CONFIG_LIST(_G.config_edd, Config, vdesks, _G.vdesk_edd);
     E_CONFIG_VAL(_G.vdesk_edd, struct _Config_vdesk, x, INT);
     E_CONFIG_VAL(_G.vdesk_edd, struct _Config_vdesk, y, INT);
-    E_CONFIG_VAL(_G.vdesk_edd, struct _Config_vdesk, layout, INT);
     E_CONFIG_VAL(_G.vdesk_edd, struct _Config_vdesk, zone_num, INT);
+    E_CONFIG_VAL(_G.vdesk_edd, struct _Config_vdesk, layout, INT);
 
     tiling_g.config = e_config_domain_load("module.tiling", _G.config_edd);
     if (!tiling_g.config) {
@@ -1446,7 +1446,7 @@ e_modapi_init(E_Module *m)
     E_CONFIG_LIMIT(tiling_g.config->tiling_enabled, 0, 1);
     E_CONFIG_LIMIT(tiling_g.config->dont_touch_borders, 0, 1);
     E_CONFIG_LIMIT(tiling_g.config->tiling_mode, E_TILING_NONE,
-                                                 E_TILING_BIGMAIN);
+                                                 E_TILING_GRID);
     E_CONFIG_LIMIT(tiling_g.config->tile_dialogs, 0, 1);
     E_CONFIG_LIMIT(tiling_g.config->float_too_big_windows, 0, 1);
     E_CONFIG_LIMIT(tiling_g.config->grid_rows, 1, 12);

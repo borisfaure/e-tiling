@@ -7,8 +7,8 @@ typedef enum _E_Tiling_Type
 {
     E_TILING_NONE = 0,
     E_TILING_INDIVIDUAL,
-    E_TILING_GRID,
     E_TILING_BIGMAIN,
+    E_TILING_GRID,
 } E_Tiling_Type;
 
 typedef struct _Config      Config;

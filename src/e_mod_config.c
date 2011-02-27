@@ -28,7 +28,7 @@ get_vdesk(Eina_List *vdesks,
 {
     DBG("getting vdesk x %d / y %d / zone_num %d\n", x, y, zone_num);
 
-    for (Eina_List *l = tiling_g.config->vdesks; l; l = l->next) {
+    for (Eina_List *l = vdesks; l; l = l->next) {
         struct _Config_vdesk *vd = l->data;
 
         if (!vd)
@@ -111,6 +111,7 @@ static void
 _free_data(E_Config_Dialog      *cfd,
            E_Config_Dialog_Data *cfdata)
 {
+    /*TODO: LEAK */
     free(cfdata);
 }
 
@@ -419,7 +420,7 @@ _basic_apply_data(E_Config_Dialog      *cfd,
         /* Check if the layout for one of the vdesks has changed */
         for (Eina_List *l = tiling_g.config->vdesks; l; l = l->next) {
             struct _Config_vdesk *vd = l->data,
-                                   *newvd;
+                                 *newvd;
 
             if (!vd || !(newvd = get_vdesk(cfdata->config.vdesks,
                                            vd->x, vd->y, vd->zone_num)))
