@@ -1250,15 +1250,21 @@ e_modapi_init(E_Module *m)
     _G.handler_hide = ecore_event_handler_add(E_EVENT_BORDER_HIDE,
                                              _e_module_tiling_hide_hook, NULL);
     /* Callback when virtual desktop changes */
+    /*
     _G.handler_desk_show = ecore_event_handler_add(E_EVENT_DESK_SHOW,
                                              _e_module_tiling_desk_show, NULL);
+    */
     /* Callback before virtual desktop changes */
+    /*
     _G.handler_desk_before_show =
         ecore_event_handler_add(E_EVENT_DESK_BEFORE_SHOW,
                                 _e_module_tiling_desk_before_show, NULL);
+    */
     /* Callback when the mouse moves */
+    /*
     _G.handler_mouse_move = ecore_event_handler_add(ECORE_EVENT_MOUSE_MOVE,
                                             _e_module_tiling_mouse_move, NULL);
+    */
     /* Callback when a border is set to another desk */
     _G.handler_desk_set = ecore_event_handler_add(E_EVENT_BORDER_DESK_SET,
                                               _e_module_tiling_desk_set, NULL);
