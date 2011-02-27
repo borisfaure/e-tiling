@@ -968,6 +968,8 @@ _e_module_tiling_cb_hook(void *data,
                          void *border)
 {
     E_Border *bd = border;
+    bool is_master = false,
+         is_slave = false;
 
     if (!bd || !bd->visible)
         return;
@@ -976,19 +978,43 @@ _e_module_tiling_cb_hook(void *data,
     if (is_untilable_dialog(bd))
         return;
 
+    if (!tiling_g.config->tiling_enabled
+    || layout_for_desk(bd->desk) == E_TILING_NONE)
+        return;
+
+    is_master = eina_list_data_find(_G.tinfo->master_list, bd) == bd;
+    is_slave = eina_list_data_find(_G.tinfo->slave_list, bd) == bd;
+
     if (!bd->changes.size && !bd->changes.pos
-    && (eina_list_data_find(_G.tinfo->master_list, bd) == bd
-        || eina_list_data_find(_G.tinfo->slave_list, bd) == bd))
+    && (is_master || is_slave))
         return;
 
     DBG("cb-Hook for %p / %s / %s, size.changes = %d, position.changes = %d"
-        " g:%dx%d+%d+%d bdname:%s\n",
+        " g:%dx%d+%d+%d bdname:%s (%c)\n",
         bd, bd->client.icccm.title, bd->client.netwm.name,
         bd->changes.size, bd->changes.pos,
-        bd->x, bd->y, bd->w, bd->h, bd->bordername);
+        bd->x, bd->y, bd->w, bd->h, bd->bordername,
+        is_master ? 'M' : (is_slave ? 'S': 'N'));
+
+    if (!is_master && !is_slave) {
+        /* New Border! */
+
+        /* TODO: change border? */
+        if (_G.tinfo->master_list) {
+           /* Put in slaves */
+        } else {
+            /* Maximize */
+        }
+    } else {
+        /* Move or Resize */
+
+        /* TODO */
+    }
+
+    return;
 
     /* If the border changes size, we maybe want to adjust the layout */
-    if (_G.tinfo && bd->changes.size) {
+    if (bd->changes.size) {
         if (layout_for_desk(bd->desk) == E_TILING_BIGMAIN) {
             double x;
 
