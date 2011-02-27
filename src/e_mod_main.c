@@ -981,40 +981,45 @@ _e_module_tiling_cb_hook(void *data,
     bool is_master = false,
          is_slave = false;
 
-    DBG("cb-Hook\n");
+    DBG("cb-Hook");
     if (!bd || !bd->visible) {
-        DBG("cb-Hook\n");
+        DBG("bd=%p", bd);
         return;
     }
     if (is_floating_window(bd)) {
+        DBG("floating window");
         return;
     }
     if (is_untilable_dialog(bd)) {
+        DBG("untilable_dialog");
         return;
     }
 
     if (!tiling_g.config->tiling_enabled
     || layout_for_desk(bd->desk) == E_TILING_NONE) {
+        DBG("no tiling");
         return;
     }
 
     is_master = eina_list_data_find(_G.tinfo->master_list, bd) == bd;
     is_slave = eina_list_data_find(_G.tinfo->slave_list, bd) == bd;
 
-    if (!bd->changes.size && !bd->changes.pos
-    && (is_master || is_slave)) {
-        return;
-    }
-
     DBG("cb-Hook for %p / %s / %s, changes(size=%d, position=%d, border=%d)"
-        " g:%dx%d+%d+%d bdname:%s (%c)\n",
+        " g:%dx%d+%d+%d bdname:%s (%c)",
         bd, bd->client.icccm.title, bd->client.netwm.name,
         bd->changes.size, bd->changes.pos, bd->changes.border,
         bd->x, bd->y, bd->w, bd->h, bd->bordername,
         is_master ? 'M' : (is_slave ? 'S': 'N'));
 
+    if (!bd->changes.size && !bd->changes.pos && !bd->changes.border
+    && (is_master || is_slave)) {
+        DBG("nothing to do");
+        return;
+    }
+
     if (!is_master && !is_slave) {
         /* New Border! */
+        DBG("new border");
 
         if (!tiling_g.config->dont_touch_borders
         && tiling_g.config->tiling_border
@@ -1027,6 +1032,7 @@ _e_module_tiling_cb_hook(void *data,
 
         if (_G.tinfo->master_list) {
            /*TODO: Put in slaves */
+           DBG("put in slaves");
         } else {
             /* Maximize */
             int offset_top = 0,
@@ -1048,7 +1054,7 @@ _e_module_tiling_cb_hook(void *data,
                 if (ORIENT_LEFT(sh->gadcon->orient))
                     offset_left += sh->w;
             }
-            DBG("maximizing the window\n");
+            DBG("maximizing the window");
             e_border_move(bd, bd->zone->x + offset_left,
                               bd->zone->y + offset_top);
             e_border_unmaximize(bd, E_MAXIMIZE_BOTH);
@@ -1057,7 +1063,7 @@ _e_module_tiling_cb_hook(void *data,
         }
     } else {
         /* Move or Resize */
-
+        DBG("move or resize");
         /* TODO */
     }
 
