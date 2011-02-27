@@ -4,16 +4,6 @@
 
 #define TILING_DEBUG
 
-void
-change_window_border(E_Border *bd,
-                     char     *bordername)
-{
-   if (bd->bordername)
-     eina_stringshare_del(bd->bordername);
-   bd->bordername = eina_stringshare_add(bordername);
-   bd->client.border.changed = 1;
-   bd->changed = 1;
-}
 
 void
 move_resize(E_Border *bd,

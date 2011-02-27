@@ -6,9 +6,6 @@
 #include <stdarg.h>
 
 void
-change_window_border(E_Border *bd,
-                     char     *bordername);
-void
 move_resize(E_Border *bd,
             int       x,
             int       y,

@@ -288,6 +288,14 @@ check_for_too_big_windows(int       width,
     return EINA_FALSE;
 }
 
+static void
+change_window_border(E_Border *bd,
+                     char     *bordername)
+{
+   eina_stringshare_replace(&bd->bordername, bordername);
+   bd->client.border.changed = 1;
+   bd->changed = 1;
+}
 
 /* }}} */
 /* Move {{{ */
@@ -971,6 +979,7 @@ _e_module_tiling_cb_hook(void *data,
     bool is_master = false,
          is_slave = false;
 
+    DBG("cb-Hook");
     if (!bd || !bd->visible)
         return;
     if (is_floating_window(bd))
@@ -989,21 +998,54 @@ _e_module_tiling_cb_hook(void *data,
     && (is_master || is_slave))
         return;
 
-    DBG("cb-Hook for %p / %s / %s, size.changes = %d, position.changes = %d"
+    DBG("cb-Hook for %p / %s / %s, changes(size=%d, position=%d, border=%d)"
         " g:%dx%d+%d+%d bdname:%s (%c)\n",
         bd, bd->client.icccm.title, bd->client.netwm.name,
-        bd->changes.size, bd->changes.pos,
+        bd->changes.size, bd->changes.pos, bd->changes.border,
         bd->x, bd->y, bd->w, bd->h, bd->bordername,
         is_master ? 'M' : (is_slave ? 'S': 'N'));
 
     if (!is_master && !is_slave) {
         /* New Border! */
 
-        /* TODO: change border? */
+        if (!tiling_g.config->dont_touch_borders
+        && tiling_g.config->tiling_border
+        && ((bd->bordername && strcmp(bd->bordername,
+                                       tiling_g.config->tiling_border))
+            || !bd->bordername))
+        {
+            change_window_border(bd, tiling_g.config->tiling_border);
+        }
+
         if (_G.tinfo->master_list) {
-           /* Put in slaves */
+           /*TODO: Put in slaves */
         } else {
             /* Maximize */
+            int offset_top = 0,
+                offset_left = 0;
+            Eina_List *l;
+            E_Shelf *sh;
+
+            /* However, we still need to check if any of the shelves produces
+             * an offset */
+            EINA_LIST_FOREACH(e_shelf_list(), l, sh) {
+                if (!sh || (sh->zone != bd->zone)
+                || !shelf_show_on_desk(sh, bd->desk)
+                || sh->cfg->overlap)
+                    continue;
+
+                if (ORIENT_TOP(sh->gadcon->orient))
+                    offset_top += sh->h;
+                else
+                if (ORIENT_LEFT(sh->gadcon->orient))
+                    offset_left += sh->w;
+            }
+            DBG("maximizing the window\n");
+            e_border_move(bd, bd->zone->x + offset_left,
+                              bd->zone->y + offset_top);
+            e_border_unmaximize(bd, E_MAXIMIZE_BOTH);
+            e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_BOTH);
+            _G.tinfo->master_list = eina_list_append(_G.tinfo->master_list, bd);
         }
     } else {
         /* Move or Resize */
