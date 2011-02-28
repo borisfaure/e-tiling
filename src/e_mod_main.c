@@ -161,17 +161,17 @@ _initialize_tinfo(const E_Desk *desk)
 }
 
 static void
-check_tinfo(const E_Border *bd)
+check_tinfo(const E_Desk *desk)
 {
-    if (!_G.tinfo || _G.tinfo->desk != bd->desk) {
-        _G.tinfo = eina_hash_find(_G.info_hash, desk_hash_key(bd->desk));
+    if (!_G.tinfo || _G.tinfo->desk != desk) {
+        _G.tinfo = eina_hash_find(_G.info_hash, desk_hash_key(desk));
         if (!_G.tinfo) {
             /* We need to add a new Tiling_Info, so we weren't on that desk before.
              * As e doesn't call the POST_EVAL-hook (or e_desk_show which then
              * indirectly calls the POST_EVAL) for each window on that desk but only
              * for the focused, we need to get all borders on that desk. */
-            DBG("need new info for %s\n", bd->desk->name);
-            _G.tinfo = _initialize_tinfo(bd->desk);
+            DBG("need new info for %s\n", desk->name);
+            _G.tinfo = _initialize_tinfo(desk);
         }
     }
 }
@@ -179,7 +179,7 @@ check_tinfo(const E_Border *bd)
 static int
 is_floating_window(const E_Border *bd)
 {
-    check_tinfo(bd);
+    check_tinfo(bd->desk);
     return (eina_list_data_find(_G.tinfo->floating_windows, bd) == bd);
 }
 
@@ -1342,10 +1342,8 @@ e_modapi_init(E_Module *m)
     _G.handler_hide = ecore_event_handler_add(E_EVENT_BORDER_HIDE,
                                              _e_module_tiling_hide_hook, NULL);
     /* Callback when virtual desktop changes */
-    /*
     _G.handler_desk_show = ecore_event_handler_add(E_EVENT_DESK_SHOW,
                                              _e_module_tiling_desk_show, NULL);
-    */
     /* Callback before virtual desktop changes */
     /*
     _G.handler_desk_before_show =
