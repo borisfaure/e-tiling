@@ -1111,7 +1111,10 @@ _e_module_tiling_hide_hook(void *data,
     E_Event_Border_Hide *ev = event;
 
     DBG("hide-hook\n");
+
+    /*
     rearrange_windows(ev->border, EINA_TRUE);
+    */
 
     if (_G.currently_switching_desktop)
         return EINA_TRUE;
@@ -1130,20 +1133,26 @@ _e_module_tiling_hide_hook(void *data,
                      i++)
                 {
                     E_Desk *desk = zone->desks[i];
-                    E_Border *first;
 
                     if (!(_tinfo = eina_hash_find(_G.info_hash,
                                                   desk_hash_key(desk))))
                         continue;
 
-                    /* TODO
-                    if (eina_list_data_find(_tinfo->client_list, ev->border)
+                    if (eina_list_data_find(_tinfo->master_list, ev->border)
                         == ev->border)
                     {
-                        _tinfo->client_list =
-                            eina_list_remove(_tinfo->client_list, ev->border);
+                        _tinfo->master_list =
+                            eina_list_remove(_tinfo->master_list, ev->border);
+                        continue;
                     }
-                    */
+                    if (eina_list_data_find(_tinfo->slave_list, ev->border)
+                        == ev->border)
+                    {
+                        _tinfo->slave_list =
+                            eina_list_remove(_tinfo->slave_list, ev->border);
+                        continue;
+                    }
+                    /*TODO: reorganize desk */
                 }
             }
         }
