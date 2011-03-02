@@ -1345,7 +1345,7 @@ e_modapi_init(E_Module *m)
     _G.info_hash = eina_hash_string_small_new(NULL);
 
     /* Callback for new windows or changes */
-    _G.hook = e_border_hook_add(E_BORDER_HOOK_EVAL_POST_FETCH,
+    _G.hook = e_border_hook_add(E_BORDER_HOOK_EVAL_POST_BORDER_ASSIGN,
                                 _e_module_tiling_cb_hook, NULL);
     /* Callback for hiding windows */
     _G.handler_hide = ecore_event_handler_add(E_EVENT_BORDER_HIDE,
