@@ -13,6 +13,14 @@
 
 /* actual module specifics */
 
+typedef struct Border_Extra {
+     E_Border *border;
+     int x,
+         y,
+         w,
+         h;
+} Border_Extra;
+
 struct tiling_g tiling_g = {
    .module = NULL,
    .config = NULL,
@@ -36,6 +44,8 @@ static struct
    /* This hash holds the Tiling_Info-pointers for each desktop */
    Eina_Hash           *info_hash;
 
+   Eina_Hash           *border_extras;
+
    E_Action            *act_toggletiling,
                        *act_togglefloat,
                        *act_switchtiling,
@@ -55,6 +65,7 @@ static struct
    .current_zone = NULL,
    .tinfo = NULL,
    .info_hash = NULL,
+   .border_extras = NULL,
 
    .act_toggletiling = NULL,
    .act_togglefloat = NULL,
@@ -1018,6 +1029,18 @@ _e_module_tiling_cb_hook(void *data,
     }
 
     if (!is_master && !is_slave) {
+        Border_Extra *extra = E_NEW(Border_Extra, 1);
+
+        *extra = (Border_Extra) {
+             .border = bd,
+             .x = bd->x,
+             .y = bd->y,
+             .w = bd->w,
+             .h = bd->h
+        };
+
+        eina_hash_direct_add(_G.border_extras, &extra->border, extra);
+
         /* New Border! */
         DBG("new border");
 
@@ -1062,9 +1085,17 @@ _e_module_tiling_cb_hook(void *data,
             _G.tinfo->master_list = eina_list_append(_G.tinfo->master_list, bd);
         }
     } else {
+        Border_Extra *extra;
+
         /* Move or Resize */
         DBG("move or resize");
         /* TODO */
+
+        extra = eina_hash_find(_G.border_extras, &bd);
+
+        if (is_master && !_G.tinfo->master_list->next) {
+            DBG("forever alone :)");
+        }
     }
 
     return;
@@ -1118,6 +1149,8 @@ _e_module_tiling_hide_hook(void *data,
 
     if (_G.currently_switching_desktop)
         return EINA_TRUE;
+
+    eina_hash_del(_G.border_extras, &ev->border, NULL);
 
     /* Ensure that the border is deleted from all available desks */
     for (Eina_List *l = e_manager_list(); l; l = l->next) {
@@ -1313,7 +1346,20 @@ _clear_info_hash(const Eina_Hash *hash,
     eina_list_free(ti->slave_list);
     E_FREE(ti);
 
-    return 1;
+    return EINA_TRUE;
+}
+
+static Eina_Bool
+_clear_border_extras(const Eina_Hash *hash,
+                     const void      *key,
+                     void            *data,
+                     void            *fdata)
+{
+    Border_Extra *be = data;
+
+    E_FREE(be);
+
+    return EINA_TRUE;
 }
 
 EAPI E_Module_Api e_modapi =
@@ -1343,6 +1389,8 @@ e_modapi_init(E_Module *m)
     bind_textdomain_codeset(PACKAGE, "UTF-8");
 
     _G.info_hash = eina_hash_string_small_new(NULL);
+
+    _G.border_extras = eina_hash_pointer_new(NULL);
 
     /* Callback for new windows or changes */
     _G.hook = e_border_hook_add(E_BORDER_HOOK_EVAL_POST_BORDER_ASSIGN,
@@ -1520,9 +1568,15 @@ if (act) {                                              \
     E_CONFIG_DD_FREE(_G.vdesk_edd);
 
     tiling_g.module = NULL;
+
     eina_hash_foreach(_G.info_hash, _clear_info_hash, NULL);
     eina_hash_free(_G.info_hash);
     _G.info_hash = NULL;
+
+    eina_hash_foreach(_G.info_hash, _clear_border_extras, NULL);
+    eina_hash_free(_G.border_extras);
+    _G.border_extras = NULL;
+
     _G.tinfo = NULL;
 
     return 1;
