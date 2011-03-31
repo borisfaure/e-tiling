@@ -90,11 +90,7 @@ static void _e_mod_action_move_top(E_Object   *obj,
                                    const char *params);
 static void _e_mod_action_move_bottom(E_Object   *obj,
                                       const char *params);
-static E_Border *get_first_window(const E_Border *exclude,
-                                  const E_Desk   *desk);
 static void toggle_floating(E_Border *bd);
-static void rearrange_windows(E_Border *bd,
-                              Eina_Bool remove_bd);
 static void _desk_show(const E_Desk *desk);
 
 #define TILE_LOOP_DESKCHECK                               \
@@ -250,28 +246,6 @@ print_borderlist()
 
 #endif
 
-/* Returns the first window from focus-stack (or NULL), avoiding *exclude if specified */
-static E_Border *
-get_first_window(const E_Border *exclude,
-                 const E_Desk   *desk)
-{
-    Eina_List *l;
-    E_Border *lbd;
-
-    EINA_LIST_FOREACH(e_border_focus_stack_get(), l, lbd) {
-        if (exclude
-            && ((lbd == exclude) || (lbd->desk != exclude->desk)))
-            continue;
-        if (!exclude && desk && (lbd->desk != desk))
-            continue;
-        if (TILE_LOOP_CHECKS(lbd))
-            continue;
-        return lbd;
-    }
-
-    return NULL;
-}
-
 /* Checks for windows which are bigger than width/height in their min_w/min_h-
  * attributes and therefore need to be set to floating
  *
@@ -392,7 +366,6 @@ toggle_floating(E_Border *bd)
         }
 
         e_border_idler_before();
-        rearrange_windows(bd, EINA_FALSE);
     } else {
         int w = bd->w,
             h = bd->h;
@@ -414,381 +387,6 @@ toggle_floating(E_Border *bd)
     }
 }
 
-/* }}} */
-/* Rearrange {{{ */
-
-static void
-rearrange_windows_grid(E_Border *bd,
-                       int remove_bd,
-                       int window_count)
-{
-    Eina_List *l;
-    E_Border *lbd;
-    E_Shelf *sh;
-    int wc = 0;
-    int wf,
-        wh;
-    int gridrows;
-    int *shelf_collision_vert,
-        *shelf_collision_horiz,
-        *offset_top,
-        *offset_left;
-    int highest_collision_vert = 0,
-        highest_collision_horiz = 0;
-    int sub_space_x,
-        sub_space_y;
-    int windows_per_row;
-
-    if (tiling_g.config->grid_distribute_equally) {
-        int internal = 1;
-
-        if (window_count > 1)
-            while (((double)window_count / (double)internal) > (double)internal)
-                internal++;
-        gridrows = max(internal, 1);
-    } else {
-        gridrows = max(min(tiling_g.config->grid_rows, window_count), 1);
-    }
-
-    wf = (bd->zone->w / gridrows);
-    windows_per_row = max((int)ceil((double)window_count / (double)gridrows), 1);
-
-    shelf_collision_vert = alloca(sizeof(int) * gridrows);
-    bzero(shelf_collision_vert, sizeof(int) * gridrows);
-
-    shelf_collision_horiz = alloca(sizeof(int) * windows_per_row);
-    bzero(shelf_collision_horiz, sizeof(int) * windows_per_row);
-
-    offset_top = alloca(sizeof(int) * gridrows);
-    bzero(offset_top, sizeof(int) * gridrows);
-
-    offset_left = alloca(sizeof(int) * windows_per_row);
-    bzero(offset_left, sizeof(int) * windows_per_row);
-
-    sub_space_x = (tiling_g.config->space_between ? tiling_g.config->between_x : 0);
-    sub_space_y = (tiling_g.config->space_between ? tiling_g.config->between_y : 0);
-
-
-    /* Loop through all the shelves on this screen (=zone) to get their space */
-    /* NOTE:
-     * shelf detection in gridmode has a tolerance area of the height/width (depends
-     * on the orientation) of your shelves if you have more than one.
-     *
-     * If you have found a good way to deal with this problem in a simple manner,
-     * please send a patch :-).
-     */
-    EINA_LIST_FOREACH(e_shelf_list(), l, sh) {
-        if (!sh || (sh->zone != bd->zone)
-        || !shelf_show_on_desk(sh, bd->desk) || sh->cfg->overlap)
-            continue;
-
-        E_Gadcon_Orient orient = sh->gadcon->orient;
-        /* Every row between sh_min and sh_max needs to be flagged */
-        if (ORIENT_BOTTOM(orient) || ORIENT_TOP(orient)) {
-            int sh_min = sh->x,
-                sh_max = sh->x + sh->w;
-
-            for (int c = 0; c < gridrows; c++)
-            {
-                int row_min = ((c % gridrows) * wf),
-                    row_max = row_min + wf;
-
-                if (!shelf_collision_vert[c] &&
-                    (between(row_min, sh_min, sh_max) ||
-                     between(sh_min, row_min, row_max)))
-                {
-                    shelf_collision_vert[c] = sh->h;
-                    if (sh->h > highest_collision_vert)
-                        highest_collision_vert = sh->h;
-                    if (ORIENT_TOP(orient))
-                        offset_top[c] = sh->h;
-                }
-            }
-        }
-        else
-        if (ORIENT_LEFT(orient) || ORIENT_RIGHT(orient)) {
-            int sh_min = sh->y,
-                sh_max = sh->y + sh->h;
-
-            for (int c = 0; c < windows_per_row; c++) {
-                int row_min = c * (bd->zone->h / windows_per_row),
-                    row_max = row_min + (bd->zone->h / windows_per_row);
-
-                if (!shelf_collision_horiz[c] &&
-                    (between(row_min, sh_min, sh_max) ||
-                     between(sh_min, row_min, row_max)))
-                {
-                    shelf_collision_horiz[c] = sh->w;
-                    if (sh->w > highest_collision_horiz)
-                        highest_collision_horiz = sh->w;
-                    if (ORIENT_LEFT(orient))
-                        offset_left[c] = sh->w;
-                }
-            }
-        }
-    }
-
-    for (int c = 0; c < gridrows; c++)
-        shelf_collision_vert[c] = bd->zone->h
-            - (sub_space_y * (windows_per_row - 1)) - shelf_collision_vert[c];
-    for (int c = 0; c < windows_per_row; c++)
-        shelf_collision_horiz[c] = bd->zone->w
-            - (sub_space_x * (gridrows - 1)) - shelf_collision_horiz[c];
-
-    /* Check for too big windows. We're pessimistic for the height-value and use the
-     * one with the lowest available space (due to shelves) */
-    if (tiling_g.config->float_too_big_windows
-    && check_for_too_big_windows(((bd->zone->w - highest_collision_horiz) /
-                                   max((window_count < (gridrows + 1) ?
-                                        window_count : gridrows), 1)),
-                                  ((bd->zone->h - highest_collision_vert) /
-                                     windows_per_row),
-                                  bd))
-        return;
-
-    /* TODO:
-    EINA_LIST_FOREACH(_G.tinfo->client_list, l, lbd) {
-        int row_horiz,
-            row_vert;
-        int hf;
-
-        TILE_LOOP_DESKCHECK;
-        if (TILE_LOOP_CHECKS(lbd))
-            continue;
-
-        if (remove_bd && lbd == bd)
-            continue;
-
-        row_horiz = (wc % gridrows);
-        row_vert = (wc / gridrows);
-        wf = (shelf_collision_horiz[row_vert] / gridrows);
-        hf = (shelf_collision_vert[row_horiz] / windows_per_row);
-        move_resize(lbd,
-                    (row_horiz * wf) + offset_left[row_vert]
-                                     + (sub_space_x * row_horiz),
-                    (row_vert  * hf) + offset_top[row_horiz]
-                                     + (sub_space_y * row_vert),
-                    wf, hf);
-        wc++;
-    }
-    */
-}
-static void
-rearrange_windows_bigmain(E_Border *bd,
-                          int remove_bd,
-                          int window_count)
-{
-    E_Border *lbd;
-    Eina_List *l;
-    E_Shelf *sh;
-    int wc = 0,
-        hf;
-    int bigw = bd->zone->w;
-    int bigh = bd->zone->h;
-    int offset_top = 0, offset_left = 0;
-    int smallh = bigh,
-        smallw;
-    int sub_space_x = (tiling_g.config->space_between ?
-                       tiling_g.config->between_x : 0);
-    int sub_space_y = (tiling_g.config->space_between ?
-                       tiling_g.config->between_y : 0);
-
-    /* Loop through all the shelves on this screen (=zone) to get their space */
-    EINA_LIST_FOREACH(e_shelf_list(), l, sh) {
-        E_Gadcon_Orient orient;
-
-        if (!sh || (sh->zone != bd->zone)
-        || !shelf_show_on_desk(sh, bd->desk)
-        || sh->cfg->overlap)
-            continue;
-
-        /* Decide what to do based on the orientation of the shelf */
-        orient = sh->gadcon->orient;
-        if (ORIENT_BOTTOM(orient) || ORIENT_TOP(orient)) {
-            if (sh->x <= (bigw * _G.tinfo->big_perc))
-                bigh -= sh->h;
-            if ((sh->x + sh->w) >= (bigw * _G.tinfo->big_perc))
-                smallh -= sh->h;
-            if (ORIENT_TOP(orient))
-                offset_top = sh->h;
-        }
-        if (ORIENT_LEFT(orient) || ORIENT_RIGHT(orient))
-            bigw -= sh->w;
-        if (ORIENT_LEFT(orient))
-            offset_left = sh->w;
-    }
-
-    smallw = bigw;
-    bigw *= _G.tinfo->big_perc;
-    smallw -= (bigw + sub_space_x);
-    smallh -= (sub_space_y * (window_count - 2));
-    hf = (smallh / (window_count - 1));
-    if (tiling_g.config->float_too_big_windows
-    && check_for_too_big_windows(bigw, hf, bd))
-        return;
-
-    /* Handle Small windows */
-    /* TODO:
-    EINA_LIST_FOREACH(_G.tinfo->client_list, l, lbd) {
-        TILE_LOOP_DESKCHECK;
-        if (TILE_LOOP_CHECKS(lbd))
-            continue;
-
-        if (lbd == _G.tinfo->mainbd)
-            continue;
-        move_resize(lbd, sub_space_x + offset_left + bigw,
-                    (wc * hf) + offset_top + (wc * sub_space_y), smallw, hf);
-        wc++;
-    }
-    */
-
-    if (_G.tinfo->mainbd) {
-        _G.tinfo->mainbd_width = bigw;
-        move_resize(_G.tinfo->mainbd, offset_left, offset_top, bigw, bigh);
-    }
-}
-
-/* The main tiling happens here. Layouts are calculated and windows are
- * moved/resized */
-static void
-rearrange_windows(E_Border *bd,
-                  Eina_Bool remove_bd)
-{
-    Eina_List *l;
-    E_Border *lbd;
-    E_Shelf *sh;
-    int window_count;
-    E_Tiling_Type layout;
-
-    if (!bd || !_G.tinfo || !tiling_g.config->tiling_enabled)
-        return;
-    if (_G.tinfo->desk && (bd->desk != _G.tinfo->desk)) {
-        E_Desk *desk = get_current_desk();
-        /* We need to verify this because when having multiple zones (xinerama)
-         * it's possible that tinfo is initialized for zone 1 even though
-         * it should be zone 0 */
-        if (desk != _G.tinfo->desk)
-            _desk_show(desk);
-        else
-            return;
-    }
-
-#ifdef TILING_DEBUG
-    printf("TILING_DEBUG: rearrange_windows()\n");
-    print_borderlist();
-#endif
-
-    /* Take care of our own tinfo->client_list */
-    /* TODO
-    if (eina_list_data_find(_G.tinfo->client_list, bd) != bd) {
-        if (!remove_bd)
-            _G.tinfo->client_list = eina_list_append(_G.tinfo->client_list, bd);
-    } else {
-        if (remove_bd)
-            _G.tinfo->client_list = eina_list_remove(_G.tinfo->client_list, bd);
-    }
-    */
-
-    /* Check if the window is set floating */
-    if (eina_list_data_find(_G.tinfo->floating_windows, bd) == bd) {
-        if (remove_bd)
-            _G.tinfo->floating_windows = eina_list_remove(_G.tinfo->floating_windows, bd);
-        return;
-    }
-
-    /* Check if the window is a dialog and whether we should handle it */
-    if (!tiling_g.config->tile_dialogs
-    &&  ((bd->client.icccm.transient_for != 0)
-         || (bd->client.netwm.type == ECORE_X_WINDOW_TYPE_DIALOG)))
-        return;
-
-    window_count = (remove_bd ? 0 : 1);
-    layout = layout_for_desk(bd->desk);
-    if (layout == E_TILING_NONE) {
-        return;
-    }
-    if (layout == E_TILING_BIGMAIN) {
-        if (remove_bd && (bd == _G.tinfo->mainbd))
-            /* If the main border is getting removed, we need to find another
-             * one */
-            _G.tinfo->mainbd = get_first_window(bd, NULL);
-
-        if (!remove_bd && !_G.tinfo->mainbd)
-            _G.tinfo->mainbd = bd;
-    }
-
-    /* Loop through all windows to count them */
-    EINA_LIST_FOREACH(e_border_focus_stack_get(), l, lbd) {
-        TILE_LOOP_DESKCHECK;
-        if (TILE_LOOP_CHECKS(lbd))
-            continue;
-
-        if (!tiling_g.config->dont_touch_borders
-        && tiling_g.config->tiling_border && !remove_bd
-        && ((lbd->bordername && strcmp(lbd->bordername,
-                                       tiling_g.config->tiling_border))
-            || !lbd->bordername))
-        {
-            change_window_border(lbd, tiling_g.config->tiling_border);
-        }
-        if (lbd == bd)
-            continue;
-        if (lbd->visible == 0)
-            continue;
-
-        window_count++;
-    }
-
-    /* If there are no other windows, it's easy: just maximize */
-    if (window_count == 1) {
-        lbd = (remove_bd ? get_first_window(bd, NULL) : bd);
-        if (lbd) {
-            int offset_top = 0,
-                offset_left = 0;
-            /* However, we still need to check if any of the shelves produces
-             * an offset */
-
-            EINA_LIST_FOREACH(e_shelf_list(), l, sh) {
-                if (!sh || (sh->zone != bd->zone)
-                || !shelf_show_on_desk(sh, bd->desk)
-                || sh->cfg->overlap)
-                    continue;
-
-                if (ORIENT_TOP(sh->gadcon->orient))
-                    offset_top += sh->h;
-                else
-                if (ORIENT_LEFT(sh->gadcon->orient))
-                    offset_left += sh->w;
-            }
-            DBG("maximizing the window\n");
-            e_border_move(lbd, lbd->zone->x + offset_left,
-                               lbd->zone->y + offset_top);
-            e_border_unmaximize(lbd, E_MAXIMIZE_BOTH);
-            e_border_maximize(lbd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_BOTH);
-            _G.tinfo->single_win = lbd;
-        }
-        return;
-    }
-
-    if (_G.tinfo->single_win) {
-        /* If we previously maximized a window, we need to unmaximize it or it
-         * takes up all the space in bigmain mode */
-        DBG("unmaximizing\n");
-        e_border_unmaximize(_G.tinfo->single_win, E_MAXIMIZE_BOTH);
-        _G.tinfo->single_win = NULL;
-    }
-
-    switch (layout) {
-      case E_TILING_GRID:
-        rearrange_windows_grid(bd, remove_bd, window_count);
-        break;
-
-      case E_TILING_BIGMAIN:
-        rearrange_windows_bigmain(bd, remove_bd, window_count);
-        break;
-    }
-    DBG("rearrange done\n\n");
-}
 /* }}} */
 
 static void
@@ -813,15 +411,6 @@ _desk_show(const E_Desk *desk)
          * for the focused, we need to get all borders on that desk. */
         DBG("need new info for %s\n", desk->name);
         _G.tinfo = _initialize_tinfo(desk);
-    } else {
-        if (_G.tinfo->need_rearrange) {
-            E_Border *first;
-
-            DBG("need_rearrange\n");
-            if ((first = get_first_window(NULL, desk)))
-                rearrange_windows(first, EINA_FALSE);
-            _G.tinfo->need_rearrange = 0;
-        }
     }
 #ifdef TILING_DEBUG
     printf("TILING_DEBUG: desk show. %s\n", desk->name);
@@ -936,19 +525,16 @@ _e_mod_action_move_left(E_Object   *obj,
    if (!bd)
        return;
 
+   /* TODO */
+
    switch (layout_for_desk(bd->desk)) {
      case E_TILING_NONE:
      case E_TILING_INDIVIDUAL:
        break;
      case E_TILING_GRID:
-       if (border_move_to_left(bd, 1))
-           rearrange_windows(bd, EINA_FALSE);
        break;
      case E_TILING_BIGMAIN:
-       _G.tinfo->mainbd = bd;
-       rearrange_windows(bd, EINA_FALSE);
        break;
-
    }
 }
 
@@ -958,9 +544,12 @@ _e_mod_action_move_right(E_Object   *obj,
 {
    E_Border *bd = e_border_focused_get();
 
-   if (border_move_to_right(bd, 1))
-       rearrange_windows(bd, EINA_FALSE);
+   if (!bd)
+       return;
+
+   /* TODO */
 }
+
 
 static void
 _e_mod_action_move_top(E_Object   *obj,
@@ -971,17 +560,15 @@ _e_mod_action_move_top(E_Object   *obj,
     if (!bd)
         return;
 
+    /* TODO */
+
     switch (layout_for_desk(bd->desk)) {
      case E_TILING_NONE:
      case E_TILING_INDIVIDUAL:
        break;
       case E_TILING_GRID:
-        if (border_move_to_left(bd, tiling_g.config->grid_rows))
-            rearrange_windows(bd, EINA_FALSE);
         break;
       case E_TILING_BIGMAIN:
-        if (border_move_to_left(bd, 1))
-            rearrange_windows(bd, EINA_FALSE);
         break;
 
     }
@@ -996,17 +583,15 @@ _e_mod_action_move_bottom(E_Object   *obj,
    if (!bd)
       return;
 
+   /* TODO */
+
    switch (layout_for_desk(bd->desk)) {
      case E_TILING_NONE:
      case E_TILING_INDIVIDUAL:
        break;
      case E_TILING_GRID:
-      if (border_move_to_right(bd, tiling_g.config->grid_rows))
-         rearrange_windows(bd, EINA_FALSE);
       break;
      case E_TILING_BIGMAIN:
-      if (border_move_to_right(bd, 1))
-         rearrange_windows(bd, EINA_FALSE);
       break;
    }
 }
@@ -1116,40 +701,6 @@ _e_module_tiling_cb_hook(void *data,
             }
         }
     }
-
-    return;
-
-    /* If the border changes size, we maybe want to adjust the layout */
-    if (bd->changes.size) {
-        if (layout_for_desk(bd->desk) == E_TILING_BIGMAIN) {
-            double x;
-
-            /* Only the mainbd-window is resizable */
-            if (bd != _G.tinfo->mainbd || _G.tinfo->mainbd_width == -1)
-                goto next;
-            /* Don't take the size of a maximized window */
-            if (bd->maximized)
-                goto next;
-            /* If the difference is too small, do nothing */
-            if (between(_G.tinfo->mainbd_width, (bd->w - 2), (bd->w + 2)))
-                goto next;
-#ifdef TILING_DEBUG
-            printf("TILING_DEBUG: trying to change the tinfo->mainbd width"
-                   "to %d (it should be: %d), big_perc atm is %f\n",
-                   bd->w, _G.tinfo->mainbd_width, _G.tinfo->big_perc);
-#endif
-            /* x is the factor which is caused by shelves */
-            x = _G.tinfo->mainbd_width / _G.tinfo->big_perc
-                / bd->desk->zone->w;
-#ifdef TILING_DEBUG
-            printf("TILING_DEBUG: x = %f -> big_perc = %f\n",
-                   x, bd->w / x / bd->desk->zone->w);
-#endif
-            _G.tinfo->big_perc = bd->w / x / bd->desk->zone->w;
-        }
-    }
-next:
-    rearrange_windows(bd, EINA_FALSE);
 }
 
 static Eina_Bool
@@ -1161,10 +712,6 @@ _e_module_tiling_hide_hook(void *data,
     E_Event_Border_Hide *ev = event;
 
     DBG("hide-hook\n");
-
-    /*
-    rearrange_windows(ev->border, EINA_TRUE);
-    */
 
     if (_G.currently_switching_desktop)
         return EINA_TRUE;
@@ -1269,9 +816,6 @@ _clear_bd_from_info_hash(const Eina_Hash *hash,
     }
     */
 
-    if (ti->mainbd == ev->border)
-        ti->mainbd = get_first_window(NULL, ti->desk);
-
     if (eina_list_data_find(ti->floating_windows, ev->border) == ev->border)
         ti->floating_windows = eina_list_remove(ti->floating_windows, ev->border);
 
@@ -1320,34 +864,6 @@ _e_module_tiling_mouse_move(void *data,
     }
 
     return EINA_TRUE;
-}
-/* }}} */
-/* Exported functions {{{*/
-
-EAPI void
-e_mod_tiling_rearrange()
-{
-    for (Eina_List *l = e_manager_list(); l; l = l->next) {
-        for (Eina_List *ll = ((E_Manager *)(l->data))->containers;
-             ll; ll = ll->next)
-        {
-            for (Eina_List *lll = ((E_Container *)(ll->data))->zones;
-                 lll; lll = lll->next)
-            {
-                E_Zone *zone = lll->data;
-
-                for (int i = 0; i < (zone->desk_x_count * zone->desk_y_count);
-                     i++)
-                {
-                    E_Desk *desk = zone->desks[i];
-                    E_Border *first;
-
-                    if ((first = get_first_window(NULL, desk)))
-                        rearrange_windows(first, EINA_FALSE);
-                }
-            }
-        }
-    }
 }
 /* }}} */
 /* Module setup {{{*/
