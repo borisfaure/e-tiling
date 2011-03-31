@@ -1016,11 +1016,12 @@ _e_module_tiling_cb_hook(void *data,
     is_slave = eina_list_data_find(_G.tinfo->slave_list, bd) == bd;
 
     DBG("cb-Hook for %p / %s / %s, changes(size=%d, position=%d, border=%d)"
-        " g:%dx%d+%d+%d bdname:%s (%c)",
+        " g:%dx%d+%d+%d bdname:%s (%c) %d",
         bd, bd->client.icccm.title, bd->client.netwm.name,
         bd->changes.size, bd->changes.pos, bd->changes.border,
         bd->x, bd->y, bd->w, bd->h, bd->bordername,
-        is_master ? 'M' : (is_slave ? 'S': 'N'));
+        is_master ? 'M' : (is_slave ? 'S': 'N'),
+        bd->maximized);
 
     if (!bd->changes.size && !bd->changes.pos && !bd->changes.border
     && (is_master || is_slave)) {
