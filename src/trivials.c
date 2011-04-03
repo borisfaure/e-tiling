@@ -41,16 +41,6 @@ recursively_set_disabled(Evas_Object *obj,
     e_widget_disabled_set(obj, disabled);
 }
 
-
-/* Returns true if value is between or equal to minimum and maximum */
-int
-between(int value,
-        int minimum,
-        int maximum)
-{
-    return value >= minimum && value <= maximum;
-}
-
 /* I wonder why noone has implemented the following one yet? */
 E_Desk *
 get_current_desk()

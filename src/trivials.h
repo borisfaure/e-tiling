@@ -14,11 +14,6 @@ void
 recursively_set_disabled(Evas_Object *obj,
                          int          disabled);
 
-int
-between(int value,
-        int minimum,
-        int maximum);
-
 E_Desk *
 get_current_desk(void);
 
