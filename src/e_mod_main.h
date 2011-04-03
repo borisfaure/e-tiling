@@ -29,7 +29,7 @@ extern struct tiling_g tiling_g;
 struct _Config_vdesk
 {
    int           x, y;
-   int           zone_num;
+   unsigned int  zone_num;
    E_Tiling_Type layout;
 };
 
@@ -92,7 +92,7 @@ EAPI void *e_modapi_init(E_Module *m);
 EAPI int   e_modapi_shutdown(E_Module *m);
 EAPI int   e_modapi_save(E_Module *m);
 
-EAPI void e_mod_tiling_rearrange();
+EAPI void e_mod_tiling_rearrange(void);
 
 
 #endif

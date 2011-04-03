@@ -214,7 +214,7 @@ layout_for_desk(E_Desk *desk)
 
 #ifdef TILING_DEBUG
 static void
-print_borderlist()
+print_borderlist(void)
 {
     int wc = 0;
 
@@ -246,35 +246,6 @@ print_borderlist()
 
 #endif
 
-/* Checks for windows which are bigger than width/height in their min_w/min_h-
- * attributes and therefore need to be set to floating
- *
- * returns True if the given border was affected */
-static Eina_Bool
-check_for_too_big_windows(int       width,
-                          int       height,
-                          E_Border *bd)
-{
-    Eina_List *l;
-    E_Border *lbd;
-
-    EINA_LIST_FOREACH(e_border_focus_stack_get(), l, lbd) {
-        TILE_LOOP_DESKCHECK;
-
-        if (TILE_LOOP_CHECKS(lbd))
-            continue;
-
-        if (lbd->client.icccm.min_w > width || lbd->client.icccm.min_h > height) {
-            toggle_floating(lbd);
-            /* If this was the window this call was about,
-             * we don't need to change anything */
-            if (bd && (lbd == bd))
-                return EINA_TRUE;
-        }
-    }
-    return EINA_FALSE;
-}
-
 static void
 change_window_border(E_Border *bd,
                      char     *bordername)
@@ -282,66 +253,6 @@ change_window_border(E_Border *bd,
    eina_stringshare_replace(&bd->bordername, bordername);
    bd->client.border.changed = 1;
    bd->changed = 1;
-}
-
-/* }}} */
-/* Move {{{ */
-/* Moves the nth list-entry to the left */
-static Eina_Bool
-border_move_to_left(E_Border *bd,
-                    int       times)
-{
-    /* TODO
-    Eina_List *n, *p;
-    void *data;
-
-    if (!bd || !_G.tinfo)
-        return EINA_FALSE;
-    if (!(n = eina_list_data_find_list(_G.tinfo->client_list, bd)))
-        return EINA_FALSE;
-    if (!(p = n->prev))
-        return EINA_FALSE;
-
-    data = n->data;
-    for (int c = 0; c < (times - 1); c++)
-        if (!(p = p->prev))
-            return EINA_FALSE;
-
-    _G.tinfo->client_list = eina_list_remove_list(_G.tinfo->client_list, n);
-    _G.tinfo->client_list = eina_list_prepend_relative_list(
-        _G.tinfo->client_list, data, p);
-    */
-
-    return EINA_TRUE;
-}
-
-/* Move to right is basically the same as move to left of (num+1) */
-static Eina_Bool
-border_move_to_right(E_Border *bd,
-                     int       times)
-{
-    /* TODO
-    Eina_List *n, *p;
-    void *data;
-
-    if (!bd || !_G.tinfo)
-        return EINA_FALSE;
-    if (!(n = eina_list_data_find_list(_G.tinfo->client_list, bd)))
-        return EINA_FALSE;
-    if (!(p = n->next))
-        return EINA_FALSE;
-
-    data = n->data;
-    for (int c = 0; c < (times - 1); c++)
-        if (!(p = p->next))
-            return EINA_FALSE;
-
-    _G.tinfo->client_list = eina_list_remove_list(_G.tinfo->client_list, n);
-    _G.tinfo->client_list = eina_list_append_relative_list(
-        _G.tinfo->client_list, data, p);
-    */
-
-    return EINA_TRUE;
 }
 
 /* }}} */
@@ -844,27 +755,6 @@ _e_module_tiling_desk_set(void *data,
     return EINA_TRUE;
 }
 
-static Eina_Bool
-_e_module_tiling_mouse_move(void *data,
-                            int   type,
-                            void *event)
-{
-    Ecore_Event_Mouse_Move *ev = event;
-
-    if (!_G.current_zone
-    || !E_INSIDE(ev->root.x, ev->root.y,
-                 _G.current_zone->x, _G.current_zone->y,
-                 _G.current_zone->w, _G.current_zone->h))
-    {
-        E_Desk *desk = get_current_desk();
-
-        _desk_before_show(_G.tinfo->desk);
-        _G.current_zone = desk->zone;
-        _desk_show(desk);
-    }
-
-    return EINA_TRUE;
-}
 /* }}} */
 /* Module setup {{{*/
 
@@ -937,11 +827,9 @@ e_modapi_init(E_Module *m)
     _G.handler_desk_show = ecore_event_handler_add(E_EVENT_DESK_SHOW,
                                              _e_module_tiling_desk_show, NULL);
     /* Callback before virtual desktop changes */
-    /*
     _G.handler_desk_before_show =
         ecore_event_handler_add(E_EVENT_DESK_BEFORE_SHOW,
                                 _e_module_tiling_desk_before_show, NULL);
-    */
     /* Callback when the mouse moves */
     /*
     _G.handler_mouse_move = ecore_event_handler_add(ECORE_EVENT_MOUSE_MOVE,
@@ -1035,8 +923,9 @@ e_modapi_init(E_Module *m)
 
     E_CONFIG_LIMIT(tiling_g.config->tiling_enabled, 0, 1);
     E_CONFIG_LIMIT(tiling_g.config->dont_touch_borders, 0, 1);
-    E_CONFIG_LIMIT(tiling_g.config->tiling_mode, E_TILING_NONE,
-                                                 E_TILING_GRID);
+#define E_CONFIG_LIMIT_MAX(v, max) {if (v > max) v = max;}
+    E_CONFIG_LIMIT_MAX(tiling_g.config->tiling_mode, E_TILING_GRID);
+#undef E_CONFIG_LIMIT_MAX
     E_CONFIG_LIMIT(tiling_g.config->tile_dialogs, 0, 1);
     E_CONFIG_LIMIT(tiling_g.config->float_too_big_windows, 0, 1);
     E_CONFIG_LIMIT(tiling_g.config->grid_rows, 1, 12);

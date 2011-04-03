@@ -24,7 +24,7 @@ struct _Config_vdesk *
 get_vdesk(Eina_List *vdesks,
           int x,
           int y,
-          int zone_num)
+          unsigned int zone_num)
 {
     DBG("getting vdesk x %d / y %d / zone_num %d\n", x, y, zone_num);
 
@@ -239,7 +239,6 @@ _basic_create_widgets(E_Config_Dialog      *cfd,
     E_Radio_Group *rg;
     E_Container *con = e_container_current_get(e_manager_current_get());
     E_Zone *zone;
-    Eina_List *l;
     int sel, c;
 
     o = e_widget_list_add(evas, 0, 0);
@@ -349,7 +348,7 @@ _basic_create_widgets(E_Config_Dialog      *cfd,
     e_widget_on_change_hook_set(ob, _cb_tiling_border_change, cfdata);
     sel = -1;
     c = 0;
-    for (l = e_theme_border_list(); l; l = l->next, c++) {
+    for (Eina_List *l = e_theme_border_list(); l; l = l->next, c++) {
         e_widget_ilist_append(ob, NULL, l->data, NULL, NULL, NULL);
         if (cfdata->config.tiling_border
         && !strcmp(l->data, cfdata->config.tiling_border))

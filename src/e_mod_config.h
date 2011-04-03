@@ -21,7 +21,7 @@ struct _Config_vdesk *
 get_vdesk(Eina_List *vdesks,
           int x,
           int y,
-          int zone_num);
+          unsigned int zone_num);
 
 
 #endif
