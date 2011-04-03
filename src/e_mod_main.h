@@ -56,13 +56,6 @@ struct _Tiling_Info
    /* This is the main border for the bigmain layout */
     E_Border  *mainbd;
 
-    /* border width */
-    int        mainbd_width;
-
-    /* If there is only one window on this zone, it's saved here to unminize
-     * as soon as there are more windows */
-    E_Border  *single_win;
-
     /* The desk for which this _Tiling_Info is used. Needed because
      * (for example) on e restart all desks are shown on all zones but no
      * change events are triggered */

@@ -133,7 +133,6 @@ _initialize_tinfo(const E_Desk *desk)
     E_Border *lbd;
 
     res = E_NEW(Tiling_Info, 1);
-    res->mainbd_width = -1;
     res->desk = desk;
     res->big_perc = tiling_g.config->big_perc;
     res->need_rearrange = 0;
