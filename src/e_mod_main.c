@@ -48,11 +48,7 @@ static struct
 
    E_Action            *act_toggletiling,
                        *act_togglefloat,
-                       *act_switchtiling,
-                       *act_moveleft,
-                       *act_moveright,
-                       *act_movetop,
-                       *act_movebottom;
+                       *act_switchtiling;
 } tiling_mod_main_g = {
 #define _G tiling_mod_main_g
    .hook = NULL,
@@ -70,10 +66,6 @@ static struct
    .act_toggletiling = NULL,
    .act_togglefloat = NULL,
    .act_switchtiling = NULL,
-   .act_moveleft = NULL,
-   .act_moveright = NULL,
-   .act_movetop = NULL,
-   .act_movebottom = NULL,
 };
 
 static void _e_mod_action_toggle_tiling_cb(E_Object   *obj,
@@ -82,14 +74,6 @@ static void _e_mod_action_toggle_floating_cb(E_Object   *obj,
                                              const char *params);
 static void _e_mod_action_switch_tiling_cb(E_Object   *obj,
                                            const char *params);
-static void _e_mod_action_move_left(E_Object   *obj,
-                                    const char *params);
-static void _e_mod_action_move_right(E_Object   *obj,
-                                     const char *params);
-static void _e_mod_action_move_top(E_Object   *obj,
-                                   const char *params);
-static void _e_mod_action_move_bottom(E_Object   *obj,
-                                      const char *params);
 static void toggle_floating(E_Border *bd);
 static void _desk_show(const E_Desk *desk);
 
@@ -427,85 +411,6 @@ _e_mod_action_switch_tiling_cb(E_Object   *obj,
     e_config_save_queue();
 }
 
-static void
-_e_mod_action_move_left(E_Object   *obj,
-                        const char *params)
-{
-   E_Border *bd = e_border_focused_get();
-
-   if (!bd)
-       return;
-
-   /* TODO */
-
-   switch (layout_for_desk(bd->desk)) {
-     case E_TILING_NONE:
-     case E_TILING_INDIVIDUAL:
-       break;
-     case E_TILING_GRID:
-       break;
-     case E_TILING_BIGMAIN:
-       break;
-   }
-}
-
-static void
-_e_mod_action_move_right(E_Object   *obj,
-                         const char *params)
-{
-   E_Border *bd = e_border_focused_get();
-
-   if (!bd)
-       return;
-
-   /* TODO */
-}
-
-
-static void
-_e_mod_action_move_top(E_Object   *obj,
-                       const char *params)
-{
-    E_Border *bd = e_border_focused_get();
-
-    if (!bd)
-        return;
-
-    /* TODO */
-
-    switch (layout_for_desk(bd->desk)) {
-     case E_TILING_NONE:
-     case E_TILING_INDIVIDUAL:
-       break;
-      case E_TILING_GRID:
-        break;
-      case E_TILING_BIGMAIN:
-        break;
-
-    }
-}
-
-static void
-_e_mod_action_move_bottom(E_Object   *obj,
-                          const char *params)
-{
-   E_Border *bd = e_border_focused_get();
-
-   if (!bd)
-      return;
-
-   /* TODO */
-
-   switch (layout_for_desk(bd->desk)) {
-     case E_TILING_NONE:
-     case E_TILING_INDIVIDUAL:
-       break;
-     case E_TILING_GRID:
-      break;
-     case E_TILING_BIGMAIN:
-      break;
-   }
-}
 /* }}} */
 /* Hooks {{{*/
 
@@ -858,14 +763,6 @@ e_modapi_init(E_Module *m)
                "Toggle floating", "toggle_floating");
     ACTION_ADD(_G.act_switchtiling, _e_mod_action_switch_tiling_cb,
                 "Switch tiling mode", "switch_tiling");
-    ACTION_ADD(_G.act_moveleft, _e_mod_action_move_left,
-               "Move window to the left", "tiling_move_left");
-    ACTION_ADD(_G.act_moveright, _e_mod_action_move_right,
-               "Move window to the right", "tiling_move_right");
-    ACTION_ADD(_G.act_movebottom, _e_mod_action_move_top,
-               "Move window to the bottom", "tiling_move_bottom");
-    ACTION_ADD(_G.act_movetop, _e_mod_action_move_bottom,
-               "Move window to the top", "tiling_move_top");
 #undef ACTION_ADD
 
     /* Configuration entries */
@@ -978,10 +875,6 @@ if (act) {                                              \
     ACTION_DEL(_G.act_toggletiling, "Toggle tiling", "toggle_tiling");
     ACTION_DEL(_G.act_togglefloat, "Toggle floating", "toggle_floating");
     ACTION_DEL(_G.act_switchtiling, "Switch tiling mode", "switch_tiling");
-    ACTION_DEL(_G.act_moveleft, "Move window to the left", "tiling_move_left");
-    ACTION_DEL(_G.act_moveright, "Move window to the right", "tiling_move_right");
-    ACTION_DEL(_G.act_movebottom, "Move window to the bottom", "tiling_move_bottom");
-    ACTION_DEL(_G.act_movetop, "Move window to the top", "tiling_move_top");
 #undef ACTION_DEL
 
     e_configure_registry_item_del("windows/tiling");
