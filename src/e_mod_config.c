@@ -2,7 +2,6 @@
 #include "e_mod_main.h"
 #include "e_mod_config.h"
 #include "config.h"
-#include "trivials.h"
 
 /* Prototypes */
 static void *_create_data(E_Config_Dialog *cfd);
@@ -13,6 +12,49 @@ static Evas_Object *_basic_create_widgets(E_Config_Dialog      *cfd,
                                           E_Config_Dialog_Data *cfdata);
 static int _basic_apply_data(E_Config_Dialog      *cfd,
                              E_Config_Dialog_Data *cfdata);
+
+
+
+
+
+/* HACK: Needed to get subobjs of the widget. Is there a better way? */
+typedef struct _E_Widget_Smart_Data E_Widget_Smart_Data;
+
+struct _E_Widget_Smart_Data
+{
+   Evas_Object *parent_obj;
+   Evas_Coord   x, y, w, h;
+   Evas_Coord   minw, minh;
+   Eina_List   *subobjs;
+};
+
+static void
+recursively_set_disabled(Evas_Object *obj,
+                         int          disabled)
+{
+    E_Widget_Smart_Data *sd;
+
+    if (!obj)
+        return;
+
+    sd = evas_object_smart_data_get(obj);
+    if (!sd || (evas_object_type_get(obj)
+                && strcmp(evas_object_type_get(obj), "e_widget")))
+        return;
+
+    for (Eina_List *l = sd->subobjs; l; l = l->next) {
+        Evas_Object *o = l->data;
+        if (!o) continue;
+        recursively_set_disabled(o, disabled);
+    }
+
+    e_widget_disabled_set(obj, disabled);
+}
+
+
+
+
+
 
 /* Some defines to make coding with the e_widget_* easier for configuration panel */
 #define RADIO(title, value, radiogroup) \

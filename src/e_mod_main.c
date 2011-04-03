@@ -1,10 +1,10 @@
 #include "e.h"
-#include "trivials.h"
 #include "config.h"
 #include "e_mod_main.h"
 #include "e_mod_config.h"
 #include "e_border.h"
 #include "e_shelf.h"
+
 #include <math.h>
 #include <stdbool.h>
 
@@ -110,6 +110,42 @@ static void _desk_show(const E_Desk *desk);
 
 
 /* Utils {{{ */
+
+/* I wonder why noone has implemented the following one yet? */
+static E_Desk *
+get_current_desk(void)
+{
+    E_Manager *m = e_manager_current_get();
+    E_Container *c = e_container_current_get(m);
+    E_Zone *z = e_zone_current_get(c);
+    return e_desk_current_get(z);
+}
+
+/* Returns 1 if the given shelf is visible on the given desk */
+static int
+shelf_show_on_desk(E_Shelf *sh,
+                   E_Desk  *desk)
+{
+    E_Config_Shelf *cf;
+
+    if (!sh || !desk)
+        return 0;
+
+    cf = sh->cfg;
+    if (!cf)
+        return 0;
+
+    if (!cf->desk_show_mode)
+        return 1;
+
+    for (Eina_List *l = cf->desk_list; l; l = l->next) {
+        E_Config_Shelf_Desk *sd = l->data;
+
+        if (sd && sd->x == desk->x && sd->y == desk->y)
+            return 1;
+    }
+    return 0;
+}
 
 /* Generates a unique identifier for the given desk to be used in info_hash */
 static char *
