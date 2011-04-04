@@ -385,7 +385,6 @@ _e_mod_action_toggle_tiling_cb(E_Object   *obj,
                                const char *params)
 {
     tiling_g.config->tiling_enabled = !tiling_g.config->tiling_enabled;
-    e_mod_tiling_rearrange();
 }
 
 static void
@@ -441,7 +440,6 @@ _e_mod_action_switch_tiling_cb(E_Object   *obj,
         toggle_layout(&vd->layout);
     }
 
-    e_mod_tiling_rearrange();
 
     e_config_save_queue();
 }
