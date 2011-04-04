@@ -7,6 +7,7 @@
 
 #include <math.h>
 #include <stdbool.h>
+#include <assert.h>
 
 /* Use TILING_DEBUG-define to toggle displaying lots of debugmessages */
 #define TILING_DEBUG
@@ -119,32 +120,6 @@ get_current_desk(void)
     E_Container *c = e_container_current_get(m);
     E_Zone *z = e_zone_current_get(c);
     return e_desk_current_get(z);
-}
-
-/* Returns 1 if the given shelf is visible on the given desk */
-static int
-shelf_show_on_desk(E_Shelf *sh,
-                   E_Desk  *desk)
-{
-    E_Config_Shelf *cf;
-
-    if (!sh || !desk)
-        return 0;
-
-    cf = sh->cfg;
-    if (!cf)
-        return 0;
-
-    if (!cf->desk_show_mode)
-        return 1;
-
-    for (Eina_List *l = cf->desk_list; l; l = l->next) {
-        E_Config_Shelf_Desk *sd = l->data;
-
-        if (sd && sd->x == desk->x && sd->y == desk->y)
-            return 1;
-    }
-    return 0;
 }
 
 /* Generates a unique identifier for the given desk to be used in info_hash */
@@ -349,35 +324,6 @@ _desk_show(const E_Desk *desk)
 #endif
 }
 
-static void
-maximize(E_Border *bd)
-{
-   int offset_top = 0,
-       offset_left = 0;
-   Eina_List *l;
-   E_Shelf *sh;
-
-   /* However, we still need to check if any of the shelves produces
-    * an offset */
-   EINA_LIST_FOREACH(e_shelf_list(), l, sh) {
-        if (!sh || (sh->zone != bd->zone)
-            || !shelf_show_on_desk(sh, bd->desk)
-            || sh->cfg->overlap)
-          continue;
-
-        if (ORIENT_TOP(sh->gadcon->orient))
-          offset_top += sh->h;
-        else
-          if (ORIENT_LEFT(sh->gadcon->orient))
-            offset_left += sh->w;
-   }
-   DBG("maximizing the window");
-   e_border_move(bd, bd->zone->x + offset_left,
-                 bd->zone->y + offset_top);
-   e_border_unmaximize(bd, E_MAXIMIZE_BOTH);
-   e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_BOTH);
-}
-
 /* Action callbacks {{{*/
 
 static void
@@ -520,8 +466,37 @@ _e_module_tiling_cb_hook(void *data,
         if (_G.tinfo->master_list) {
            /*TODO: Put in slaves */
            DBG("put in slaves");
+           if (_G.tinfo->slave_list) {
+           } else {
+               /* Resize Master */
+               E_Border *master = _G.tinfo->master_list->data;
+               Border_Extra *master_extra = eina_hash_find(_G.border_extras,
+                                                           &master);
+               int new_master_width = master->w * _G.tinfo->big_perc;
+
+               assert(master_extra);
+
+               extra->x = master->x + new_master_width;
+               extra->y = master->y;
+               extra->w = master->w - new_master_width;
+               extra->h = master->h;
+               e_border_move_resize(bd,
+                                    extra->x,
+                                    extra->y,
+                                    extra->w,
+                                    extra->h);
+               e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_VERTICAL);
+
+               master_extra->w = new_master_width;
+               e_border_unmaximize(master, E_MAXIMIZE_HORIZONTAL);
+               e_border_resize(master,
+                               new_master_width,
+                               master->h);
+               _G.tinfo->slave_list = eina_list_append(_G.tinfo->slave_list, bd);
+           }
         } else {
-            maximize(bd);
+            e_border_unmaximize(bd, E_MAXIMIZE_BOTH);
+            e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_BOTH);
             _G.tinfo->master_list = eina_list_append(_G.tinfo->master_list, bd);
         }
     } else {
@@ -529,26 +504,27 @@ _e_module_tiling_cb_hook(void *data,
 
         /* Move or Resize */
         DBG("move or resize");
-        /* TODO */
 
         extra = eina_hash_find(_G.border_extras, &bd);
 
         if (!extra) {
-             ERR("No extra for %p", bd);
+            ERR("No extra for %p", bd);
         }
 
-        if (is_master && !_G.tinfo->master_list->next) {
+        if (is_master && !_G.tinfo->master_list->next && !_G.tinfo->slave_list) {
             DBG("forever alone :)");
             if (bd->maximized) {
-                 extra->x = bd->x;
-                 extra->y = bd->y;
-                 extra->w = bd->w;
-                 extra->h = bd->h;
+                extra->x = bd->x;
+                extra->y = bd->y;
+                extra->w = bd->w;
+                extra->h = bd->h;
             } else {
-                 /* TODO: what if a window doesn't want to be maximized? */
-                 maximize(bd);
+                /* TODO: what if a window doesn't want to be maximized? */
+                e_border_unmaximize(bd, E_MAXIMIZE_BOTH);
+                e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_BOTH);
             }
         }
+        /* TODO */
     }
 }
 
@@ -559,13 +535,14 @@ _e_module_tiling_hide_hook(void *data,
 {
     static Tiling_Info *_tinfo = NULL;
     E_Event_Border_Hide *ev = event;
-
-    DBG("hide-hook\n");
+    E_Border *bd = ev->border;
 
     if (_G.currently_switching_desktop)
         return EINA_TRUE;
 
-    eina_hash_del(_G.border_extras, &ev->border, NULL);
+    DBG("hide-hook\n");
+
+    eina_hash_del(_G.border_extras, bd, NULL);
 
     /* Ensure that the border is deleted from all available desks */
     for (Eina_List *l = e_manager_list(); l; l = l->next) {
@@ -586,18 +563,16 @@ _e_module_tiling_hide_hook(void *data,
                                                   desk_hash_key(desk))))
                         continue;
 
-                    if (eina_list_data_find(_tinfo->master_list, ev->border)
-                        == ev->border)
+                    if (eina_list_data_find(_tinfo->master_list, bd) == bd)
                     {
                         _tinfo->master_list =
-                            eina_list_remove(_tinfo->master_list, ev->border);
+                            eina_list_remove(_tinfo->master_list, bd);
                         continue;
                     }
-                    if (eina_list_data_find(_tinfo->slave_list, ev->border)
-                        == ev->border)
+                    if (eina_list_data_find(_tinfo->slave_list, bd) == bd)
                     {
                         _tinfo->slave_list =
-                            eina_list_remove(_tinfo->slave_list, ev->border);
+                            eina_list_remove(_tinfo->slave_list, bd);
                         continue;
                     }
                     /*TODO: reorganize desk */
@@ -937,6 +912,6 @@ e_modapi_save(E_Module *m)
 {
     e_config_domain_save("module.tiling", _G.config_edd, tiling_g.config);
 
-    return 1;
+    return EINA_TRUE;
 }
 /* }}} */
