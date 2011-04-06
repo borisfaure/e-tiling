@@ -293,37 +293,6 @@ toggle_floating(E_Border *bd)
 }
 
 /* }}} */
-
-static void
-_desk_before_show(const E_Desk *desk)
-{
-    if (_G.tinfo->desk == desk) {
-        DBG("desk before show: %s \n", desk->name);
-        if (!eina_hash_modify(_G.info_hash, desk_hash_key(desk), _G.tinfo))
-            eina_hash_add(_G.info_hash, desk_hash_key(desk), _G.tinfo);
-    }
-    _G.tinfo = NULL;
-}
-
-static void
-_desk_show(const E_Desk *desk)
-{
-    _G.tinfo = eina_hash_find(_G.info_hash, desk_hash_key(desk));
-    if (!_G.tinfo) {
-        /* We need to add a new Tiling_Info, so we weren't on that desk before.
-         * As e doesn't call the POST_EVAL-hook (or e_desk_show which then
-         * indirectly calls the POST_EVAL) for each window on that desk but only
-         * for the focused, we need to get all borders on that desk. */
-        DBG("need new info for %s\n", desk->name);
-        _G.tinfo = _initialize_tinfo(desk);
-    }
-#ifdef TILING_DEBUG
-    printf("TILING_DEBUG: desk show. %s\n", desk->name);
-    print_borderlist();
-    printf("TILING_DEBUG: desk show done\n");
-#endif
-}
-
 /* Action callbacks {{{*/
 
 static void
@@ -392,6 +361,36 @@ _e_mod_action_switch_tiling_cb(E_Object   *obj,
 
 /* }}} */
 /* Hooks {{{*/
+
+static void
+_desk_before_show(const E_Desk *desk)
+{
+    if (_G.tinfo->desk == desk) {
+        DBG("desk before show: %s \n", desk->name);
+        if (!eina_hash_modify(_G.info_hash, desk_hash_key(desk), _G.tinfo))
+            eina_hash_add(_G.info_hash, desk_hash_key(desk), _G.tinfo);
+    }
+    _G.tinfo = NULL;
+}
+
+static void
+_desk_show(const E_Desk *desk)
+{
+    _G.tinfo = eina_hash_find(_G.info_hash, desk_hash_key(desk));
+    if (!_G.tinfo) {
+        /* We need to add a new Tiling_Info, so we weren't on that desk before.
+         * As e doesn't call the POST_EVAL-hook (or e_desk_show which then
+         * indirectly calls the POST_EVAL) for each window on that desk but only
+         * for the focused, we need to get all borders on that desk. */
+        DBG("need new info for %s\n", desk->name);
+        _G.tinfo = _initialize_tinfo(desk);
+    }
+#ifdef TILING_DEBUG
+    printf("TILING_DEBUG: desk show. %s\n", desk->name);
+    print_borderlist();
+    printf("TILING_DEBUG: desk show done\n");
+#endif
+}
 
 static void
 _e_module_tiling_cb_hook(void *data,
