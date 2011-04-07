@@ -582,6 +582,16 @@ _e_module_tiling_cb_hook(void *data,
         }
         /* TODO */
         ERR("TODO");
+        if (bd->x == extra->x && bd->y == extra->y
+        &&  bd->w == extra->w && bd->h == extra->h)
+        {
+            return;
+        }
+        DBG("old:%dx%d+%d+%d vs new:%dx%d+%d+%d. step:%dx%d. base:%dx%d",
+            extra->x, extra->y, extra->w, extra->h,
+            bd->x, bd->y, bd->w, bd->h,
+            bd->client.icccm.step_w, bd->client.icccm.step_h,
+            bd->client.icccm.base_w, bd->client.icccm.base_h);
     }
 }
 
