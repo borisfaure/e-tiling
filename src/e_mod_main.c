@@ -299,7 +299,7 @@ toggle_floating(E_Border *bd)
 
 static void _reorganize_slaves(void)
 {
-    int zx, zy, zw, zh, x, y, w, h, ch, i = 0;
+    int zx, zy, zw, zh, x, w, h, ch, i = 0;
 
     if (!_G.tinfo->slaves_count)
         return;
@@ -307,10 +307,9 @@ static void _reorganize_slaves(void)
     e_zone_useful_geometry_get(_G.tinfo->desk->zone, &zx, &zy, &zw, &zh);
 
     x = _G.tinfo->big_perc * zw + zx;
-    y = zy;
+    ch = 0;
     w = zw - x + zx;
     h = zw / _G.tinfo->slaves_count;
-    ch = 0;
 
     DBG("zw = %d, count = %d, h = %d",
         zw, _G.tinfo->slaves_count, h);
@@ -329,7 +328,7 @@ static void _reorganize_slaves(void)
         /* let's use a bresenham here */
 
         extra->x = x;
-        extra->y = y;
+        extra->y = ch + zy;
         extra->w = w;
         extra->h = h + d;
         ch += extra->h;
@@ -340,7 +339,6 @@ static void _reorganize_slaves(void)
                                  extra->y,
                                  extra->w,
                                  extra->h);
-        y += extra->h;
     }
 }
 /* }}} */
