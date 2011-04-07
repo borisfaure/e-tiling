@@ -35,27 +35,24 @@ struct _Config_vdesk
 
 struct _Config
 {
-   int            tiling_enabled;
-   E_Tiling_Type  tiling_mode;
-   int            dont_touch_borders;
-   int            tile_dialogs;
-   int            float_too_big_windows;
-   int            grid_rows;
-   int            grid_distribute_equally;
-   int            space_between;
-   int            between_x;
-   int            between_y;
-   double         big_perc;
-   Eina_List     *vdesks;
-   char          *tiling_border;
-   char          *floating_border;
+    int            tiling_enabled;
+    E_Tiling_Type  tiling_mode;
+    int            dont_touch_borders;
+    int            tile_dialogs;
+    int            float_too_big_windows;
+    int            grid_rows;
+    int            grid_distribute_equally;
+    int            space_between;
+    int            between_x;
+    int            between_y;
+    double         big_perc;
+    Eina_List     *vdesks;
+    char          *tiling_border;
+    char          *floating_border;
 };
 
 struct _Tiling_Info
 {
-   /* This is the main border for the bigmain layout */
-    E_Border  *mainbd;
-
     /* The desk for which this _Tiling_Info is used. Needed because
      * (for example) on e restart all desks are shown on all zones but no
      * change events are triggered */
@@ -68,6 +65,8 @@ struct _Tiling_Info
     Eina_List *slave_list;
     /* List of windows in our own sorting: master */
     Eina_List *master_list;
+
+    int        slaves_count;
 
     /* big_perc (percentage of the screen which the mainbd-border will get)
      * has to be stored individually for each desk, the one in Tiling_Config

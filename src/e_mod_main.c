@@ -145,10 +145,12 @@ _initialize_tinfo(const E_Desk *desk)
 
     res = E_NEW(Tiling_Info, 1);
     res->desk = desk;
+    res->slaves_count = 0;
     res->big_perc = tiling_g.config->big_perc;
     res->need_rearrange = 0;
     eina_hash_add(_G.info_hash, desk_hash_key(desk), res);
 
+    /* TODO: should we do that?? */
     EINA_LIST_FOREACH(e_border_client_list(), l, lbd) {
         if (lbd->desk == desk) {
             if (res->master_list)
@@ -292,6 +294,55 @@ toggle_floating(E_Border *bd)
     }
 }
 
+/* }}} */
+/* Reorganize windows {{{*/
+
+static void _reorganize_slaves(void)
+{
+    int zx, zy, zw, zh, x, y, w, h, ch, i = 0;
+
+    if (!_G.tinfo->slaves_count)
+        return;
+
+    e_zone_useful_geometry_get(_G.tinfo->desk->zone, &zx, &zy, &zw, &zh);
+
+    x = _G.tinfo->big_perc * zw + zx;
+    y = zy;
+    w = zw - x + zx;
+    h = zw / _G.tinfo->slaves_count;
+    ch = 0;
+
+    DBG("zw = %d, count = %d, h = %d",
+        zw, _G.tinfo->slaves_count, h);
+    for (Eina_List *l = _G.tinfo->slave_list; l; l = l->next, i++) {
+        E_Border *bd = l->data;
+        Border_Extra *extra;
+        int d = (i * 2 * zh) % _G.tinfo->slaves_count
+              - (2 * ch) % _G.tinfo->slaves_count;
+
+        extra = eina_hash_find(_G.border_extras, &bd);
+        if (!extra) {
+            ERR("No extra for %p", bd);
+            continue;
+        }
+
+        /* let's use a bresenham here */
+
+        extra->x = x;
+        extra->y = y;
+        extra->w = w;
+        extra->h = h + d;
+        ch += extra->h;
+        DBG("%p: d = %d, ch = %d, (%d, %d, %d, %d)", bd, d, ch,
+            extra->x, extra->y, extra->w, extra->h);
+
+        e_border_move_resize(bd, extra->x,
+                                 extra->y,
+                                 extra->w,
+                                 extra->h);
+        y += extra->h;
+    }
+}
 /* }}} */
 /* Action callbacks {{{*/
 
@@ -463,9 +514,15 @@ _e_module_tiling_cb_hook(void *data,
         }
 
         if (_G.tinfo->master_list) {
-            /*TODO: Put in slaves */
             DBG("put in slaves");
             if (_G.tinfo->slave_list) {
+                if (!_G.tinfo->slave_list->next) {
+                    e_border_unmaximize(_G.tinfo->slave_list->data,
+                                        E_MAXIMIZE_BOTH);
+                }
+                _G.tinfo->slave_list = eina_list_append(_G.tinfo->slave_list, bd);
+                _G.tinfo->slaves_count++;
+                _reorganize_slaves();
             } else {
                 /* Resize Master */
                 E_Border *master = _G.tinfo->master_list->data;
@@ -488,12 +545,12 @@ _e_module_tiling_cb_hook(void *data,
 
                 master_extra->w = new_master_width;
                 e_border_unmaximize(master, E_MAXIMIZE_HORIZONTAL);
-                e_border_move(master, master_extra->x,
-                                      master_extra->y);
-                e_border_resize(master,
-                                new_master_width,
-                                master->h);
+                e_border_move_resize(master, master_extra->x,
+                                     master_extra->y,
+                                     new_master_width,
+                                     master->h);
                 _G.tinfo->slave_list = eina_list_append(_G.tinfo->slave_list, bd);
+                _G.tinfo->slaves_count++;
             }
         } else {
             e_border_unmaximize(bd, E_MAXIMIZE_BOTH);
@@ -526,6 +583,7 @@ _e_module_tiling_cb_hook(void *data,
             }
         }
         /* TODO */
+        ERR("TODO");
     }
 }
 
@@ -555,37 +613,57 @@ _e_module_tiling_hide_hook(void *data,
         _G.tinfo->master_list = eina_list_remove(_G.tinfo->master_list, bd);
         if (_G.tinfo->slave_list) {
             if (_G.tinfo->slave_list->next) {
-                /* TODO: take first of the list, put it as master and reorganize
-                 * slaves */
-            } else {
-                /* TODO */
-               E_Border *new_master = _G.tinfo->slave_list->data;
-               Border_Extra *new_master_extra = eina_hash_find(_G.border_extras,
-                                                           &new_master);
-               _G.tinfo->slave_list = eina_list_remove(_G.tinfo->slave_list,
-                                                       new_master);
-
-               e_border_unmaximize(new_master, E_MAXIMIZE_BOTH);
-               e_border_maximize(new_master, E_MAXIMIZE_EXPAND | E_MAXIMIZE_BOTH);
-               new_master_extra->x = bd->x;
-               new_master_extra->y = bd->y;
-               new_master_extra->w = bd->w;
-               new_master_extra->h = bd->h;
-
-               _G.tinfo->master_list = eina_list_append(_G.tinfo->master_list,
+                E_Border *new_master = _G.tinfo->slave_list->data;
+                Border_Extra *new_master_extra = eina_hash_find(_G.border_extras,
+                                                                &new_master);
+                _G.tinfo->slave_list = eina_list_remove(_G.tinfo->slave_list,
                                                         new_master);
+                _G.tinfo->slaves_count--;
+
+                new_master_extra->x = bd->x;
+                new_master_extra->y = bd->y;
+                new_master_extra->w = bd->w;
+                new_master_extra->h = bd->h;
+                e_border_move_resize(new_master, bd->x, bd->y,
+                                                 bd->w, bd->h);
+                e_border_maximize(new_master, E_MAXIMIZE_EXPAND | E_MAXIMIZE_VERTICAL);
+
+
+                _G.tinfo->master_list = eina_list_append(_G.tinfo->master_list,
+                                                         new_master);
+                _reorganize_slaves();
+            } else {
+                E_Border *new_master = _G.tinfo->slave_list->data;
+                Border_Extra *new_master_extra = eina_hash_find(_G.border_extras,
+                                                                &new_master);
+                _G.tinfo->slave_list = eina_list_remove(_G.tinfo->slave_list,
+                                                        new_master);
+                _G.tinfo->slaves_count--;
+
+                e_border_unmaximize(new_master, E_MAXIMIZE_BOTH);
+                e_border_maximize(new_master, E_MAXIMIZE_EXPAND | E_MAXIMIZE_BOTH);
+                new_master_extra->x = bd->x;
+                new_master_extra->y = bd->y;
+                new_master_extra->w = bd->w;
+                new_master_extra->h = bd->h;
+
+                _G.tinfo->master_list = eina_list_append(_G.tinfo->master_list,
+                                                         new_master);
             }
         }
     } else {
+        _G.tinfo->slaves_count--;
         if (!_G.tinfo->slave_list->next) {
             E_Border *master = _G.tinfo->master_list->data;
 
             e_border_unmaximize(master, E_MAXIMIZE_BOTH);
             e_border_maximize(master, E_MAXIMIZE_EXPAND | E_MAXIMIZE_BOTH);
+            _G.tinfo->slave_list = eina_list_remove(_G.tinfo->slave_list, bd);
         } else {
+            _G.tinfo->slave_list = eina_list_remove(_G.tinfo->slave_list, bd);
             /* TODO: reorganize slaves */
+            _reorganize_slaves();
         }
-        _G.tinfo->slave_list = eina_list_remove(_G.tinfo->slave_list, bd);
     }
     eina_hash_del(_G.border_extras, bd, NULL);
 
