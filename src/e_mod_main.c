@@ -588,6 +588,13 @@ _e_module_tiling_cb_hook(void *data,
         {
             return;
         }
+
+        if (bd->changes.border && bd->changes.size) {
+            e_border_move_resize(bd, extra->x, extra->y,
+                                     extra->w, extra->h);
+            return;
+        }
+
         DBG("old:%dx%d+%d+%d vs new:%dx%d+%d+%d. step:%dx%d. base:%dx%d",
             extra->x, extra->y, extra->w, extra->h,
             bd->x, bd->y, bd->w, bd->h,
