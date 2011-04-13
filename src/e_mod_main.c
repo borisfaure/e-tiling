@@ -565,6 +565,7 @@ _e_module_tiling_cb_hook(void *data,
 
         if (!extra) {
             ERR("No extra for %p", bd);
+            return;
         }
 
         if (is_master && !_G.tinfo->master_list->next && !_G.tinfo->slave_list) {
