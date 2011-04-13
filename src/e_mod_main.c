@@ -309,7 +309,7 @@ static void _reorganize_slaves(void)
     x = _G.tinfo->big_perc * zw + zx;
     ch = 0;
     w = zw - x + zx;
-    h = zw / _G.tinfo->slaves_count;
+    h = zh / _G.tinfo->slaves_count;
 
     DBG("zw = %d, count = %d, h = %d",
         zw, _G.tinfo->slaves_count, h);
