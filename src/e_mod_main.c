@@ -69,8 +69,6 @@ static struct
    .act_switchtiling = NULL,
 };
 
-static void _e_mod_action_toggle_tiling_cb(E_Object   *obj,
-                                           const char *params);
 static void _e_mod_action_toggle_floating_cb(E_Object   *obj,
                                              const char *params);
 static void _e_mod_action_switch_tiling_cb(E_Object   *obj,
@@ -345,13 +343,6 @@ static void _reorganize_slaves(void)
 /* Action callbacks {{{*/
 
 static void
-_e_mod_action_toggle_tiling_cb(E_Object   *obj,
-                               const char *params)
-{
-    tiling_g.config->tiling_enabled = !tiling_g.config->tiling_enabled;
-}
-
-static void
 _e_mod_action_toggle_floating_cb(E_Object   *obj,
                                  const char *params)
 {
@@ -463,8 +454,7 @@ _e_module_tiling_cb_hook(void *data,
         return;
     }
 
-    if (!tiling_g.config->tiling_enabled
-    || layout_for_desk(bd->desk) == E_TILING_NONE) {
+    if (layout_for_desk(bd->desk) == E_TILING_NONE) {
         DBG("no tiling");
         return;
     }
@@ -867,8 +857,6 @@ e_modapi_init(E_Module *m)
 }
 
     /* Module's actions */
-    ACTION_ADD(_G.act_toggletiling, _e_mod_action_toggle_tiling_cb,
-               "Toggle tiling", "toggle_tiling");
     ACTION_ADD(_G.act_togglefloat, _e_mod_action_toggle_floating_cb,
                "Toggle floating", "toggle_floating");
     ACTION_ADD(_G.act_switchtiling, _e_mod_action_switch_tiling_cb,
@@ -886,7 +874,6 @@ e_modapi_init(E_Module *m)
     _G.config_edd = E_CONFIG_DD_NEW("Tiling_Config", Config);
     _G.vdesk_edd = E_CONFIG_DD_NEW("Tiling_Config_VDesk",
                                    struct _Config_vdesk);
-    E_CONFIG_VAL(_G.config_edd, Config, tiling_enabled, INT);
     E_CONFIG_VAL(_G.config_edd, Config, tiling_mode, INT);
     E_CONFIG_VAL(_G.config_edd, Config, dont_touch_borders, INT);
     E_CONFIG_VAL(_G.config_edd, Config, tile_dialogs, INT);
@@ -928,7 +915,6 @@ e_modapi_init(E_Module *m)
     if (!tiling_g.config->floating_border)
         tiling_g.config->floating_border = strdup("default");
 
-    E_CONFIG_LIMIT(tiling_g.config->tiling_enabled, 0, 1);
     E_CONFIG_LIMIT(tiling_g.config->dont_touch_borders, 0, 1);
 #define E_CONFIG_LIMIT_MAX(v, max) {if (v > max) v = max;}
     E_CONFIG_LIMIT_MAX(tiling_g.config->tiling_mode, E_TILING_GRID);

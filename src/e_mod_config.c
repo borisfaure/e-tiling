@@ -289,9 +289,6 @@ _basic_create_widgets(E_Config_Dialog      *cfd,
     /* General settings */
     of = e_widget_framelist_add(evas, D_("General"), 0);
     e_widget_framelist_object_append(of,
-      e_widget_check_add(evas, D_("Enable tiling"),
-                         &cfdata->config.tiling_enabled));
-    e_widget_framelist_object_append(of,
       e_widget_check_add(evas, D_("Don't change window borders"),
                          &cfdata->config.dont_touch_borders));
     e_widget_framelist_object_append(of,
