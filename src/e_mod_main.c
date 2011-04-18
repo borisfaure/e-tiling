@@ -335,12 +335,10 @@ _add_border(E_Border *bd)
     /* New Border! */
     DBG("new border");
 
-    if (tiling_g.config->tiling_border
-    && ((bd->bordername && strcmp(bd->bordername,
-                                      tiling_g.config->tiling_border))
-            || !bd->bordername))
+    if ((bd->bordername && strcmp(bd->bordername, "pixel"))
+    ||  !bd->bordername)
     {
-        change_window_border(bd, tiling_g.config->tiling_border);
+        change_window_border(bd, "pixel");
     }
 
     if (_G.tinfo->master_list) {
@@ -918,8 +916,6 @@ e_modapi_init(E_Module *m)
     E_CONFIG_VAL(_G.config_edd, Config, space_between, INT);
     E_CONFIG_VAL(_G.config_edd, Config, between_x, INT);
     E_CONFIG_VAL(_G.config_edd, Config, between_y, INT);
-    E_CONFIG_VAL(_G.config_edd, Config, floating_border, STR);
-    E_CONFIG_VAL(_G.config_edd, Config, tiling_border, STR);
     E_CONFIG_VAL(_G.config_edd, Config, big_perc, DOUBLE);
 
     E_CONFIG_LIST(_G.config_edd, Config, vdesks, _G.vdesk_edd);
@@ -935,20 +931,7 @@ e_modapi_init(E_Module *m)
         tiling_g.config->float_too_big_windows = 1;
         tiling_g.config->big_perc = 0.5;
         tiling_g.config->grid_rows = 2;
-    } else {
-        /* Because e doesn't strdup these when loading from configuration,
-         * we have to */
-        if (tiling_g.config->floating_border)
-            tiling_g.config->floating_border =
-                strdup(tiling_g.config->floating_border);
-        if (tiling_g.config->tiling_border)
-            tiling_g.config->tiling_border =
-                strdup(tiling_g.config->tiling_border);
     }
-    if (!tiling_g.config->tiling_border)
-        tiling_g.config->tiling_border = strdup("pixel");
-    if (!tiling_g.config->floating_border)
-        tiling_g.config->floating_border = strdup("default");
 
 #define E_CONFIG_LIMIT_MAX(v, max) {if (v > max) v = max;}
     E_CONFIG_LIMIT_MAX(tiling_g.config->tiling_mode, E_TILING_GRID);

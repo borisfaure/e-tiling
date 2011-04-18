@@ -45,8 +45,6 @@ struct _Config
     int            between_y;
     double         big_perc;
     Eina_List     *vdesks;
-    char          *tiling_border;
-    char          *floating_border;
 };
 
 struct _Tiling_Info
