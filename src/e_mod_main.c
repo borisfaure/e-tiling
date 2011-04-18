@@ -335,9 +335,8 @@ _add_border(E_Border *bd)
     /* New Border! */
     DBG("new border");
 
-    if (!tiling_g.config->dont_touch_borders
-        && tiling_g.config->tiling_border
-        && ((bd->bordername && strcmp(bd->bordername,
+    if (tiling_g.config->tiling_border
+    && ((bd->bordername && strcmp(bd->bordername,
                                       tiling_g.config->tiling_border))
             || !bd->bordername))
     {
@@ -912,7 +911,6 @@ e_modapi_init(E_Module *m)
     _G.vdesk_edd = E_CONFIG_DD_NEW("Tiling_Config_VDesk",
                                    struct _Config_vdesk);
     E_CONFIG_VAL(_G.config_edd, Config, tiling_mode, INT);
-    E_CONFIG_VAL(_G.config_edd, Config, dont_touch_borders, INT);
     E_CONFIG_VAL(_G.config_edd, Config, tile_dialogs, INT);
     E_CONFIG_VAL(_G.config_edd, Config, float_too_big_windows, INT);
     E_CONFIG_VAL(_G.config_edd, Config, grid_rows, INT);
@@ -952,7 +950,6 @@ e_modapi_init(E_Module *m)
     if (!tiling_g.config->floating_border)
         tiling_g.config->floating_border = strdup("default");
 
-    E_CONFIG_LIMIT(tiling_g.config->dont_touch_borders, 0, 1);
 #define E_CONFIG_LIMIT_MAX(v, max) {if (v > max) v = max;}
     E_CONFIG_LIMIT_MAX(tiling_g.config->tiling_mode, E_TILING_GRID);
 #undef E_CONFIG_LIMIT_MAX

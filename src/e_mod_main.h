@@ -36,7 +36,6 @@ struct _Config_vdesk
 struct _Config
 {
     E_Tiling_Type  tiling_mode;
-    int            dont_touch_borders;
     int            tile_dialogs;
     int            float_too_big_windows;
     int            grid_rows;
