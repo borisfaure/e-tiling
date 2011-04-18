@@ -911,8 +911,6 @@ e_modapi_init(E_Module *m)
     E_CONFIG_VAL(_G.config_edd, Config, tiling_mode, INT);
     E_CONFIG_VAL(_G.config_edd, Config, tile_dialogs, INT);
     E_CONFIG_VAL(_G.config_edd, Config, float_too_big_windows, INT);
-    E_CONFIG_VAL(_G.config_edd, Config, grid_rows, INT);
-    E_CONFIG_VAL(_G.config_edd, Config, grid_distribute_equally, INT);
     E_CONFIG_VAL(_G.config_edd, Config, big_perc, DOUBLE);
 
     E_CONFIG_LIST(_G.config_edd, Config, vdesks, _G.vdesk_edd);
@@ -927,7 +925,6 @@ e_modapi_init(E_Module *m)
         tiling_g.config->tiling_mode = E_TILING_BIGMAIN;
         tiling_g.config->float_too_big_windows = 1;
         tiling_g.config->big_perc = 0.5;
-        tiling_g.config->grid_rows = 2;
     }
 
 #define E_CONFIG_LIMIT_MAX(v, max) {if (v > max) v = max;}
@@ -935,8 +932,6 @@ e_modapi_init(E_Module *m)
 #undef E_CONFIG_LIMIT_MAX
     E_CONFIG_LIMIT(tiling_g.config->tile_dialogs, 0, 1);
     E_CONFIG_LIMIT(tiling_g.config->float_too_big_windows, 0, 1);
-    E_CONFIG_LIMIT(tiling_g.config->grid_rows, 1, 12);
-    E_CONFIG_LIMIT(tiling_g.config->grid_distribute_equally, 0, 1);
     E_CONFIG_LIMIT(tiling_g.config->big_perc, 0.1, 1);
 
     desk = get_current_desk();

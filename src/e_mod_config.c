@@ -263,16 +263,6 @@ _basic_create_widgets(E_Config_Dialog      *cfd,
     e_widget_framelist_object_append(of, osf);
     e_widget_table_object_append(ot, of, 0, 2, 1, 1, 1, 1, 1, 1);
 
-
-    /* Grid mode settings */
-    of = e_widget_framelist_add(evas, D_("Grid mode settings"), 0);
-    rg = e_widget_radio_group_new(&cfdata->config.grid_distribute_equally);
-    e_widget_framelist_object_append(of, RADIO("Distribute space equally", 1, rg));
-    e_widget_framelist_object_append(of, RADIO("Use this number of rows:", 0, rg));
-    e_widget_framelist_object_append(of, e_widget_slider_add(evas, 1, 0, D_("%1.0f"), 1.0, 12.0, 1.0, 0, NULL, &cfdata->config.grid_rows, 100));
-    e_widget_table_object_append(ot, of, 1, 0, 1, 1, 1, 1, 1, 1);
-
-
     /* Bigmain settings */
     of = e_widget_framelist_add(evas, D_("Bigmain settings"), 0);
     e_widget_framelist_object_append(of, e_widget_label_add(evas, D_("Big win takes percent of screen:")));
