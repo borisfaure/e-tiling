@@ -40,8 +40,6 @@ struct _Config
     int            float_too_big_windows;
     int            grid_rows;
     int            grid_distribute_equally;
-    int            between_x;
-    int            between_y;
     double         big_perc;
     Eina_List     *vdesks;
 };

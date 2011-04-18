@@ -913,8 +913,6 @@ e_modapi_init(E_Module *m)
     E_CONFIG_VAL(_G.config_edd, Config, float_too_big_windows, INT);
     E_CONFIG_VAL(_G.config_edd, Config, grid_rows, INT);
     E_CONFIG_VAL(_G.config_edd, Config, grid_distribute_equally, INT);
-    E_CONFIG_VAL(_G.config_edd, Config, between_x, INT);
-    E_CONFIG_VAL(_G.config_edd, Config, between_y, INT);
     E_CONFIG_VAL(_G.config_edd, Config, big_perc, DOUBLE);
 
     E_CONFIG_LIST(_G.config_edd, Config, vdesks, _G.vdesk_edd);

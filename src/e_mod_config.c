@@ -205,7 +205,7 @@ _basic_create_widgets(E_Config_Dialog      *cfd,
                       Evas                 *evas,
                       E_Config_Dialog_Data *cfdata)
 {
-    Evas_Object *o, *ob, *of, *osf, *ossf, *ot;
+    Evas_Object *o, *ob, *of, *osf, *ot;
     E_Radio_Group *rg;
     E_Container *con = e_container_current_get(e_manager_current_get());
     E_Zone *zone;
@@ -221,23 +221,6 @@ _basic_create_widgets(E_Config_Dialog      *cfd,
     e_widget_framelist_object_append(of,
       e_widget_check_add(evas, D_("Set too big windows floating automatically"),
                          &cfdata->config.float_too_big_windows));
-
-    osf = e_widget_list_add(evas, 0, 0);
-
-    ossf = e_widget_list_add(evas, 0, 1);
-    LIST_ADD(ossf, e_widget_label_add(evas, D_("Horizontal:")));
-    LIST_ADD(ossf, e_widget_slider_add(evas, 1, 0, D_("%1.0f px"), 0.0, 50.0,
-                                       1.0, 0, NULL, &cfdata->config.between_x, 200));
-    LIST_ADD(osf, ossf);
-    ossf = e_widget_list_add(evas, 0, 1);
-    LIST_ADD(ossf, e_widget_label_add(evas, D_("Vertical:")));
-    LIST_ADD(ossf, e_widget_slider_add(evas, 1, 0, D_("%1.0f px"), 0.0, 50.0,
-                                       1.0, 0, NULL, &cfdata->config.between_y, 200));
-    LIST_ADD(osf, ossf);
-    cfdata->o_space_between = osf;
-    e_widget_framelist_object_append(of, osf);
-    e_widget_table_object_append(ot, of, 0, 0, 1, 2, 1, 1, 1, 1);
-
 
     /* Virtual desktop settings */
     of = e_widget_framelist_add(evas, D_("Virtual Desktops"), 0);
