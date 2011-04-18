@@ -913,7 +913,6 @@ e_modapi_init(E_Module *m)
     E_CONFIG_VAL(_G.config_edd, Config, float_too_big_windows, INT);
     E_CONFIG_VAL(_G.config_edd, Config, grid_rows, INT);
     E_CONFIG_VAL(_G.config_edd, Config, grid_distribute_equally, INT);
-    E_CONFIG_VAL(_G.config_edd, Config, space_between, INT);
     E_CONFIG_VAL(_G.config_edd, Config, between_x, INT);
     E_CONFIG_VAL(_G.config_edd, Config, between_y, INT);
     E_CONFIG_VAL(_G.config_edd, Config, big_perc, DOUBLE);
@@ -941,7 +940,6 @@ e_modapi_init(E_Module *m)
     E_CONFIG_LIMIT(tiling_g.config->grid_rows, 1, 12);
     E_CONFIG_LIMIT(tiling_g.config->grid_distribute_equally, 0, 1);
     E_CONFIG_LIMIT(tiling_g.config->big_perc, 0.1, 1);
-    E_CONFIG_LIMIT(tiling_g.config->space_between, 0, 1);
 
     desk = get_current_desk();
     _G.current_zone = desk->zone;

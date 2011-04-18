@@ -28,33 +28,6 @@ struct _E_Widget_Smart_Data
    Eina_List   *subobjs;
 };
 
-static void
-recursively_set_disabled(Evas_Object *obj,
-                         int          disabled)
-{
-    E_Widget_Smart_Data *sd;
-
-    if (!obj)
-        return;
-
-    sd = evas_object_smart_data_get(obj);
-    if (!sd || (evas_object_type_get(obj)
-                && strcmp(evas_object_type_get(obj), "e_widget")))
-        return;
-
-    for (Eina_List *l = sd->subobjs; l; l = l->next) {
-        Evas_Object *o = l->data;
-        if (!o) continue;
-        recursively_set_disabled(o, disabled);
-    }
-
-    e_widget_disabled_set(obj, disabled);
-}
-
-
-
-
-
 
 /* Some defines to make coding with the e_widget_* easier for configuration panel */
 #define RADIO(title, value, radiogroup) \
@@ -227,19 +200,6 @@ _cb_zone_change(void        *data,
     _fill_zone_config(zone, cfdata);
 }
 
-static void
-_cb_leave_space_change(void        *data,
-                       Evas_Object *obj)
-{
-    E_Config_Dialog_Data *cfdata = data;
-
-    if (!cfdata)
-        return;
-
-    recursively_set_disabled(cfdata->o_space_between,
-                             !cfdata->config.space_between);
-}
-
 static Evas_Object *
 _basic_create_widgets(E_Config_Dialog      *cfd,
                       Evas                 *evas,
@@ -263,10 +223,6 @@ _basic_create_widgets(E_Config_Dialog      *cfd,
                          &cfdata->config.float_too_big_windows));
 
     osf = e_widget_list_add(evas, 0, 0);
-    ob = e_widget_check_add(evas, D_("Leave space between windows:"),
-                            &cfdata->config.space_between);
-    e_widget_on_change_hook_set(ob, _cb_leave_space_change, cfdata);
-    e_widget_framelist_object_append(of, ob);
 
     ossf = e_widget_list_add(evas, 0, 1);
     LIST_ADD(ossf, e_widget_label_add(evas, D_("Horizontal:")));
@@ -279,7 +235,6 @@ _basic_create_widgets(E_Config_Dialog      *cfd,
                                        1.0, 0, NULL, &cfdata->config.between_y, 200));
     LIST_ADD(osf, ossf);
     cfdata->o_space_between = osf;
-    recursively_set_disabled(osf, !cfdata->config.space_between);
     e_widget_framelist_object_append(of, osf);
     e_widget_table_object_append(ot, of, 0, 0, 1, 2, 1, 1, 1, 1);
 
