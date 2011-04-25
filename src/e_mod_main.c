@@ -9,8 +9,6 @@
 #include <stdbool.h>
 #include <assert.h>
 
-/* Use TILING_DEBUG-define to toggle displaying lots of debugmessages */
-#define TILING_DEBUG
 
 /* actual module specifics */
 
@@ -205,40 +203,6 @@ layout_for_desk(E_Desk *desk)
     }
     return tiling_g.config->tiling_mode;
 }
-
-#ifdef TILING_DEBUG
-static void
-print_borderlist(void)
-{
-    int wc = 0;
-
-    if (!_G.tinfo)
-        return;
-
-    printf("\n\nTILING_DEBUG: Tiling-Borderlist for \"%s\":\n",
-           desk_hash_key(_G.tinfo->desk));
-    for (Eina_List *l = _G.tinfo->master_list; l; l = l->next, wc++) {
-        E_Border *lbd = l->data;
-
-        printf("  #M:%d = %p, %s, %s, %s, desk %s)\n",
-               wc, lbd, lbd->client.icccm.name,
-               lbd->client.icccm.title, lbd->client.netwm.name,
-               desk_hash_key(lbd->desk));
-        printf("  current = %p, next = %p, prev = %p\n", l, l->next, l->prev);
-    }
-    for (Eina_List *l = _G.tinfo->slave_list; l; l = l->next, wc++) {
-        E_Border *lbd = l->data;
-
-        printf("  #S:%d = %p, %s, %s, %s, desk %s)\n",
-               wc, lbd, lbd->client.icccm.name,
-               lbd->client.icccm.title, lbd->client.netwm.name,
-               desk_hash_key(lbd->desk));
-        printf("  current = %p, next = %p, prev = %p\n", l, l->next, l->prev);
-    }
-    printf("TILING_DEBUG: End of Borderlist\n\n");
-}
-
-#endif
 
 static void
 change_window_border(E_Border   *bd,
@@ -574,11 +538,6 @@ _desk_show(const E_Desk *desk)
         DBG("need new info for %s\n", desk->name);
         _G.tinfo = _initialize_tinfo(desk);
     }
-#ifdef TILING_DEBUG
-    printf("TILING_DEBUG: desk show. %s\n", desk->name);
-    print_borderlist();
-    printf("TILING_DEBUG: desk show done\n");
-#endif
 }
 
 static void
