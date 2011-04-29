@@ -127,7 +127,7 @@ _initialize_tinfo(const E_Desk *desk)
     res = E_NEW(Tiling_Info, 1);
     res->desk = desk;
     res->slaves_count = 0;
-    res->big_perc = tiling_g.config->big_perc;
+    res->big_perc = 0.5;
     res->need_rearrange = 0;
     eina_hash_add(_G.info_hash, desk_hash_key(desk), res);
 
@@ -908,7 +908,6 @@ e_modapi_init(E_Module *m)
     E_CONFIG_VAL(_G.config_edd, Config, tiling_mode, INT);
     E_CONFIG_VAL(_G.config_edd, Config, tile_dialogs, INT);
     E_CONFIG_VAL(_G.config_edd, Config, float_too_big_windows, INT);
-    E_CONFIG_VAL(_G.config_edd, Config, big_perc, DOUBLE);
 
     E_CONFIG_LIST(_G.config_edd, Config, vdesks, _G.vdesk_edd);
     E_CONFIG_VAL(_G.vdesk_edd, struct _Config_vdesk, x, INT);
@@ -921,7 +920,6 @@ e_modapi_init(E_Module *m)
         tiling_g.config = E_NEW(Config, 1);
         tiling_g.config->tiling_mode = E_TILING_BIGMAIN;
         tiling_g.config->float_too_big_windows = 1;
-        tiling_g.config->big_perc = 0.5;
     }
 
 #define E_CONFIG_LIMIT_MAX(v, max) {if (v > max) v = max;}
@@ -929,7 +927,6 @@ e_modapi_init(E_Module *m)
 #undef E_CONFIG_LIMIT_MAX
     E_CONFIG_LIMIT(tiling_g.config->tile_dialogs, 0, 1);
     E_CONFIG_LIMIT(tiling_g.config->float_too_big_windows, 0, 1);
-    E_CONFIG_LIMIT(tiling_g.config->big_perc, 0.1, 1);
 
     desk = get_current_desk();
     _G.current_zone = desk->zone;

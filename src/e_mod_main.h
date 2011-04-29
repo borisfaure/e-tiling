@@ -38,7 +38,6 @@ struct _Config
     E_Tiling_Type  tiling_mode;
     int            tile_dialogs;
     int            float_too_big_windows;
-    double         big_perc;
     Eina_List     *vdesks;
 };
 

@@ -263,15 +263,6 @@ _basic_create_widgets(E_Config_Dialog      *cfd,
     e_widget_framelist_object_append(of, osf);
     e_widget_table_object_append(ot, of, 0, 2, 1, 1, 1, 1, 1, 1);
 
-    /* Bigmain settings */
-    of = e_widget_framelist_add(evas, D_("Bigmain settings"), 0);
-    e_widget_framelist_object_append(of, e_widget_label_add(evas, D_("Big win takes percent of screen:")));
-    e_widget_framelist_object_append(of, e_widget_slider_add(evas, 1, 0, D_("%.2f"), 0.1, 1.0, 0.01, 0, &cfdata->config.big_perc, NULL, 100));
-    e_widget_table_object_append(ot, of, 1, 1, 1, 1, 1, 1, 1, 1);
-
-    e_widget_table_object_append(ot, osf, 1, 2, 1, 1, 1, 1, 1, 1);
-    LIST_ADD(o, ot);
-
     return o;
 }
 
