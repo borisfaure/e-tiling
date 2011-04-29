@@ -85,27 +85,6 @@ static void _desk_show(const E_Desk *desk);
      && ((lbd->client.icccm.transient_for != 0)                            \
          || (lbd->client.netwm.type == ECORE_X_WINDOW_TYPE_DIALOG))))      \
 
-#define ORIENT_BOTTOM(x)                \
-((x == E_GADCON_ORIENT_CORNER_BL)       \
- || (x == E_GADCON_ORIENT_CORNER_BR)    \
- || (x == E_GADCON_ORIENT_BOTTOM))
-
-#define ORIENT_TOP(x)                   \
-((x == E_GADCON_ORIENT_CORNER_TL)       \
- || (x == E_GADCON_ORIENT_CORNER_TR)    \
- || (x == E_GADCON_ORIENT_TOP))
-
-#define ORIENT_LEFT(x)                  \
-((x == E_GADCON_ORIENT_CORNER_LB)       \
- || (x == E_GADCON_ORIENT_CORNER_LT)    \
- || (x == E_GADCON_ORIENT_LEFT))
-
-#define ORIENT_RIGHT(x)                 \
-((x == E_GADCON_ORIENT_CORNER_RB)       \
- || (x == E_GADCON_ORIENT_CORNER_RT)    \
- || (x == E_GADCON_ORIENT_RIGHT))
-
-
 /* Utils {{{ */
 
 /* I wonder why noone has implemented the following one yet? */
