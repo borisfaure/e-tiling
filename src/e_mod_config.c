@@ -3,19 +3,6 @@
 #include "e_mod_config.h"
 #include "config.h"
 
-/* Prototypes */
-static void *_create_data(E_Config_Dialog *cfd);
-static void  _free_data(E_Config_Dialog      *cfd,
-                        E_Config_Dialog_Data *cfdata);
-static Evas_Object *_basic_create_widgets(E_Config_Dialog      *cfd,
-                                          Evas                 *evas,
-                                          E_Config_Dialog_Data *cfdata);
-static int _basic_apply_data(E_Config_Dialog      *cfd,
-                             E_Config_Dialog_Data *cfdata);
-
-
-
-
 
 /* HACK: Needed to get subobjs of the widget. Is there a better way? */
 typedef struct _E_Widget_Smart_Data E_Widget_Smart_Data;
@@ -27,7 +14,6 @@ struct _E_Widget_Smart_Data
    Evas_Coord   minw, minh;
    Eina_List   *subobjs;
 };
-
 
 /* Some defines to make coding with the e_widget_* easier for configuration panel */
 #define RADIO(title, value, radiogroup) \
@@ -54,33 +40,6 @@ get_vdesk(Eina_List *vdesks,
     }
 
     return NULL;
-}
-
-E_Config_Dialog *
-e_int_config_tiling_module(E_Container *con,
-                           const char  *params)
-{
-    E_Config_Dialog *cfd;
-    E_Config_Dialog_View *v;
-    char buf[PATH_MAX];
-
-    if (e_config_dialog_find("E", "windows/tiling"))
-        return NULL;
-
-    v = E_NEW(E_Config_Dialog_View, 1);
-
-    v->create_cfdata = _create_data;
-    v->free_cfdata = _free_data;
-    v->basic.apply_cfdata = _basic_apply_data;
-    v->basic.create_widgets = _basic_create_widgets;
-
-    snprintf(buf, sizeof(buf), "%s/e-module-tiling.edj",
-             e_module_dir_get(tiling_g.module));
-    cfd = e_config_dialog_new(con,
-                              D_("Tiling Configuration"),
-                              "E", "windows/tiling",
-                              buf, 0, v, NULL);
-    return cfd;
 }
 
 /*
@@ -306,4 +265,31 @@ _basic_apply_data(E_Config_Dialog      *cfd,
     e_config_save_queue();
 
     return EINA_TRUE;
+}
+
+E_Config_Dialog *
+e_int_config_tiling_module(E_Container *con,
+                           const char  *params)
+{
+    E_Config_Dialog *cfd;
+    E_Config_Dialog_View *v;
+    char buf[PATH_MAX];
+
+    if (e_config_dialog_find("E", "windows/tiling"))
+        return NULL;
+
+    v = E_NEW(E_Config_Dialog_View, 1);
+
+    v->create_cfdata = _create_data;
+    v->free_cfdata = _free_data;
+    v->basic.apply_cfdata = _basic_apply_data;
+    v->basic.create_widgets = _basic_create_widgets;
+
+    snprintf(buf, sizeof(buf), "%s/e-module-tiling.edj",
+             e_module_dir_get(tiling_g.module));
+    cfd = e_config_dialog_new(con,
+                              D_("Tiling Configuration"),
+                              "E", "windows/tiling",
+                              buf, 0, v, NULL);
+    return cfd;
 }
