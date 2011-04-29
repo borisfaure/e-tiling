@@ -9,6 +9,10 @@
 #include <stdbool.h>
 #include <assert.h>
 
+typedef enum {
+    TILING_RESIZE,
+    TILING_MOVE,
+} tiling_change_t;
 
 /* actual module specifics */
 
@@ -67,10 +71,12 @@ static struct
    .act_switchtiling = NULL,
 };
 
-static void _e_mod_action_toggle_floating_cb(E_Object   *obj,
-                                             const char *params);
-static void _e_mod_action_switch_tiling_cb(E_Object   *obj,
-                                           const char *params);
+static void
+_e_mod_action_toggle_floating_cb(E_Object   *obj,
+                                 const char *params);
+static void
+_e_mod_action_switch_tiling_cb(E_Object   *obj,
+                               const char *params);
 static void toggle_floating(E_Border *bd);
 static void _desk_show(const E_Desk *desk);
 
@@ -401,6 +407,57 @@ _remove_border(E_Border *bd)
     }
     eina_hash_del(_G.border_extras, bd, NULL);
 }
+
+static void
+_move_resize_column(Eina_List *list, int delta_x, int delta_w)
+{
+    for (Eina_List *l = list; l; l = l->next) {
+        E_Border *bd = l->data;
+        Border_Extra *extra;
+
+        extra = eina_hash_find(_G.border_extras, &bd);
+        if (!extra) {
+            ERR("No extra for %p", bd);
+            continue;
+        }
+
+        extra->x += delta_x;
+        extra->w += delta_w;
+
+        e_border_move_resize(bd, extra->x,
+                                 extra->y,
+                                 extra->w,
+                                 extra->h);
+    }
+}
+
+static void
+_move_resize_border_in_column(E_Border *bd, Border_Extra *extra,
+                              bool is_master, tiling_change_t change)
+{
+    if (change == TILING_RESIZE) {
+        if (is_master) {
+            int delta = bd->w - extra->w;
+
+            _move_resize_column(_G.tinfo->slave_list, delta, -delta);
+        } else {
+            /* You're not allowed to resize */
+            bd->w = extra->w;
+        }
+    } else {
+        if (is_master) {
+            /* You're not allowed to move */
+            bd->x = extra->x;
+        } else {
+            int delta = bd->x - extra->x;
+
+            _move_resize_column(_G.tinfo->slave_list, delta, -delta);
+            _move_resize_column(_G.tinfo->master_list, 0, delta);
+        }
+    }
+
+}
+
 /* }}} */
 /* Toggle Floating {{{ */
 
@@ -612,10 +669,12 @@ _e_module_tiling_cb_hook(void *data,
             bd->client.icccm.base_w, bd->client.icccm.base_h);
 
         if (abs(extra->w - bd->w) >= bd->client.icccm.step_w) {
+            _move_resize_border_in_column(bd, extra, is_master, TILING_RESIZE);
         }
         if (abs(extra->h - bd->h) >= bd->client.icccm.step_h) {
         }
         if (extra->x != bd->x) {
+            _move_resize_border_in_column(bd, extra, is_master, TILING_MOVE);
         }
         if (extra->y != bd->y) {
         }
