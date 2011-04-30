@@ -504,12 +504,9 @@ toggle_layout(E_Tiling_Type *layout)
     switch(*layout) {
       case E_TILING_NONE:
       case E_TILING_INDIVIDUAL:
-        *layout = E_TILING_GRID;
+        *layout = E_TILING_TILE;
         break;
-      case E_TILING_GRID:
-        *layout = E_TILING_BIGMAIN;
-        break;
-      case E_TILING_BIGMAIN:
+      case E_TILING_TILE:
         *layout = E_TILING_NONE;
         break;
     }
@@ -918,12 +915,12 @@ e_modapi_init(E_Module *m)
     tiling_g.config = e_config_domain_load("module.tiling", _G.config_edd);
     if (!tiling_g.config) {
         tiling_g.config = E_NEW(Config, 1);
-        tiling_g.config->tiling_mode = E_TILING_BIGMAIN;
+        tiling_g.config->tiling_mode = E_TILING_TILE;
         tiling_g.config->float_too_big_windows = 1;
     }
 
 #define E_CONFIG_LIMIT_MAX(v, max) {if (v > max) v = max;}
-    E_CONFIG_LIMIT_MAX(tiling_g.config->tiling_mode, E_TILING_GRID);
+    E_CONFIG_LIMIT_MAX(tiling_g.config->tiling_mode, E_TILING_TILE);
 #undef E_CONFIG_LIMIT_MAX
     E_CONFIG_LIMIT(tiling_g.config->tile_dialogs, 0, 1);
     E_CONFIG_LIMIT(tiling_g.config->float_too_big_windows, 0, 1);
