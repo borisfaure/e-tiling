@@ -69,7 +69,7 @@ _create_data(E_Config_Dialog *cfd)
         newvd->x = vd->x;
         newvd->y = vd->y;
         newvd->zone_num = vd->zone_num;
-        newvd->layout = vd->layout;
+        newvd->nb_cols = vd->nb_cols;
 
         cfdata->config.vdesks = eina_list_append(cfdata->config.vdesks, newvd);
     }
@@ -115,7 +115,6 @@ _fill_zone_config(E_Zone               *zone,
             vd->x = desk->x;
             vd->y = desk->y;
             vd->zone_num = zone->num;
-            vd->layout = E_TILING_NONE;
             vd->nb_cols = 2;
 
             cfdata->config.vdesks = eina_list_append(cfdata->config.vdesks, vd);
@@ -187,7 +186,7 @@ _basic_create_widgets(E_Config_Dialog      *cfd,
     rg = e_widget_radio_group_new((int *)&cfdata->config.tiling_mode);
     e_widget_framelist_object_append(of, RADIO("Default number of columns"
                                                " (0 → tiling disabled):",
-                                               E_TILING_TILE, rg));
+                                               E_TILING_GLOBAL, rg));
     slider = e_widget_slider_add(evas, 1, 0, D_("%1.0f columns"), 0.0, 8.0, 1.0, 0, NULL,
                                  &cfdata->config.nb_cols, 150);
     e_widget_framelist_object_append(of, slider);
@@ -249,6 +248,7 @@ _basic_apply_data(E_Config_Dialog      *cfd,
                                            vd->x, vd->y, vd->zone_num)))
                 continue;
 
+            /*
             if (newvd->layout != vd->layout) {
                 E_Zone *zone = e_zone_current_get(e_container_current_get(
                         e_manager_current_get()));
@@ -260,6 +260,7 @@ _basic_apply_data(E_Config_Dialog      *cfd,
                     break;
                 }
             }
+            */
         }
     }
 

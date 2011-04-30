@@ -3,11 +3,10 @@
 #include <libintl.h>
 #define D_(str) dgettext(PACKAGE, str)
 
-typedef enum _E_Tiling_Type
+typedef enum _E_Tiling_Conf
 {
-    E_TILING_NONE = 0,
     E_TILING_INDIVIDUAL,
-    E_TILING_TILE,
+    E_TILING_GLOBAL,
 } E_Tiling_Type;
 
 typedef struct _Config      Config;
@@ -29,7 +28,6 @@ struct _Config_vdesk
 {
    int           x, y;
    unsigned int  zone_num;
-   E_Tiling_Type layout;
    int           nb_cols;
 };
 
@@ -63,6 +61,8 @@ struct _Tiling_Info
      * has to be stored individually for each desk, the one in Tiling_Config
      * is only the default */
     double     big_perc;
+
+    int nb_cols;
 
     /* When sending a border to another desktop, it has to be updated as soon
      * as the user switches to it. This is stored in the following flag. */

@@ -74,9 +74,6 @@ static struct
 static void
 _e_mod_action_toggle_floating_cb(E_Object   *obj,
                                  const char *params);
-static void
-_e_mod_action_switch_tiling_cb(E_Object   *obj,
-                               const char *params);
 static void toggle_floating(E_Border *bd);
 static void _desk_show(const E_Desk *desk);
 
@@ -129,6 +126,7 @@ _initialize_tinfo(const E_Desk *desk)
     res->slaves_count = 0;
     res->big_perc = 0.5;
     res->need_rearrange = 0;
+    res->nb_cols = 2;
     eina_hash_add(_G.info_hash, desk_hash_key(desk), res);
 
     /* TODO: should we do that?? */
@@ -173,20 +171,6 @@ is_untilable_dialog(E_Border *bd)
     return (!tiling_g.config->tile_dialogs
     && ((bd->client.icccm.transient_for != 0)
          || (bd->client.netwm.type == ECORE_X_WINDOW_TYPE_DIALOG)));
-}
-
-static E_Tiling_Type
-layout_for_desk(E_Desk *desk)
-{
-    if (tiling_g.config->tiling_mode == E_TILING_INDIVIDUAL) {
-        struct _Config_vdesk *vd;
-
-        vd = get_vdesk(tiling_g.config->vdesks, desk->x, desk->y,
-                       desk->zone->num);
-
-        return vd ? vd->layout : E_TILING_NONE;
-    }
-    return tiling_g.config->tiling_mode;
 }
 
 static void
@@ -265,7 +249,7 @@ _add_border(E_Border *bd)
         return;
     }
 
-    if (layout_for_desk(bd->desk) == E_TILING_NONE) {
+    if (!_G.tinfo->nb_cols) {
         DBG("no tiling");
         return;
     }
@@ -498,53 +482,6 @@ _e_mod_action_toggle_floating_cb(E_Object   *obj,
     toggle_floating(e_border_focused_get());
 }
 
-static void
-toggle_layout(E_Tiling_Type *layout)
-{
-    switch(*layout) {
-      case E_TILING_NONE:
-      case E_TILING_INDIVIDUAL:
-        *layout = E_TILING_TILE;
-        break;
-      case E_TILING_TILE:
-        *layout = E_TILING_NONE;
-        break;
-    }
-}
-
-static void
-_e_mod_action_switch_tiling_cb(E_Object   *obj,
-                               const char *params)
-{
-    if (tiling_g.config->tiling_mode != E_TILING_INDIVIDUAL) {
-        toggle_layout(&tiling_g.config->tiling_mode);
-    } else {
-        E_Desk *desk = get_current_desk();
-        struct _Config_vdesk *vd;
-
-        if (!desk)
-            return;
-
-        vd = get_vdesk(tiling_g.config->vdesks, desk->x, desk->y,
-                       desk->zone->num);
-        if (!vd) {
-            /* There was no config entry. Probably the vdesk-configuration
-             * changed but the user didn't open the tiling config yet. */
-            vd = malloc(sizeof(struct _Config_vdesk));
-
-            vd->x = desk->x;
-            vd->y = desk->y;
-            vd->layout = tiling_g.config->tiling_mode;
-            tiling_g.config->vdesks =
-                eina_list_append(tiling_g.config->vdesks, vd);
-        }
-        toggle_layout(&vd->layout);
-    }
-
-
-    e_config_save_queue();
-}
-
 /* }}} */
 /* Hooks {{{*/
 
@@ -595,7 +532,7 @@ _e_module_tiling_cb_hook(void *data,
         return;
     }
 
-    if (layout_for_desk(bd->desk) == E_TILING_NONE) {
+    if (!_G.tinfo->nb_cols) {
         DBG("no tiling");
         return;
     }
@@ -887,8 +824,6 @@ e_modapi_init(E_Module *m)
     /* Module's actions */
     ACTION_ADD(_G.act_togglefloat, _e_mod_action_toggle_floating_cb,
                "Toggle floating", "toggle_floating");
-    ACTION_ADD(_G.act_switchtiling, _e_mod_action_switch_tiling_cb,
-                "Switch tiling mode", "switch_tiling");
 #undef ACTION_ADD
 
     /* Configuration entries */
@@ -902,7 +837,6 @@ e_modapi_init(E_Module *m)
     _G.config_edd = E_CONFIG_DD_NEW("Tiling_Config", Config);
     _G.vdesk_edd = E_CONFIG_DD_NEW("Tiling_Config_VDesk",
                                    struct _Config_vdesk);
-    E_CONFIG_VAL(_G.config_edd, Config, tiling_mode, INT);
     E_CONFIG_VAL(_G.config_edd, Config, tile_dialogs, INT);
     E_CONFIG_VAL(_G.config_edd, Config, float_too_big_windows, INT);
 
@@ -910,18 +844,14 @@ e_modapi_init(E_Module *m)
     E_CONFIG_VAL(_G.vdesk_edd, struct _Config_vdesk, x, INT);
     E_CONFIG_VAL(_G.vdesk_edd, struct _Config_vdesk, y, INT);
     E_CONFIG_VAL(_G.vdesk_edd, struct _Config_vdesk, zone_num, INT);
-    E_CONFIG_VAL(_G.vdesk_edd, struct _Config_vdesk, layout, INT);
+    E_CONFIG_VAL(_G.vdesk_edd, struct _Config_vdesk, nb_cols, INT);
 
     tiling_g.config = e_config_domain_load("module.tiling", _G.config_edd);
     if (!tiling_g.config) {
         tiling_g.config = E_NEW(Config, 1);
-        tiling_g.config->tiling_mode = E_TILING_TILE;
         tiling_g.config->float_too_big_windows = 1;
     }
 
-#define E_CONFIG_LIMIT_MAX(v, max) {if (v > max) v = max;}
-    E_CONFIG_LIMIT_MAX(tiling_g.config->tiling_mode, E_TILING_TILE);
-#undef E_CONFIG_LIMIT_MAX
     E_CONFIG_LIMIT(tiling_g.config->tile_dialogs, 0, 1);
     E_CONFIG_LIMIT(tiling_g.config->float_too_big_windows, 0, 1);
 
