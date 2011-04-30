@@ -71,22 +71,6 @@ static struct
    .act_switchtiling = NULL,
 };
 
-static void
-_e_mod_action_toggle_floating_cb(E_Object   *obj,
-                                 const char *params);
-static void toggle_floating(E_Border *bd);
-static void _desk_show(const E_Desk *desk);
-
-#define TILE_LOOP_DESKCHECK                               \
-  if ((lbd->desk != bd->desk) || (lbd->zone != bd->zone)) \
-    continue;
-
-#define TILE_LOOP_CHECKS(lbd)                                              \
-((_G.tinfo && eina_list_data_find(_G.tinfo->floating_windows, lbd) == lbd) \
- || (lbd->visible == 0)                                                    \
- || (!tiling_g.config->tile_dialogs                                        \
-     && ((lbd->client.icccm.transient_for != 0)                            \
-         || (lbd->client.netwm.type == ECORE_X_WINDOW_TYPE_DIALOG))))      \
 
 /* Utils {{{ */
 
@@ -150,10 +134,7 @@ check_tinfo(const E_Desk *desk)
     if (!_G.tinfo || _G.tinfo->desk != desk) {
         _G.tinfo = eina_hash_find(_G.info_hash, desk_hash_key(desk));
         if (!_G.tinfo) {
-            /* We need to add a new Tiling_Info, so we weren't on that desk before.
-             * As e doesn't call the POST_EVAL-hook (or e_desk_show which then
-             * indirectly calls the POST_EVAL) for each window on that desk but only
-             * for the focused, we need to get all borders on that desk. */
+            /* lazy init */
             DBG("need new info for %s\n", desk->name);
             _G.tinfo = _initialize_tinfo(desk);
         }
@@ -346,9 +327,12 @@ _remove_border(E_Border *bd)
         _G.tinfo->master_list = eina_list_remove(_G.tinfo->master_list, bd);
         if (_G.tinfo->slave_list) {
             if (_G.tinfo->slave_list->next) {
-                E_Border *new_master = _G.tinfo->slave_list->data;
-                Border_Extra *new_master_extra = eina_hash_find(_G.border_extras,
-                                                                &new_master);
+                E_Border *new_master;
+                Border_Extra *new_master_extra;
+
+                new_master = _G.tinfo->slave_list->data;
+                new_master_extra = eina_hash_find(_G.border_extras,
+                                                  &new_master);
                 _G.tinfo->slave_list = eina_list_remove(_G.tinfo->slave_list,
                                                         new_master);
                 _G.tinfo->slaves_count--;
@@ -359,22 +343,27 @@ _remove_border(E_Border *bd)
                 new_master_extra->h = bd->h;
                 e_border_move_resize(new_master, bd->x, bd->y,
                                                  bd->w, bd->h);
-                e_border_maximize(new_master, E_MAXIMIZE_EXPAND | E_MAXIMIZE_VERTICAL);
+                e_border_maximize(new_master,
+                                  E_MAXIMIZE_EXPAND | E_MAXIMIZE_VERTICAL);
 
 
                 _G.tinfo->master_list = eina_list_append(_G.tinfo->master_list,
                                                          new_master);
                 _reorganize_slaves();
             } else {
-                E_Border *new_master = _G.tinfo->slave_list->data;
-                Border_Extra *new_master_extra = eina_hash_find(_G.border_extras,
+                E_Border *new_master;
+                Border_Extra *new_master_extra;
+
+                new_master = _G.tinfo->slave_list->data;
+                new_master_extra = eina_hash_find(_G.border_extras,
                                                                 &new_master);
                 _G.tinfo->slave_list = eina_list_remove(_G.tinfo->slave_list,
                                                         new_master);
                 _G.tinfo->slaves_count--;
 
                 e_border_unmaximize(new_master, E_MAXIMIZE_BOTH);
-                e_border_maximize(new_master, E_MAXIMIZE_EXPAND | E_MAXIMIZE_BOTH);
+                e_border_maximize(new_master,
+                                  E_MAXIMIZE_EXPAND | E_MAXIMIZE_BOTH);
                 new_master_extra->x = bd->x;
                 new_master_extra->y = bd->y;
                 new_master_extra->w = bd->w;
@@ -468,7 +457,7 @@ toggle_floating(E_Border *bd)
         _add_border(bd);
     } else {
         /* To give the user a bit of feedback we restore the original border */
-        /* TODO: save the original border, don't just restore the default one */
+        /* TODO: save the original border, don't just restore the default one*/
         _G.tinfo->floating_windows =
             eina_list_prepend(_G.tinfo->floating_windows, bd);
 
@@ -577,7 +566,9 @@ _e_module_tiling_cb_hook(void *data,
             return;
         }
 
-        if (is_master && !_G.tinfo->master_list->next && !_G.tinfo->slave_list) {
+        if (is_master && !_G.tinfo->master_list->next
+            && !_G.tinfo->slave_list)
+        {
             DBG("forever alone :)");
             if (bd->maximized) {
                 extra->x = bd->x;
@@ -705,8 +696,10 @@ _clear_bd_from_info_hash(const Eina_Hash *hash,
     }
     */
 
-    if (eina_list_data_find(ti->floating_windows, ev->border) == ev->border)
-        ti->floating_windows = eina_list_remove(ti->floating_windows, ev->border);
+    if (eina_list_data_find(ti->floating_windows, ev->border) == ev->border) {
+        ti->floating_windows = eina_list_remove(ti->floating_windows,
+                                                ev->border);
+    }
 
     return EINA_TRUE;
 }
@@ -720,11 +713,13 @@ _e_module_tiling_desk_set(void *data,
      * because a user can move the window to another desk (and events are
      * fired) involving zone changes or not (depends on the mouse position) */
     E_Event_Border_Desk_Set *ev = event;
-    Tiling_Info *_tinfo = eina_hash_find(_G.info_hash, desk_hash_key(ev->desk));
+    Tiling_Info *tinfo;
 
-    if (!_tinfo) {
+    tinfo = eina_hash_find(_G.info_hash, desk_hash_key(ev->desk));
+
+    if (!tinfo) {
         DBG("create new info for %s\n", ev->desk->name);
-        _tinfo = _initialize_tinfo(ev->desk);
+        tinfo = _initialize_tinfo(ev->desk);
     }
 
     eina_hash_foreach(_G.info_hash, _clear_bd_from_info_hash, ev);

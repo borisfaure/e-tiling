@@ -15,7 +15,8 @@ struct _E_Widget_Smart_Data
    Eina_List   *subobjs;
 };
 
-/* Some defines to make coding with the e_widget_* easier for configuration panel */
+/* Some defines to make coding with the e_widget_* easier for
+ * configuration panel */
 #define RADIO(title, value, radiogroup) \
   e_widget_radio_add(evas, D_(title), value, radiogroup)
 #define LIST_ADD(list, object) \
@@ -71,7 +72,8 @@ _create_data(E_Config_Dialog *cfd)
         newvd->zone_num = vd->zone_num;
         newvd->nb_cols = vd->nb_cols;
 
-        cfdata->config.vdesks = eina_list_append(cfdata->config.vdesks, newvd);
+        cfdata->config.vdesks = eina_list_append(cfdata->config.vdesks,
+                                                 newvd);
     }
 
     return cfdata;
@@ -117,13 +119,15 @@ _fill_zone_config(E_Zone               *zone,
             vd->zone_num = zone->num;
             vd->nb_cols = 2;
 
-            cfdata->config.vdesks = eina_list_append(cfdata->config.vdesks, vd);
+            cfdata->config.vdesks = eina_list_append(cfdata->config.vdesks,
+                                                     vd);
         }
 
         list = e_widget_list_add(evas, 0, 1);
 
         LIST_ADD(list, e_widget_label_add(evas, desk->name));
-        slider = e_widget_slider_add(evas, 1, 0, D_("%1.0f columns"), 0.0, 8.0, 1.0, 0, NULL,
+        slider = e_widget_slider_add(evas, 1, 0, D_("%1.0f columns"),
+                                     0.0, 8.0, 1.0, 0, NULL,
                                      &vd->nb_cols, 150);
         LIST_ADD(list, slider);
 
@@ -176,13 +180,16 @@ _basic_create_widgets(E_Config_Dialog      *cfd,
       e_widget_check_add(evas, D_("Tile dialog windows aswell"),
                          &cfdata->config.tile_dialogs));
     e_widget_framelist_object_append(of,
-      e_widget_check_add(evas, D_("Set too big windows floating automatically"),
+      e_widget_check_add(evas,
+                         D_("Set too big windows floating automatically"),
                          &cfdata->config.float_too_big_windows));
     LIST_ADD(o, of);
 
     /* Virtual desktop settings */
     of = e_widget_framelist_add(evas, D_("Virtual Desktops"), 0);
-    e_widget_label_add(evas, D_("Number of columns used to tile per desk (0 → tiling disabled):"));
+    e_widget_label_add(evas,
+                       D_("Number of columns used to tile per desk"
+                          " (0 → tiling disabled):"));
     osf = e_widget_list_add(evas, 0, 1);
 
     /* Zone list */
@@ -206,7 +213,8 @@ _basic_create_widgets(E_Config_Dialog      *cfd,
     /* Order is important here: Firstly create the list, then add it to the
      * scrollframe before any objects get added to the list */
     cfdata->o_desklist = e_widget_list_add(evas, 1, 0);
-    cfdata->o_deskscroll = e_widget_scrollframe_simple_add(evas, cfdata->o_desklist);
+    cfdata->o_deskscroll = e_widget_scrollframe_simple_add(evas,
+                                                           cfdata->o_desklist);
     cfdata->evas = evas;
 
     _fill_zone_config(con->zones->data, cfdata);
