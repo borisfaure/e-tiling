@@ -84,20 +84,6 @@ get_current_desk(void)
     return e_desk_current_get(z);
 }
 
-/* Generates a unique identifier for the given desk to be used in info_hash */
-static char *
-desk_hash_key(const E_Desk *desk)
-{
-    /* TODO: can't we use the pointer as a hash? */
-    /* I think 64 chars should be enough for all localizations of "desk" */
-    static char buffer[64];
-
-    if (!desk)
-        return NULL;
-    snprintf(buffer, sizeof(buffer), "%d%s", desk->zone->num, desk->name);
-    return buffer;
-}
-
 static Tiling_Info *
 _initialize_tinfo(const E_Desk *desk)
 {
@@ -110,7 +96,7 @@ _initialize_tinfo(const E_Desk *desk)
     res->slaves_count = 0;
     res->big_perc = 0.5;
     res->need_rearrange = 0;
-    eina_hash_add(_G.info_hash, desk_hash_key(desk), res);
+    eina_hash_direct_add(_G.info_hash, &res->desk, res);
 
     /* TODO: should we do that?? */
     EINA_LIST_FOREACH(e_border_client_list(), l, lbd) {
@@ -132,14 +118,13 @@ static void
 check_tinfo(const E_Desk *desk)
 {
     if (!_G.tinfo || _G.tinfo->desk != desk) {
-        _G.tinfo = eina_hash_find(_G.info_hash, desk_hash_key(desk));
+        _G.tinfo = eina_hash_find(_G.info_hash, &desk);
         if (!_G.tinfo) {
             /* lazy init */
             DBG("need new info for %s\n", desk->name);
             _G.tinfo = _initialize_tinfo(desk);
         }
         if (!_G.tinfo->conf) {
-            /* TODO: find conf */
             _G.tinfo->conf = get_vdesk(tiling_g.config->vdesks,
                                        desk->x, desk->y,
                                        desk->zone->num);
@@ -483,31 +468,6 @@ _e_mod_action_toggle_floating_cb(E_Object   *obj,
 /* Hooks {{{*/
 
 static void
-_desk_before_show(const E_Desk *desk)
-{
-    if (_G.tinfo->desk == desk) {
-        DBG("desk before show: %s \n", desk->name);
-        if (!eina_hash_modify(_G.info_hash, desk_hash_key(desk), _G.tinfo))
-            eina_hash_add(_G.info_hash, desk_hash_key(desk), _G.tinfo);
-    }
-    _G.tinfo = NULL;
-}
-
-static void
-_desk_show(const E_Desk *desk)
-{
-    _G.tinfo = eina_hash_find(_G.info_hash, desk_hash_key(desk));
-    if (!_G.tinfo) {
-        /* We need to add a new Tiling_Info, so we weren't on that desk before.
-         * As e doesn't call the POST_EVAL-hook (or e_desk_show which then
-         * indirectly calls the POST_EVAL) for each window on that desk but only
-         * for the focused, we need to get all borders on that desk. */
-        DBG("need new info for %s\n", desk->name);
-        _G.tinfo = _initialize_tinfo(desk);
-    }
-}
-
-static void
 _e_module_tiling_cb_hook(void *data,
                          void *border)
 {
@@ -581,8 +541,6 @@ _e_module_tiling_cb_hook(void *data,
                 e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_BOTH);
             }
         }
-        /* TODO */
-        ERR("TODO");
         if (bd->x == extra->x && bd->y == extra->y
         &&  bd->w == extra->w && bd->h == extra->h)
         {
@@ -605,13 +563,14 @@ _e_module_tiling_cb_hook(void *data,
             _move_resize_border_in_column(bd, extra, is_master, TILING_RESIZE);
         }
         if (abs(extra->h - bd->h) >= bd->client.icccm.step_h) {
+            /* TODO */
         }
         if (extra->x != bd->x) {
             _move_resize_border_in_column(bd, extra, is_master, TILING_MOVE);
         }
         if (extra->y != bd->y) {
+            /* TODO */
         }
-
     }
 }
 
@@ -645,9 +604,6 @@ _e_module_tiling_desk_show(void *data,
                            int   type,
                            void *event)
 {
-    E_Event_Desk_Show *ev = event;
-
-    _desk_show(ev->desk);
     _G.currently_switching_desktop = 0;
 
     return EINA_TRUE;
@@ -658,9 +614,6 @@ _e_module_tiling_desk_before_show(void *data,
                                   int   type,
                                   void *event)
 {
-    E_Event_Desk_Before_Show *ev = event;
-
-    _desk_before_show(ev->desk);
     _G.currently_switching_desktop = 1;
 
     return EINA_TRUE;
@@ -715,7 +668,7 @@ _e_module_tiling_desk_set(void *data,
     E_Event_Border_Desk_Set *ev = event;
     Tiling_Info *tinfo;
 
-    tinfo = eina_hash_find(_G.info_hash, desk_hash_key(ev->desk));
+    tinfo = eina_hash_find(_G.info_hash, &ev->desk);
 
     if (!tinfo) {
         DBG("create new info for %s\n", ev->desk->name);
@@ -786,7 +739,7 @@ e_modapi_init(E_Module *m)
     bindtextdomain(PACKAGE, buf);
     bind_textdomain_codeset(PACKAGE, "UTF-8");
 
-    _G.info_hash = eina_hash_string_small_new(NULL);
+    _G.info_hash = eina_hash_pointer_new(NULL);
 
     _G.border_extras = eina_hash_pointer_new(NULL);
 
