@@ -89,13 +89,13 @@ static void
 _fill_zone_config(E_Zone               *zone,
                   E_Config_Dialog_Data *cfdata)
 {
-    E_Radio_Group *rg;
     Evas *evas = cfdata->evas;
     Evas_Object *o;
     int mw, mh;
 
     /* Clear old entries first */
     evas_object_del(cfdata->o_desklist);
+
     cfdata->o_desklist = e_widget_list_add(evas, 1, 0);
     o = e_widget_scrollframe_object_get(cfdata->o_deskscroll);
     e_scrollframe_child_set(o, cfdata->o_desklist);
@@ -104,7 +104,7 @@ _fill_zone_config(E_Zone               *zone,
     for (int i = 0; i < zone->desk_y_count * zone->desk_x_count; i++) {
         E_Desk *desk = zone->desks[i];
         struct _Config_vdesk *vd;
-        Evas_Object *radiolist;
+        Evas_Object *list, *slider;
 
         if (!desk)
             continue;
@@ -116,17 +116,19 @@ _fill_zone_config(E_Zone               *zone,
             vd->y = desk->y;
             vd->zone_num = zone->num;
             vd->layout = E_TILING_NONE;
+            vd->nb_cols = 2;
 
             cfdata->config.vdesks = eina_list_append(cfdata->config.vdesks, vd);
         }
 
-        rg = e_widget_radio_group_new((int*)&vd->layout);
-        radiolist = e_widget_list_add(evas, 0, 1);
+        list = e_widget_list_add(evas, 0, 1);
 
-        LIST_ADD(radiolist, e_widget_label_add(evas, desk->name));
-        LIST_ADD(radiolist, RADIO("None", E_TILING_NONE, rg));
-        LIST_ADD(radiolist, RADIO("Tile", E_TILING_TILE, rg));
-        LIST_ADD(cfdata->o_desklist, radiolist);
+        LIST_ADD(list, e_widget_label_add(evas, desk->name));
+        slider = e_widget_slider_add(evas, 1, 0, D_("%1.0f columns"), 0.0, 8.0, 1.0, 0, NULL,
+                                     &vd->nb_cols, 150);
+        LIST_ADD(list, slider);
+
+        LIST_ADD(cfdata->o_desklist, list);
     }
 
     /* Get the correct sizes of desklist and scrollframe */
@@ -163,7 +165,7 @@ _basic_create_widgets(E_Config_Dialog      *cfd,
                       Evas                 *evas,
                       E_Config_Dialog_Data *cfdata)
 {
-    Evas_Object *o, *ob, *of, *osf;
+    Evas_Object *o, *ob, *of, *osf, *slider;
     E_Radio_Group *rg;
     E_Container *con = e_container_current_get(e_manager_current_get());
     E_Zone *zone;
@@ -183,8 +185,12 @@ _basic_create_widgets(E_Config_Dialog      *cfd,
     /* Virtual desktop settings */
     of = e_widget_framelist_add(evas, D_("Virtual Desktops"), 0);
     rg = e_widget_radio_group_new((int *)&cfdata->config.tiling_mode);
-    e_widget_framelist_object_append(of, RADIO("Do not tile", E_TILING_NONE, rg));
-    e_widget_framelist_object_append(of, RADIO("Always tile", E_TILING_TILE, rg));
+    e_widget_framelist_object_append(of, RADIO("Default number of columns"
+                                               " (0 → tiling disabled):",
+                                               E_TILING_TILE, rg));
+    slider = e_widget_slider_add(evas, 1, 0, D_("%1.0f columns"), 0.0, 8.0, 1.0, 0, NULL,
+                                 &cfdata->config.nb_cols, 150);
+    e_widget_framelist_object_append(of, slider);
     e_widget_framelist_object_append(of, RADIO("Individual modes:", E_TILING_INDIVIDUAL, rg));
 
     osf = e_widget_list_add(evas, 0, 1);

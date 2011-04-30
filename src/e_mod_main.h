@@ -30,6 +30,7 @@ struct _Config_vdesk
    int           x, y;
    unsigned int  zone_num;
    E_Tiling_Type layout;
+   int           nb_cols;
 };
 
 struct _Config
@@ -37,6 +38,7 @@ struct _Config
     E_Tiling_Type  tiling_mode;
     int            tile_dialogs;
     int            float_too_big_windows;
+    int            nb_cols;
     Eina_List     *vdesks;
 };
 
