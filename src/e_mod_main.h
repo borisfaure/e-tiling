@@ -29,7 +29,6 @@ struct _Config
 {
     int            tile_dialogs;
     int            float_too_big_windows;
-    int            nb_cols;
     Eina_List     *vdesks;
 };
 
@@ -39,6 +38,8 @@ struct _Tiling_Info
      * (for example) on e restart all desks are shown on all zones but no
      * change events are triggered */
     const E_Desk    *desk;
+
+    struct _Config_vdesk *conf;
 
     /* List of windows which were toggled floating */
     Eina_List *floating_windows;
@@ -54,8 +55,6 @@ struct _Tiling_Info
      * has to be stored individually for each desk, the one in Tiling_Config
      * is only the default */
     double     big_perc;
-
-    int nb_cols;
 
     /* When sending a border to another desktop, it has to be updated as soon
      * as the user switches to it. This is stored in the following flag. */

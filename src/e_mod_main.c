@@ -126,7 +126,6 @@ _initialize_tinfo(const E_Desk *desk)
     res->slaves_count = 0;
     res->big_perc = 0.5;
     res->need_rearrange = 0;
-    res->nb_cols = 2;
     eina_hash_add(_G.info_hash, desk_hash_key(desk), res);
 
     /* TODO: should we do that?? */
@@ -138,6 +137,9 @@ _initialize_tinfo(const E_Desk *desk)
                 res->master_list = eina_list_append(res->master_list, lbd);
         }
     }
+
+    res->conf = get_vdesk(tiling_g.config->vdesks, desk->x, desk->y,
+                          desk->zone->num);
 
     return res;
 }
@@ -154,6 +156,12 @@ check_tinfo(const E_Desk *desk)
              * for the focused, we need to get all borders on that desk. */
             DBG("need new info for %s\n", desk->name);
             _G.tinfo = _initialize_tinfo(desk);
+        }
+        if (!_G.tinfo->conf) {
+            /* TODO: find conf */
+            _G.tinfo->conf = get_vdesk(tiling_g.config->vdesks,
+                                       desk->x, desk->y,
+                                       desk->zone->num);
         }
     }
 }
@@ -249,7 +257,7 @@ _add_border(E_Border *bd)
         return;
     }
 
-    if (!_G.tinfo->nb_cols) {
+    if (!_G.tinfo->conf->nb_cols) {
         DBG("no tiling");
         return;
     }
@@ -532,7 +540,7 @@ _e_module_tiling_cb_hook(void *data,
         return;
     }
 
-    if (!_G.tinfo->nb_cols) {
+    if (!_G.tinfo->conf->nb_cols) {
         DBG("no tiling");
         return;
     }
@@ -850,6 +858,7 @@ e_modapi_init(E_Module *m)
     if (!tiling_g.config) {
         tiling_g.config = E_NEW(Config, 1);
         tiling_g.config->float_too_big_windows = 1;
+        tiling_g.config->tile_dialogs = 1;
     }
 
     E_CONFIG_LIMIT(tiling_g.config->tile_dialogs, 0, 1);
