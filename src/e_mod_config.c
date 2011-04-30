@@ -164,8 +164,7 @@ _basic_create_widgets(E_Config_Dialog      *cfd,
                       Evas                 *evas,
                       E_Config_Dialog_Data *cfdata)
 {
-    Evas_Object *o, *ob, *of, *osf, *slider;
-    E_Radio_Group *rg;
+    Evas_Object *o, *ob, *of, *osf;
     E_Container *con = e_container_current_get(e_manager_current_get());
     E_Zone *zone;
 
@@ -183,15 +182,7 @@ _basic_create_widgets(E_Config_Dialog      *cfd,
 
     /* Virtual desktop settings */
     of = e_widget_framelist_add(evas, D_("Virtual Desktops"), 0);
-    rg = e_widget_radio_group_new((int *)&cfdata->config.tiling_mode);
-    e_widget_framelist_object_append(of, RADIO("Default number of columns"
-                                               " (0 → tiling disabled):",
-                                               E_TILING_GLOBAL, rg));
-    slider = e_widget_slider_add(evas, 1, 0, D_("%1.0f columns"), 0.0, 8.0, 1.0, 0, NULL,
-                                 &cfdata->config.nb_cols, 150);
-    e_widget_framelist_object_append(of, slider);
-    e_widget_framelist_object_append(of, RADIO("Individual modes:", E_TILING_INDIVIDUAL, rg));
-
+    e_widget_label_add(evas, D_("Number of columns used to tile per desk (0 → tiling disabled):"));
     osf = e_widget_list_add(evas, 0, 1);
 
     /* Zone list */

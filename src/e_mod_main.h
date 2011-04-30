@@ -3,12 +3,6 @@
 #include <libintl.h>
 #define D_(str) dgettext(PACKAGE, str)
 
-typedef enum _E_Tiling_Conf
-{
-    E_TILING_INDIVIDUAL,
-    E_TILING_GLOBAL,
-} E_Tiling_Type;
-
 typedef struct _Config      Config;
 typedef struct _Tiling_Info Tiling_Info;
 
@@ -33,7 +27,6 @@ struct _Config_vdesk
 
 struct _Config
 {
-    E_Tiling_Type  tiling_mode;
     int            tile_dialogs;
     int            float_too_big_windows;
     int            nb_cols;
