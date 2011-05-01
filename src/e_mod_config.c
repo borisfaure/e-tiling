@@ -66,7 +66,7 @@ _create_data(E_Config_Dialog *cfd)
         if (!vd)
             continue;
 
-        newvd = malloc(sizeof(struct _Config_vdesk));
+        newvd = E_NEW(struct _Config_vdesk, 1);
         newvd->x = vd->x;
         newvd->y = vd->y;
         newvd->zone_num = vd->zone_num;
@@ -113,7 +113,7 @@ _fill_zone_config(E_Zone               *zone,
 
         vd = get_vdesk(cfdata->config.vdesks, desk->x, desk->y, zone->num);
         if (!vd) {
-            vd = malloc(sizeof(struct _Config_vdesk));
+            vd = E_NEW(struct _Config_vdesk, 1);
             vd->x = desk->x;
             vd->y = desk->y;
             vd->zone_num = zone->num;
