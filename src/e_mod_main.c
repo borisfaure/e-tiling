@@ -393,6 +393,7 @@ _move_resize_border_in_column(E_Border *bd, Border_Extra *extra,
             int delta = bd->w - extra->w;
 
             _move_resize_column(_G.tinfo->slave_list, delta, -delta);
+            extra->w = bd->w;
         } else {
             /* You're not allowed to resize */
             bd->w = extra->w;
