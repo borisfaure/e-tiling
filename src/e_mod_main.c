@@ -74,6 +74,9 @@ static struct
 
 /* Utils {{{ */
 
+#define EINA_LIST_IS_IN(_list, _el) \
+    (eina_list_data_find(_list, _el) == _el)
+
 /* I wonder why noone has implemented the following one yet? */
 static E_Desk *
 get_current_desk(void)
@@ -81,6 +84,7 @@ get_current_desk(void)
     E_Manager *m = e_manager_current_get();
     E_Container *c = e_container_current_get(m);
     E_Zone *z = e_zone_current_get(c);
+
     return e_desk_current_get(z);
 }
 
@@ -91,8 +95,6 @@ _initialize_tinfo(const E_Desk *desk)
 
     tinfo = E_NEW(Tiling_Info, 1);
     tinfo->desk = desk;
-    tinfo->slaves_count = 0;
-    tinfo->big_perc = 0.5;
     tinfo->need_rearrange = 0;
     eina_hash_direct_add(_G.info_hash, &tinfo->desk, tinfo);
 
@@ -128,7 +130,7 @@ is_floating_window(const E_Border *bd)
 }
 
 static int
-is_untilable_dialog(E_Border *bd)
+is_untilable_dialog(const E_Border *bd)
 {
     return (!tiling_g.config->tile_dialogs
     && ((bd->client.icccm.transient_for != 0)
@@ -144,10 +146,22 @@ change_window_border(E_Border   *bd,
    bd->changed = 1;
 }
 
+static int
+get_column(const E_Border *bd)
+{
+    for (int i = 0; i < TILING_MAX_COLUMNS; i++) {
+        if (EINA_LIST_IS_IN(_G.tinfo->columns[i], bd))
+            return i;
+    }
+    return -1;
+}
+
 /* }}} */
 /* Reorganize windows {{{*/
+/* TODO */
+#if 0
 static void
-_reorganize_slaves(void)
+_reorganize_column(Eina_List *col)
 {
     int zx, zy, zw, zh, x, w, h, ch, i = 0;
 
@@ -192,10 +206,12 @@ _reorganize_slaves(void)
                                  extra->h);
     }
 }
+#endif
 
 static void
 _add_border(E_Border *bd)
 {
+#if 0
     Border_Extra *extra;
 
     if (!bd) {
@@ -279,11 +295,14 @@ _add_border(E_Border *bd)
         e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_BOTH);
         _G.tinfo->master_list = eina_list_append(_G.tinfo->master_list, bd);
     }
+#endif
 }
 
 static void
 _remove_border(E_Border *bd)
 {
+    /* TODO */
+#if 0
     bool is_master = false,
          is_slave = false;
 
@@ -359,8 +378,10 @@ _remove_border(E_Border *bd)
         }
     }
     eina_hash_del(_G.border_extras, bd, NULL);
+#endif
 }
 
+#if 0
 static void
 _move_resize_column(Eina_List *list, int delta_x, int delta_w)
 {
@@ -383,11 +404,13 @@ _move_resize_column(Eina_List *list, int delta_x, int delta_w)
                                  extra->h);
     }
 }
+#endif
 
 static void
 _move_resize_border_in_column(E_Border *bd, Border_Extra *extra,
-                              bool is_master, tiling_change_t change)
+                              int colnum, tiling_change_t change)
 {
+#if 0
     if (change == TILING_RESIZE) {
         if (is_master) {
             int delta = bd->w - extra->w;
@@ -409,7 +432,7 @@ _move_resize_border_in_column(E_Border *bd, Border_Extra *extra,
             _move_resize_column(_G.tinfo->master_list, 0, delta);
         }
     }
-
+#endif
 }
 
 /* }}} */
@@ -460,8 +483,7 @@ _e_module_tiling_cb_hook(void *data,
                          void *border)
 {
     E_Border *bd = border;
-    bool is_master = false,
-         is_slave = false;
+    int col = -1;
 
     DBG("cb-Hook for %p", bd);
     if (!bd) {
@@ -481,24 +503,22 @@ _e_module_tiling_cb_hook(void *data,
         return;
     }
 
-    is_master = eina_list_data_find(_G.tinfo->master_list, bd) == bd;
-    is_slave = eina_list_data_find(_G.tinfo->slave_list, bd) == bd;
+    col = get_column(bd);
 
     DBG("cb-Hook for %p / %s / %s, changes(size=%d, position=%d, border=%d)"
-        " g:%dx%d+%d+%d bdname:%s (%c) %d",
+        " g:%dx%d+%d+%d bdname:%s (%d) %d",
         bd, bd->client.icccm.title, bd->client.netwm.name,
         bd->changes.size, bd->changes.pos, bd->changes.border,
         bd->x, bd->y, bd->w, bd->h, bd->bordername,
-        is_master ? 'M' : (is_slave ? 'S': 'N'),
-        bd->maximized);
+        col, bd->maximized);
 
     if (!bd->changes.size && !bd->changes.pos && !bd->changes.border
-    && (is_master || is_slave)) {
+    && (col >= 0)) {
         DBG("nothing to do");
         return;
     }
 
-    if (!is_master && !is_slave) {
+    if (col < 0) {
         _add_border(bd);
     } else {
         Border_Extra *extra;
@@ -513,9 +533,7 @@ _e_module_tiling_cb_hook(void *data,
             return;
         }
 
-        if (is_master && !_G.tinfo->master_list->next
-            && !_G.tinfo->slave_list)
-        {
+        if (col == 0 && !_G.tinfo->columns[1] && !_G.tinfo->columns[0]->next) {
             DBG("forever alone :)");
             if (bd->maximized) {
                 extra->x = bd->x;
@@ -547,13 +565,13 @@ _e_module_tiling_cb_hook(void *data,
             bd->client.icccm.base_w, bd->client.icccm.base_h);
 
         if (abs(extra->w - bd->w) >= bd->client.icccm.step_w) {
-            _move_resize_border_in_column(bd, extra, is_master, TILING_RESIZE);
+            _move_resize_border_in_column(bd, extra, col, TILING_RESIZE);
         }
         if (abs(extra->h - bd->h) >= bd->client.icccm.step_h) {
             /* TODO */
         }
         if (extra->x != bd->x) {
-            _move_resize_border_in_column(bd, extra, is_master, TILING_MOVE);
+            _move_resize_border_in_column(bd, extra, col, TILING_MOVE);
         }
         if (extra->y != bd->y) {
             /* TODO */
@@ -566,6 +584,7 @@ _e_module_tiling_hide_hook(void *data,
                            int   type,
                            void *event)
 {
+#if 0
     E_Event_Border_Hide *ev = event;
     E_Border *bd = ev->border;
 
@@ -582,6 +601,7 @@ _e_module_tiling_hide_hook(void *data,
     }
 
     _remove_border(bd);
+#endif
 
     return EINA_TRUE;
 }
@@ -680,8 +700,10 @@ _clear_info_hash(const Eina_Hash *hash,
     Tiling_Info *ti = data;
 
     eina_list_free(ti->floating_windows);
-    eina_list_free(ti->master_list);
-    eina_list_free(ti->slave_list);
+    for (int i = 0; i < TILING_MAX_COLUMNS; i++) {
+        eina_list_free(ti->columns[i]);
+        ti->columns[i] = NULL;
+    }
     E_FREE(ti);
 
     return EINA_TRUE;
@@ -872,6 +894,8 @@ EAPI int
 e_modapi_save(E_Module *m)
 {
     e_config_domain_save("module.tiling", _G.config_edd, tiling_g.config);
+    /* TODO */
+    DBG("SAVE");
 
     return EINA_TRUE;
 }

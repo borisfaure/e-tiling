@@ -17,6 +17,7 @@ extern struct tiling_g tiling_g;
 #define ERR(...) EINA_LOG_DOM_ERR(tiling_g.log_domain, __VA_ARGS__)
 #define DBG(...) EINA_LOG_DOM_DBG(tiling_g.log_domain, __VA_ARGS__)
 
+#define TILING_MAX_COLUMNS 8
 
 struct _Config_vdesk
 {
@@ -44,17 +45,8 @@ struct _Tiling_Info
     /* List of windows which were toggled floating */
     Eina_List *floating_windows;
 
-    /* List of windows in our own sorting: slave */
-    Eina_List *slave_list;
-    /* List of windows in our own sorting: master */
-    Eina_List *master_list;
-
-    int        slaves_count;
-
-    /* big_perc (percentage of the screen which the mainbd-border will get)
-     * has to be stored individually for each desk, the one in Tiling_Config
-     * is only the default */
-    double     big_perc;
+    Eina_List *columns[TILING_MAX_COLUMNS];
+    int current_columns_count;
 
     /* When sending a border to another desktop, it has to be updated as soon
      * as the user switches to it. This is stored in the following flag. */

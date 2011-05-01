@@ -39,6 +39,7 @@ get_vdesk(Eina_List *vdesks,
         if (vd->x == x && vd->y == y && vd->zone_num == zone_num)
             return vd;
     }
+    DBG("NOT FOUND!!!");
 
     return NULL;
 }
@@ -263,6 +264,7 @@ _basic_apply_data(E_Config_Dialog      *cfd,
         }
     }
 
+    DBG("APPLY DATA");
     memcpy(tiling_g.config, cfdata, sizeof(Config));
 
     cfdata->config.vdesks = NULL;
