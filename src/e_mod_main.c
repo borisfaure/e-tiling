@@ -198,8 +198,7 @@ _add_border(E_Border *bd)
 {
     Border_Extra *extra;
 
-    if (!bd || !bd->visible) {
-        DBG("bd=%p", bd);
+    if (!bd) {
         return;
     }
     if (is_floating_window(bd)) {
@@ -463,9 +462,8 @@ _e_module_tiling_cb_hook(void *data,
     bool is_master = false,
          is_slave = false;
 
-    DBG("cb-Hook");
-    if (!bd || !bd->visible) {
-        DBG("bd=%p", bd);
+    DBG("cb-Hook for %p", bd);
+    if (!bd) {
         return;
     }
     if (is_floating_window(bd)) {
@@ -573,7 +571,7 @@ _e_module_tiling_hide_hook(void *data,
     if (_G.currently_switching_desktop)
         return EINA_TRUE;
 
-    DBG("hide-hook\n");
+    DBG("hide-hook for %p", bd);
 
     check_tinfo(bd->desk);
 
