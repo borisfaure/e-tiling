@@ -87,31 +87,19 @@ get_current_desk(void)
 static Tiling_Info *
 _initialize_tinfo(const E_Desk *desk)
 {
-    Eina_List *l;
-    Tiling_Info *res;
-    E_Border *lbd;
+    Tiling_Info *tinfo;
 
-    res = E_NEW(Tiling_Info, 1);
-    res->desk = desk;
-    res->slaves_count = 0;
-    res->big_perc = 0.5;
-    res->need_rearrange = 0;
-    eina_hash_direct_add(_G.info_hash, &res->desk, res);
+    tinfo = E_NEW(Tiling_Info, 1);
+    tinfo->desk = desk;
+    tinfo->slaves_count = 0;
+    tinfo->big_perc = 0.5;
+    tinfo->need_rearrange = 0;
+    eina_hash_direct_add(_G.info_hash, &tinfo->desk, tinfo);
 
-    /* TODO: should we do that?? */
-    EINA_LIST_FOREACH(e_border_client_list(), l, lbd) {
-        if (lbd->desk == desk) {
-            if (res->master_list)
-                res->slave_list = eina_list_append(res->slave_list, lbd);
-            else
-                res->master_list = eina_list_append(res->master_list, lbd);
-        }
-    }
-
-    res->conf = get_vdesk(tiling_g.config->vdesks, desk->x, desk->y,
+    tinfo->conf = get_vdesk(tiling_g.config->vdesks, desk->x, desk->y,
                           desk->zone->num);
 
-    return res;
+    return tinfo;
 }
 
 static void
