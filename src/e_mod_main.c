@@ -223,7 +223,7 @@ _add_border(E_Border *bd)
         return;
     }
 
-    if (!_G.tinfo->conf->nb_cols) {
+    if (!_G.tinfo->conf || !_G.tinfo->conf->nb_cols) {
         DBG("no tiling");
         return;
     }
@@ -489,7 +489,7 @@ _e_module_tiling_cb_hook(void *data,
         return;
     }
 
-    if (!_G.tinfo->conf->nb_cols) {
+    if (!_G.tinfo->conf || !_G.tinfo->conf->nb_cols) {
         DBG("no tiling");
         return;
     }
