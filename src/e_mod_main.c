@@ -76,6 +76,8 @@ static struct
 
 #define EINA_LIST_IS_IN(_list, _el) \
     (eina_list_data_find(_list, _el) == _el)
+#define EINA_LIST_ADD(_list, _el) \
+    _list = eina_list_append(_list, _el)
 
 /* I wonder why noone has implemented the following one yet? */
 static E_Desk *
@@ -156,13 +158,22 @@ get_column(const E_Border *bd)
     return -1;
 }
 
+static int
+get_column_count(void)
+{
+    for (int i = 0; i < TILING_MAX_COLUMNS; i++) {
+        if (!_G.tinfo->columns[i])
+            return i;
+    }
+    return TILING_MAX_COLUMNS;
+}
 /* }}} */
 /* Reorganize windows {{{*/
 /* TODO */
-#if 0
 static void
-_reorganize_column(Eina_List *col)
+_reorganize_column(int col)
 {
+#if 0
     int zx, zy, zw, zh, x, w, h, ch, i = 0;
 
     if (!_G.tinfo->slaves_count)
@@ -205,13 +216,66 @@ _reorganize_column(Eina_List *col)
                                  extra->w,
                                  extra->h);
     }
+#endif
+}
+
+#if 0
+static void
+_move_resize_column(Eina_List *list, int delta_x, int delta_w)
+{
+    /* TODO: is alone */
+    for (Eina_List *l = list; l; l = l->next) {
+        E_Border *bd = l->data;
+        Border_Extra *extra;
+
+        extra = eina_hash_find(_G.border_extras, &bd);
+        if (!extra) {
+            ERR("No extra for %p", bd);
+            continue;
+        }
+
+        extra->x += delta_x;
+        extra->w += delta_w;
+
+        e_border_move_resize(bd, extra->x,
+                                 extra->y,
+                                 extra->w,
+                                 extra->h);
+    }
 }
 #endif
 
 static void
+_set_column_geometry(Eina_List *list, int x, int w)
+{
+    for (Eina_List *l = list; l; l = l->next) {
+        E_Border *bd = l->data;
+        Border_Extra *extra;
+
+        extra = eina_hash_find(_G.border_extras, &bd);
+        if (!extra) {
+            ERR("No extra for %p", bd);
+            continue;
+        }
+
+        extra->x = x;
+        extra->w = w;
+
+        if (bd->maximized & E_MAXIMIZE_VERTICAL) {
+            e_border_unmaximize(bd, E_MAXIMIZE_HORIZONTAL);
+        }
+
+        e_border_move_resize(bd, extra->x,
+                                 extra->y,
+                                 extra->w,
+                                 extra->h);
+    }
+}
+
+
+static void
 _add_border(E_Border *bd)
 {
-#if 0
     Border_Extra *extra;
 
     if (!bd) {
@@ -251,29 +315,39 @@ _add_border(E_Border *bd)
         change_window_border(bd, "pixel");
     }
 
-    if (_G.tinfo->master_list) {
+    if (_G.tinfo->columns[0]) {
         DBG("put in slaves");
-        if (_G.tinfo->slave_list) {
-            if (!_G.tinfo->slave_list->next) {
-                e_border_unmaximize(_G.tinfo->slave_list->data,
+        if (_G.tinfo->columns[_G.tinfo->conf->nb_cols - 1]) {
+            int col = _G.tinfo->conf->nb_cols - 1;
+
+            if (!_G.tinfo->columns[col]->next) {
+                e_border_unmaximize(_G.tinfo->columns[col]->data,
                                     E_MAXIMIZE_BOTH);
             }
-            _G.tinfo->slave_list = eina_list_append(_G.tinfo->slave_list, bd);
-            _G.tinfo->slaves_count++;
-            _reorganize_slaves();
+            EINA_LIST_ADD(_G.tinfo->columns[col], bd);
+            _reorganize_column(col);
         } else {
-            /* Resize Master */
-            E_Border *master = _G.tinfo->master_list->data;
-            Border_Extra *master_extra = eina_hash_find(_G.border_extras,
-                                                        &master);
-            int new_master_width = master->w * _G.tinfo->big_perc;
+            /* Add column */
+            int nb_cols = get_column_count();
+            int x, y, w, h;
+            int width = 0;
 
-            assert(master_extra);
+            e_zone_useful_geometry_get(bd->zone, &x, &y, &w, &h);
 
-            extra->x = master->x + new_master_width;
-            extra->y = master->y;
-            extra->w = master->w - new_master_width;
-            extra->h = master->h;
+            for (int i = 0; i < nb_cols; i++) {
+
+                width = w / (nb_cols + 1 - i);
+
+                _set_column_geometry(_G.tinfo->columns[i], x, width);
+
+                w -= width;
+                x += width;
+            }
+
+            extra->x = x;
+            extra->y = y;
+            extra->w = width;
+            extra->h = h;
             e_border_move_resize(bd,
                                  extra->x,
                                  extra->y,
@@ -281,21 +355,13 @@ _add_border(E_Border *bd)
                                  extra->h);
             e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_VERTICAL);
 
-            master_extra->w = new_master_width;
-            e_border_unmaximize(master, E_MAXIMIZE_HORIZONTAL);
-            e_border_move_resize(master, master_extra->x,
-                                 master_extra->y,
-                                 new_master_width,
-                                 master->h);
-            _G.tinfo->slave_list = eina_list_append(_G.tinfo->slave_list, bd);
-            _G.tinfo->slaves_count++;
+            EINA_LIST_ADD(_G.tinfo->columns[nb_cols], bd);
         }
     } else {
         e_border_unmaximize(bd, E_MAXIMIZE_BOTH);
         e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_BOTH);
-        _G.tinfo->master_list = eina_list_append(_G.tinfo->master_list, bd);
+        EINA_LIST_ADD(_G.tinfo->columns[0], bd);
     }
-#endif
 }
 
 static void
@@ -380,31 +446,6 @@ _remove_border(E_Border *bd)
     eina_hash_del(_G.border_extras, bd, NULL);
 #endif
 }
-
-#if 0
-static void
-_move_resize_column(Eina_List *list, int delta_x, int delta_w)
-{
-    for (Eina_List *l = list; l; l = l->next) {
-        E_Border *bd = l->data;
-        Border_Extra *extra;
-
-        extra = eina_hash_find(_G.border_extras, &bd);
-        if (!extra) {
-            ERR("No extra for %p", bd);
-            continue;
-        }
-
-        extra->x += delta_x;
-        extra->w += delta_w;
-
-        e_border_move_resize(bd, extra->x,
-                                 extra->y,
-                                 extra->w,
-                                 extra->h);
-    }
-}
-#endif
 
 static void
 _move_resize_border_in_column(E_Border *bd, Border_Extra *extra,
