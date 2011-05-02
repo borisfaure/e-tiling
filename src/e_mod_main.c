@@ -169,31 +169,31 @@ get_column_count(void)
 }
 /* }}} */
 /* Reorganize windows {{{*/
-/* TODO */
+
 static void
 _reorganize_column(int col)
 {
-#if 0
-    int zx, zy, zw, zh, x, w, h, ch, i = 0;
+    int zx, zy, zw, zh, x, w, h, ch, i = 0, count;
 
-    if (!_G.tinfo->slaves_count)
+    if (col < 0 || col >= TILING_MAX_COLUMNS
+        || !_G.tinfo->columns[col])
         return;
 
     e_zone_useful_geometry_get(_G.tinfo->desk->zone, &zx, &zy, &zw, &zh);
     DBG("useful geometry: %dx%d+%d+%d", zw, zh, zx, zy);
 
-    x = _G.tinfo->big_perc * zw + zx;
-    ch = 0;
-    w = zw - x + zx;
-    h = zh / _G.tinfo->slaves_count;
+    count = eina_list_count(_G.tinfo->columns[col]);
 
-    DBG("zw = %d, count = %d, h = %d",
-        zw, _G.tinfo->slaves_count, h);
-    for (Eina_List *l = _G.tinfo->slave_list; l; l = l->next, i++) {
+    x = _G.tinfo->x[col];
+    ch = 0;
+    w = _G.tinfo->w[col];
+    h = zh / count;
+
+    for (Eina_List *l = _G.tinfo->columns[col]; l; l = l->next, i++) {
         E_Border *bd = l->data;
         Border_Extra *extra;
-        int d = (i * 2 * zh) % _G.tinfo->slaves_count
-              - (2 * ch) % _G.tinfo->slaves_count;
+        int d = (i * 2 * zh) % count
+              - (2 * ch) % count;
 
         extra = eina_hash_find(_G.border_extras, &bd);
         if (!extra) {
@@ -216,7 +216,6 @@ _reorganize_column(int col)
                                  extra->w,
                                  extra->h);
     }
-#endif
 }
 
 #if 0
@@ -246,9 +245,9 @@ _move_resize_column(Eina_List *list, int delta_x, int delta_w)
 #endif
 
 static void
-_set_column_geometry(Eina_List *list, int x, int w)
+_set_column_geometry(int col, int x, int w)
 {
-    for (Eina_List *l = list; l; l = l->next) {
+    for (Eina_List *l = _G.tinfo->columns[col]; l; l = l->next) {
         E_Border *bd = l->data;
         Border_Extra *extra;
 
@@ -270,6 +269,8 @@ _set_column_geometry(Eina_List *list, int x, int w)
                                  extra->w,
                                  extra->h);
     }
+    _G.tinfo->x[col] = x;
+    _G.tinfo->w[col] = w;
 }
 
 
@@ -316,7 +317,6 @@ _add_border(E_Border *bd)
     }
 
     if (_G.tinfo->columns[0]) {
-        DBG("put in slaves");
         if (_G.tinfo->columns[_G.tinfo->conf->nb_cols - 1]) {
             int col = _G.tinfo->conf->nb_cols - 1;
 
@@ -338,7 +338,7 @@ _add_border(E_Border *bd)
 
                 width = w / (nb_cols + 1 - i);
 
-                _set_column_geometry(_G.tinfo->columns[i], x, width);
+                _set_column_geometry(i, x, width);
 
                 w -= width;
                 x += width;
@@ -361,6 +361,9 @@ _add_border(E_Border *bd)
         e_border_unmaximize(bd, E_MAXIMIZE_BOTH);
         e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_BOTH);
         EINA_LIST_ADD(_G.tinfo->columns[0], bd);
+        e_zone_useful_geometry_get(bd->zone,
+                                   &_G.tinfo->x[0], NULL,
+                                   &_G.tinfo->w[0], NULL);
     }
 }
 

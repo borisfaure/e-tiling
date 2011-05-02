@@ -46,7 +46,8 @@ struct _Tiling_Info
     Eina_List *floating_windows;
 
     Eina_List *columns[TILING_MAX_COLUMNS];
-    int current_columns_count;
+    int              x[TILING_MAX_COLUMNS];
+    int              w[TILING_MAX_COLUMNS];
 
     /* When sending a border to another desktop, it has to be updated as soon
      * as the user switches to it. This is stored in the following flag. */
