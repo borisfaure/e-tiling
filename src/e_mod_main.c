@@ -201,6 +201,9 @@ _reorganize_column(int col)
             continue;
         }
 
+        if ((bd->maximized & E_MAXIMIZE_VERTICAL) && count != 1) {
+            e_border_unmaximize(bd, E_MAXIMIZE_VERTICAL);
+        }
         /* let's use a bresenham here */
 
         extra->x = x;
@@ -344,6 +347,8 @@ _add_border(E_Border *bd)
                 x += width;
             }
 
+            _G.tinfo->x[nb_cols] = x;
+            _G.tinfo->w[nb_cols] = width;
             extra->x = x;
             extra->y = y;
             extra->w = width;
