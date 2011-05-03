@@ -213,8 +213,8 @@ _reorganize_column(int col)
         extra->w = w;
         extra->h = h + d;
         ch += extra->h;
-        DBG("%p: d = %d, ch = %d, (%d, %d, %d, %d)", bd, d, ch,
-            extra->x, extra->y, extra->w, extra->h);
+        DBG("%p: d = %d, ch = %d, (%dx%d+%d+%d)", bd, d, ch,
+            extra->w, extra->h, extra->x, extra->y);
 
         e_border_move_resize(bd, extra->x,
                                  extra->y,
@@ -510,7 +510,7 @@ _e_module_tiling_cb_hook(void *data,
         " g:%dx%d+%d+%d bdname:%s (%d) %d",
         bd, bd->client.icccm.title, bd->client.netwm.name,
         bd->changes.size, bd->changes.pos, bd->changes.border,
-        bd->x, bd->y, bd->w, bd->h, bd->bordername,
+        bd->w, bd->h, bd->x, bd->y, bd->bordername,
         col, bd->maximized);
 
     if (!bd->changes.size && !bd->changes.pos && !bd->changes.border
@@ -528,7 +528,6 @@ _e_module_tiling_cb_hook(void *data,
         DBG("move or resize");
 
         extra = eina_hash_find(_G.border_extras, &bd);
-
         if (!extra) {
             ERR("No extra for %p", bd);
             return;
@@ -560,8 +559,8 @@ _e_module_tiling_cb_hook(void *data,
         }
 
         DBG("old:%dx%d+%d+%d vs new:%dx%d+%d+%d. step:%dx%d. base:%dx%d",
-            extra->x, extra->y, extra->w, extra->h,
-            bd->x, bd->y, bd->w, bd->h,
+            extra->w, extra->h, extra->x, extra->y,
+            bd->w, bd->h, bd->x, bd->y,
             bd->client.icccm.step_w, bd->client.icccm.step_h,
             bd->client.icccm.base_w, bd->client.icccm.base_h);
 
