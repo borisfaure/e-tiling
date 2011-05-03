@@ -223,7 +223,6 @@ _reorganize_column(int col)
     }
 }
 
-#if 0
 static void
 _move_resize_column(Eina_List *list, int delta_x, int delta_w)
 {
@@ -247,7 +246,6 @@ _move_resize_column(Eina_List *list, int delta_x, int delta_w)
                                  extra->h);
     }
 }
-#endif
 
 static void
 _set_column_geometry(int col, int x, int w)
@@ -411,31 +409,31 @@ _remove_border(E_Border *bd)
 
 static void
 _move_resize_border_in_column(E_Border *bd, Border_Extra *extra,
-                              int colnum, tiling_change_t change)
+                              int col, tiling_change_t change)
 {
-#if 0
     if (change == TILING_RESIZE) {
-        if (is_master) {
-            int delta = bd->w - extra->w;
-
-            _move_resize_column(_G.tinfo->slave_list, delta, -delta);
-            extra->w = bd->w;
-        } else {
+        if (col == TILING_MAX_COLUMNS || !_G.tinfo->columns[col + 1]) {
             /* You're not allowed to resize */
             bd->w = extra->w;
+        } else {
+            int delta = bd->w - extra->w;
+
+            _move_resize_column(_G.tinfo->columns[col], 0, delta);
+            _move_resize_column(_G.tinfo->columns[col+1], delta, -delta);
+            extra->w = bd->w;
         }
     } else {
-        if (is_master) {
+        if (col == 0) {
             /* You're not allowed to move */
             bd->x = extra->x;
         } else {
             int delta = bd->x - extra->x;
 
-            _move_resize_column(_G.tinfo->slave_list, delta, -delta);
-            _move_resize_column(_G.tinfo->master_list, 0, delta);
+            _move_resize_column(_G.tinfo->columns[col], delta, -delta);
+            _move_resize_column(_G.tinfo->columns[col-1], 0, delta);
+            extra->x = bd->x;
         }
     }
-#endif
 }
 
 /* }}} */
