@@ -408,8 +408,8 @@ _remove_border(E_Border *bd)
 }
 
 static void
-_move_resize_border_in_column(E_Border *bd, Border_Extra *extra,
-                              int col, tiling_change_t change)
+_move_resize_border_column(E_Border *bd, Border_Extra *extra,
+                           int col, tiling_change_t change)
 {
     if (change == TILING_RESIZE) {
         if (col == TILING_MAX_COLUMNS || !_G.tinfo->columns[col + 1]) {
@@ -432,6 +432,74 @@ _move_resize_border_in_column(E_Border *bd, Border_Extra *extra,
             _move_resize_column(_G.tinfo->columns[col], delta, -delta);
             _move_resize_column(_G.tinfo->columns[col-1], 0, delta);
             extra->x = bd->x;
+        }
+    }
+}
+
+static void
+_move_resize_border_in_column(E_Border *bd, Border_Extra *extra,
+                              int col, tiling_change_t change)
+{
+    Eina_List *l;
+
+    l = eina_list_data_find_list(_G.tinfo->columns[col], bd);
+    if (!l)
+        return;
+
+    if (change == TILING_RESIZE) {
+        if (!l->next) {
+            /* You're not allowed to resize */
+            bd->h = extra->h;
+        } else {
+            int delta = bd->h - extra->h;
+            E_Border *nextbd = l->next->data;
+            Border_Extra *nextextra;
+            int min_height = MAX(nextbd->client.icccm.base_h, 1);
+
+            nextextra = eina_hash_find(_G.border_extras, &nextbd);
+            if (!nextextra) {
+                ERR("No extra for %p", nextbd);
+                return;
+            }
+
+            if (nextextra->h - delta < min_height)
+                delta = nextextra->h - min_height;
+
+            nextextra->y += delta;
+            nextextra->h -= delta;
+            e_border_move_resize(nextbd, nextextra->x, nextextra->y,
+                                         nextextra->w, nextextra->h);
+
+            extra->h += delta;
+            bd->h = extra->h;
+        }
+    } else {
+        if (!l->prev) {
+            /* You're not allowed to move */
+            bd->y = extra->y;
+        } else {
+            int delta = bd->y - extra->y;
+            E_Border *prevbd = l->prev->data;
+            Border_Extra *prevextra;
+            int min_height = MAX(prevbd->client.icccm.base_h, 1);
+
+            prevextra = eina_hash_find(_G.border_extras, &prevbd);
+            if (!prevextra) {
+                ERR("No extra for %p", prevbd);
+                return;
+            }
+
+            if (prevextra->h - delta < min_height)
+                delta = prevextra->h - min_height;
+
+            prevextra->h += delta;
+            e_border_move_resize(prevbd, prevextra->x, prevextra->y,
+                                         prevextra->w, prevextra->h);
+
+            extra->y += delta;
+            extra->h -= delta;
+            bd->y = extra->y;
+            bd->h = extra->h;
         }
     }
 }
@@ -565,16 +633,16 @@ _e_module_tiling_cb_hook(void *data,
             bd->client.icccm.base_w, bd->client.icccm.base_h);
 
         if (abs(extra->w - bd->w) >= bd->client.icccm.step_w) {
-            _move_resize_border_in_column(bd, extra, col, TILING_RESIZE);
+            _move_resize_border_column(bd, extra, col, TILING_RESIZE);
         }
         if (abs(extra->h - bd->h) >= bd->client.icccm.step_h) {
-            /* TODO */
+            _move_resize_border_in_column(bd, extra, col, TILING_RESIZE);
         }
         if (extra->x != bd->x) {
-            _move_resize_border_in_column(bd, extra, col, TILING_MOVE);
+            _move_resize_border_column(bd, extra, col, TILING_MOVE);
         }
         if (extra->y != bd->y) {
-            /* TODO */
+            _move_resize_border_in_column(bd, extra, col, TILING_MOVE);
         }
     }
 }
