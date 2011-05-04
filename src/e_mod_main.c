@@ -418,6 +418,9 @@ _move_resize_border_column(E_Border *bd, Border_Extra *extra,
         } else {
             int delta = bd->w - extra->w;
 
+            if (delta + 1 > _G.tinfo->w[col + 1])
+                delta = _G.tinfo->w[col + 1] - 1;
+
             _move_resize_column(_G.tinfo->columns[col], 0, delta);
             _move_resize_column(_G.tinfo->columns[col+1], delta, -delta);
             extra->w = bd->w;
@@ -428,6 +431,9 @@ _move_resize_border_column(E_Border *bd, Border_Extra *extra,
             bd->x = extra->x;
         } else {
             int delta = bd->x - extra->x;
+
+            if (delta + 1 > _G.tinfo->w[col - 1])
+                delta = _G.tinfo->w[col - 1] - 1;
 
             _move_resize_column(_G.tinfo->columns[col], delta, -delta);
             _move_resize_column(_G.tinfo->columns[col-1], 0, delta);
