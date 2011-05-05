@@ -458,8 +458,11 @@ static void
 _remove_border(E_Border *bd)
 {
     int col;
+    int nb_cols;
 
     check_tinfo(bd->desk);
+
+    nb_cols = get_column_count();
 
     col = get_column(bd);
     if (col < 0)
@@ -472,22 +475,66 @@ _remove_border(E_Border *bd)
     if (_G.tinfo->columns[col]) {
         _reorganize_column(col);
     } else {
-        /* Remove column */
-        int nb_cols = get_column_count();
-        int x, y, w, h;
-        int width = 0;
+        if (nb_cols >= _G.tinfo->borders) {
+            int x, y, w, h;
+            int width = 0;
+            /* Remove column */
 
-        /* TODO */
-        e_zone_useful_geometry_get(bd->zone, &x, &y, &w, &h);
+            nb_cols--;
 
-        for (int i = 0; i < nb_cols; i++) {
+            e_zone_useful_geometry_get(bd->zone, &x, &y, &w, &h);
 
-            width = w / (nb_cols - i);
+            for (int i = col; i < nb_cols; i++) {
+                _G.tinfo->columns[i] = _G.tinfo->columns[i+1];
+                _G.tinfo->     nb[i] = _G.tinfo->     nb[i+1];
+            }
+            for (int i = 0; i < nb_cols; i++) {
 
-            _set_column_geometry(i, x, width);
+                width = w / (nb_cols - i);
 
-            w -= width;
-            x += width;
+                _set_column_geometry(i, x, width);
+
+                w -= width;
+                x += width;
+            }
+        } else {
+            for (int i = col+1; i < nb_cols; i++) {
+                if (_G.tinfo->nb[i] > 1) {
+                    for (int j = col; j < i - 1; j++) {
+                        _G.tinfo->columns[j] = _G.tinfo->columns[j+1];
+                        _G.tinfo->     nb[j] = _G.tinfo->     nb[j+1];
+                        _reorganize_column(j);
+                    }
+                    bd = _G.tinfo->columns[i]->data;
+                    EINA_LIST_REMOVE(_G.tinfo->columns[i], bd);
+                    _G.tinfo->nb[i]--;
+                    _reorganize_column(i);
+
+                    _G.tinfo->columns[i-1] = NULL;
+                    EINA_LIST_APPEND(_G.tinfo->columns[i-1], bd);
+                    _G.tinfo->nb[i-1] = 1;
+                    _reorganize_column(i-1);
+                    return;
+                }
+            }
+            for (int i = col-1; i >= 0; i--) {
+                if (_G.tinfo->nb[i] == 1) {
+                    _G.tinfo->columns[i+1] = _G.tinfo->columns[i];
+                    _G.tinfo->     nb[i+1] = _G.tinfo->     nb[i];
+                    _reorganize_column(i+1);
+                } else {
+                    bd = _G.tinfo->columns[i]->prev->data;
+                    EINA_LIST_REMOVE(_G.tinfo->columns[i], bd);
+                    _G.tinfo->nb[i]--;
+                    _reorganize_column(i);
+
+                    _G.tinfo->columns[i+1] = NULL;
+                    EINA_LIST_APPEND(_G.tinfo->columns[i+1], bd);
+                    _G.tinfo->nb[i+1] = 1;
+                    _reorganize_column(i+1);
+                    return;
+                }
+            }
         }
     }
 }
