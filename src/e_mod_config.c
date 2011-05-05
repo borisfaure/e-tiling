@@ -233,41 +233,29 @@ static int
 _basic_apply_data(E_Config_Dialog      *cfd,
                   E_Config_Dialog_Data *cfdata)
 {
-    int need_rearrangement;
+    /* Check if the layout for one of the vdesks has changed */
+    for (Eina_List *l = tiling_g.config->vdesks; l; l = l->next) {
+        struct _Config_vdesk *vd = l->data,
+        *newvd;
 
-    need_rearrangement = memcmp(cfdata, tiling_g.config,
-            sizeof(Config) - (sizeof(char *) * 2) - sizeof(Eina_List *));
+        if (!vd || !(newvd = get_vdesk(cfdata->config.vdesks,
+                                       vd->x, vd->y, vd->zone_num)))
+            continue;
 
-    if (!need_rearrangement) {
-        /* Check if the layout for one of the vdesks has changed */
-        for (Eina_List *l = tiling_g.config->vdesks; l; l = l->next) {
-            struct _Config_vdesk *vd = l->data,
-                                 *newvd;
-
-            if (!vd || !(newvd = get_vdesk(cfdata->config.vdesks,
-                                           vd->x, vd->y, vd->zone_num)))
-                continue;
-
-            /*
-            if (newvd->layout != vd->layout) {
-                E_Zone *zone = e_zone_current_get(e_container_current_get(
-                        e_manager_current_get()));
-                E_Desk *desk = e_desk_current_get(zone);
-
-                if (desk->x == vd->x && desk->y == vd->y
-                && zone->num == vd->zone_num) {
-                    need_rearrangement = 1;
-                    break;
-                }
-            }
-            */
+        if (newvd->nb_cols != vd->nb_cols) {
+            DBG("number of columns for (%d, %d, %d) changed from %d to %d",
+                vd->x, vd->y, vd->zone_num, vd->nb_cols, newvd->nb_cols);
+            change_column_number(newvd);
         }
+
     }
 
     DBG("APPLY DATA");
     memcpy(tiling_g.config, cfdata, sizeof(Config));
 
     cfdata->config.vdesks = NULL;
+
+    /* TODO: update tinfo->conf ?? */
 
     e_config_save_queue();
 

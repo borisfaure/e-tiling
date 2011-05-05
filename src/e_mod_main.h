@@ -62,5 +62,6 @@ EAPI int   e_modapi_save(E_Module *m);
 
 EAPI void e_mod_tiling_rearrange(void);
 
+void change_column_number(struct _Config_vdesk *newconf);
 
 #endif

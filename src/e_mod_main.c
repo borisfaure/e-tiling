@@ -71,6 +71,8 @@ static struct
    .act_switchtiling = NULL,
 };
 
+static void
+_add_border(E_Border *bd);
 
 /* Utils {{{ */
 
@@ -170,7 +172,7 @@ get_column_count(void)
     return TILING_MAX_COLUMNS;
 }
 /* }}} */
-/* Reorganize windows {{{*/
+/* Reorganize columns {{{*/
 
 static void
 _reorganize_column(int col)
@@ -190,6 +192,8 @@ _reorganize_column(int col)
     ch = 0;
     w = _G.tinfo->w[col];
     h = zh / count;
+    DBG("zh = %d, count = %d, h = %d",
+         zh, count, h);
 
     for (Eina_List *l = _G.tinfo->columns[col]; l; l = l->next, i++) {
         E_Border *bd = l->data;
@@ -276,6 +280,78 @@ _set_column_geometry(int col, int x, int w)
     _G.tinfo->w[col] = w;
 }
 
+static void _add_column(void)
+{
+    if (_G.tinfo->conf->nb_cols == TILING_MAX_COLUMNS)
+        return;
+
+    _G.tinfo->conf->nb_cols++;
+
+    if (_G.tinfo->conf->nb_cols == 1) {
+        for (Eina_List *l = e_border_focus_stack_get(); l; l = l->next) {
+            _add_border(l->data);
+        }
+    }
+    if (_G.tinfo->columns[_G.tinfo->conf->nb_cols - 2]) {
+        /* TODO: resize every colums, put last bd in col-2 as maximized in
+         * col-1 */
+    }
+}
+
+static void _remove_column(void)
+{
+    if (!_G.tinfo->conf->nb_cols)
+        return;
+
+    _G.tinfo->conf->nb_cols--;
+
+    if (!_G.tinfo->conf->nb_cols) {
+        /* TODO: reorganize with no tiling*/
+    } else {
+        int col = _G.tinfo->conf->nb_cols;
+
+        if (_G.tinfo->columns[col]) {
+            _G.tinfo->columns[col-1] = eina_list_merge(
+                _G.tinfo->columns[col-1], _G.tinfo->columns[col]);
+            _reorganize_column(col-1);
+        }
+    }
+}
+
+void change_column_number(struct _Config_vdesk *newconf)
+{
+    E_Manager *m;
+    E_Container *c;
+    E_Zone *z;
+    E_Desk *d;
+    int old_nb_cols;
+
+    m = e_manager_current_get();
+    if (!m) return;
+    c = e_container_current_get(m);
+    if (!c) return;
+    z = e_container_zone_number_get(c, newconf->zone_num);
+    if (!z) return;
+    d = e_desk_at_xy_get(z, newconf->x, newconf->y);
+    if (!d) return;
+
+    check_tinfo(d);
+    old_nb_cols = _G.tinfo->conf->nb_cols;
+
+    if (newconf->nb_cols == 0) {
+        /* TODO: reorganize with no tiling*/
+    } else if (newconf->nb_cols > old_nb_cols) {
+        for (int i = newconf->nb_cols; i > old_nb_cols; i--) {
+            _add_column();
+        }
+    } else {
+        for (int i = newconf->nb_cols; i < old_nb_cols; i++) {
+            _remove_column();
+        }
+    }
+}
+/* }}} */
+/* Reorganize windows {{{*/
 
 static void
 _add_border(E_Border *bd)
@@ -302,10 +378,10 @@ _add_border(E_Border *bd)
     extra = E_NEW(Border_Extra, 1);
     *extra = (Border_Extra) {
         .border = bd,
-            .x = bd->x,
-            .y = bd->y,
-            .w = bd->w,
-            .h = bd->h
+        .x = bd->x,
+        .y = bd->y,
+        .w = bd->w,
+        .h = bd->h
     };
 
     eina_hash_direct_add(_G.border_extras, &extra->border, extra);
@@ -393,6 +469,7 @@ _remove_border(E_Border *bd)
         int x, y, w, h;
         int width = 0;
 
+        /* TODO */
         e_zone_useful_geometry_get(bd->zone, &x, &y, &w, &h);
 
         for (int i = 0; i < nb_cols; i++) {
