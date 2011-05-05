@@ -48,6 +48,9 @@ struct _Tiling_Info
     Eina_List *columns[TILING_MAX_COLUMNS];
     int              x[TILING_MAX_COLUMNS];
     int              w[TILING_MAX_COLUMNS];
+    int             nb[TILING_MAX_COLUMNS];
+
+    int borders;
 
     /* When sending a border to another desktop, it has to be updated as soon
      * as the user switches to it. This is stored in the following flag. */

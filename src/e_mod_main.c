@@ -357,6 +357,7 @@ static void
 _add_border(E_Border *bd)
 {
     Border_Extra *extra;
+    int col;
 
     if (!bd) {
         return;
@@ -397,7 +398,7 @@ _add_border(E_Border *bd)
 
     if (_G.tinfo->columns[0]) {
         if (_G.tinfo->columns[_G.tinfo->conf->nb_cols - 1]) {
-            int col = _G.tinfo->conf->nb_cols - 1;
+            col = _G.tinfo->conf->nb_cols - 1;
 
             if (!_G.tinfo->columns[col]->next) {
                 e_border_unmaximize(_G.tinfo->columns[col]->data,
@@ -437,6 +438,7 @@ _add_border(E_Border *bd)
             e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_VERTICAL);
 
             EINA_LIST_APPEND(_G.tinfo->columns[nb_cols], bd);
+            col = nb_cols;
         }
     } else {
         e_border_unmaximize(bd, E_MAXIMIZE_BOTH);
@@ -445,7 +447,11 @@ _add_border(E_Border *bd)
         e_zone_useful_geometry_get(bd->zone,
                                    &_G.tinfo->x[0], NULL,
                                    &_G.tinfo->w[0], NULL);
+        col = 0;
     }
+    _G.tinfo->borders++;
+    _G.tinfo->nb[col]++;
+
 }
 
 static void
@@ -459,6 +465,8 @@ _remove_border(E_Border *bd)
     if (col < 0)
         return;
 
+    _G.tinfo->nb[col]--;
+    _G.tinfo->borders--;
     EINA_LIST_REMOVE(_G.tinfo->columns[col], bd);
     eina_hash_del(_G.border_extras, bd, NULL);
     if (_G.tinfo->columns[col]) {
