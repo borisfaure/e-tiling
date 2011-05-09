@@ -475,7 +475,7 @@ _remove_border(E_Border *bd)
     if (_G.tinfo->columns[col]) {
         _reorganize_column(col);
     } else {
-        if (nb_cols >= _G.tinfo->borders) {
+        if (nb_cols > _G.tinfo->borders) {
             int x, y, w, h;
             int width = 0;
             /* Remove column */
@@ -488,6 +488,8 @@ _remove_border(E_Border *bd)
                 _G.tinfo->columns[i] = _G.tinfo->columns[i+1];
                 _G.tinfo->     nb[i] = _G.tinfo->     nb[i+1];
             }
+            _G.tinfo->columns[nb_cols] = NULL;
+            _G.tinfo->     nb[nb_cols] = 0;
             for (int i = 0; i < nb_cols; i++) {
 
                 width = w / (nb_cols - i);
