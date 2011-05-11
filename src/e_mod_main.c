@@ -21,7 +21,11 @@ typedef struct Border_Extra {
      int x,
          y,
          w,
-         h;
+         h,
+         orig_x,
+         orig_y,
+         orig_w,
+         orig_h;
 } Border_Extra;
 
 struct tiling_g tiling_g = {
@@ -417,7 +421,11 @@ _add_border(E_Border *bd)
         .x = bd->x,
         .y = bd->y,
         .w = bd->w,
-        .h = bd->h
+        .h = bd->h,
+        .orig_x = bd->x,
+        .orig_y = bd->y,
+        .orig_w = bd->w,
+        .orig_h = bd->h
     };
 
     eina_hash_direct_add(_G.border_extras, &extra->border, extra);
