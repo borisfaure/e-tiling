@@ -292,9 +292,44 @@ static void _add_column(void)
             _add_border(l->data);
         }
     }
-    if (_G.tinfo->columns[_G.tinfo->conf->nb_cols - 2]) {
-        /* TODO: resize every colums, put last bd in col-2 as maximized in
-         * col-1 */
+    if (_G.tinfo->columns[_G.tinfo->conf->nb_cols - 2]
+    &&  _G.tinfo->borders >= _G.tinfo->conf->nb_cols)
+    {
+        int nb_cols = _G.tinfo->conf->nb_cols - 1;
+        int x, y, w, h;
+        int width = 0;
+        /* Add column */
+
+        e_zone_useful_geometry_get(_G.tinfo->desk->zone, &x, &y, &w, &h);
+
+        for (int i = 0; i < nb_cols; i++) {
+
+            width = w / (nb_cols + 1 - i);
+
+            _set_column_geometry(i, x, width);
+
+            w -= width;
+            x += width;
+        }
+        for (int i = nb_cols - 1; i >= 0; i--) {
+            if (_G.tinfo->nb[i] == 1) {
+                _G.tinfo->columns[i+1] = _G.tinfo->columns[i];
+                _G.tinfo->     nb[i+1] = _G.tinfo->     nb[i];
+                _reorganize_column(i+1);
+            } else {
+                E_Border *bd = eina_list_last(_G.tinfo->columns[i])->data;
+
+                EINA_LIST_REMOVE(_G.tinfo->columns[i], bd);
+                _G.tinfo->nb[i]--;
+                _reorganize_column(i);
+
+                _G.tinfo->columns[i+1] = NULL;
+                EINA_LIST_APPEND(_G.tinfo->columns[i+1], bd);
+                _G.tinfo->nb[i+1] = 1;
+                _reorganize_column(i+1);
+                return;
+            }
+        }
     }
 }
 
@@ -525,7 +560,7 @@ _remove_border(E_Border *bd)
                     _G.tinfo->     nb[i+1] = _G.tinfo->     nb[i];
                     _reorganize_column(i+1);
                 } else {
-                    bd = _G.tinfo->columns[i]->prev->data;
+                    bd = eina_list_last(_G.tinfo->columns[i])->data;
                     EINA_LIST_REMOVE(_G.tinfo->columns[i], bd);
                     _G.tinfo->nb[i]--;
                     _reorganize_column(i);
