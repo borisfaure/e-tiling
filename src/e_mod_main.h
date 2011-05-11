@@ -48,7 +48,6 @@ struct _Tiling_Info
     Eina_List *columns[TILING_MAX_COLUMNS];
     int              x[TILING_MAX_COLUMNS];
     int              w[TILING_MAX_COLUMNS];
-    int             nb[TILING_MAX_COLUMNS];
 
     int borders;
 

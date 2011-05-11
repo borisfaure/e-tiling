@@ -316,20 +316,17 @@ static void _add_column(void)
             x += width;
         }
         for (int i = nb_cols - 1; i >= 0; i--) {
-            if (_G.tinfo->nb[i] == 1) {
+            if (eina_list_count(_G.tinfo->columns[i]) == 1) {
                 _G.tinfo->columns[i+1] = _G.tinfo->columns[i];
-                _G.tinfo->     nb[i+1] = _G.tinfo->     nb[i];
                 _reorganize_column(i+1);
             } else {
                 E_Border *bd = eina_list_last(_G.tinfo->columns[i])->data;
 
                 EINA_LIST_REMOVE(_G.tinfo->columns[i], bd);
-                _G.tinfo->nb[i]--;
                 _reorganize_column(i);
 
                 _G.tinfo->columns[i+1] = NULL;
                 EINA_LIST_APPEND(_G.tinfo->columns[i+1], bd);
-                _G.tinfo->nb[i+1] = 1;
                 _reorganize_column(i+1);
                 return;
             }
@@ -362,7 +359,6 @@ static void _remove_column(void)
             }
             eina_list_free(_G.tinfo->columns[i]);
             _G.tinfo->columns[i] = NULL;
-            _G.tinfo->nb[i] = 0;
         }
         e_place_zone_region_smart_cleanup(_G.tinfo->desk->zone);
     } else {
@@ -414,7 +410,6 @@ void change_column_number(struct _Config_vdesk *newconf)
             }
             eina_list_free(_G.tinfo->columns[i]);
             _G.tinfo->columns[i] = NULL;
-            _G.tinfo->nb[i] = 0;
         }
         e_place_zone_region_smart_cleanup(z);
     } else if (newconf->nb_cols > old_nb_cols) {
@@ -531,7 +526,6 @@ _add_border(E_Border *bd)
         col = 0;
     }
     _G.tinfo->borders++;
-    _G.tinfo->nb[col]++;
 
 }
 
@@ -549,7 +543,6 @@ _remove_border(E_Border *bd)
     if (col < 0)
         return;
 
-    _G.tinfo->nb[col]--;
     _G.tinfo->borders--;
     EINA_LIST_REMOVE(_G.tinfo->columns[col], bd);
     eina_hash_del(_G.border_extras, bd, NULL);
@@ -567,10 +560,8 @@ _remove_border(E_Border *bd)
 
             for (int i = col; i < nb_cols; i++) {
                 _G.tinfo->columns[i] = _G.tinfo->columns[i+1];
-                _G.tinfo->     nb[i] = _G.tinfo->     nb[i+1];
             }
             _G.tinfo->columns[nb_cols] = NULL;
-            _G.tinfo->     nb[nb_cols] = 0;
             for (int i = 0; i < nb_cols; i++) {
 
                 width = w / (nb_cols - i);
@@ -582,38 +573,32 @@ _remove_border(E_Border *bd)
             }
         } else {
             for (int i = col+1; i < nb_cols; i++) {
-                if (_G.tinfo->nb[i] > 1) {
+                if (eina_list_count(_G.tinfo->columns[i]) > 1) {
                     for (int j = col; j < i - 1; j++) {
                         _G.tinfo->columns[j] = _G.tinfo->columns[j+1];
-                        _G.tinfo->     nb[j] = _G.tinfo->     nb[j+1];
                         _reorganize_column(j);
                     }
                     bd = _G.tinfo->columns[i]->data;
                     EINA_LIST_REMOVE(_G.tinfo->columns[i], bd);
-                    _G.tinfo->nb[i]--;
                     _reorganize_column(i);
 
                     _G.tinfo->columns[i-1] = NULL;
                     EINA_LIST_APPEND(_G.tinfo->columns[i-1], bd);
-                    _G.tinfo->nb[i-1] = 1;
                     _reorganize_column(i-1);
                     return;
                 }
             }
             for (int i = col-1; i >= 0; i--) {
-                if (_G.tinfo->nb[i] == 1) {
+                if (eina_list_count(_G.tinfo->columns[i]) == 1) {
                     _G.tinfo->columns[i+1] = _G.tinfo->columns[i];
-                    _G.tinfo->     nb[i+1] = _G.tinfo->     nb[i];
                     _reorganize_column(i+1);
                 } else {
                     bd = eina_list_last(_G.tinfo->columns[i])->data;
                     EINA_LIST_REMOVE(_G.tinfo->columns[i], bd);
-                    _G.tinfo->nb[i]--;
                     _reorganize_column(i);
 
                     _G.tinfo->columns[i+1] = NULL;
                     EINA_LIST_APPEND(_G.tinfo->columns[i+1], bd);
-                    _G.tinfo->nb[i+1] = 1;
                     _reorganize_column(i+1);
                     return;
                 }
