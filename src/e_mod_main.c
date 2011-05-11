@@ -18,14 +18,9 @@ typedef enum {
 
 typedef struct Border_Extra {
      E_Border *border;
-     int x,
-         y,
-         w,
-         h,
-         orig_x,
-         orig_y,
-         orig_w,
-         orig_h;
+     struct {
+         int x, y, w, h;
+     } expected, orig;
 } Border_Extra;
 
 struct tiling_g tiling_g = {
@@ -216,18 +211,19 @@ _reorganize_column(int col)
         }
         /* let's use a bresenham here */
 
-        extra->x = x;
-        extra->y = ch + zy;
-        extra->w = w;
-        extra->h = h + d;
-        ch += extra->h;
+        extra->expected.x = x;
+        extra->expected.y = ch + zy;
+        extra->expected.w = w;
+        extra->expected.h = h + d;
+        ch += extra->expected.h;
         DBG("%p: d = %d, ch = %d, (%dx%d+%d+%d)", bd, d, ch,
-            extra->w, extra->h, extra->x, extra->y);
+            extra->expected.w, extra->expected.h,
+            extra->expected.x, extra->expected.y);
 
-        e_border_move_resize(bd, extra->x,
-                                 extra->y,
-                                 extra->w,
-                                 extra->h);
+        e_border_move_resize(bd, extra->expected.x,
+                                 extra->expected.y,
+                                 extra->expected.w,
+                                 extra->expected.h);
     }
 }
 
@@ -245,13 +241,13 @@ _move_resize_column(Eina_List *list, int delta_x, int delta_w)
             continue;
         }
 
-        extra->x += delta_x;
-        extra->w += delta_w;
+        extra->expected.x += delta_x;
+        extra->expected.w += delta_w;
 
-        e_border_move_resize(bd, extra->x,
-                                 extra->y,
-                                 extra->w,
-                                 extra->h);
+        e_border_move_resize(bd, extra->expected.x,
+                                 extra->expected.y,
+                                 extra->expected.w,
+                                 extra->expected.h);
     }
 }
 
@@ -268,17 +264,17 @@ _set_column_geometry(int col, int x, int w)
             continue;
         }
 
-        extra->x = x;
-        extra->w = w;
+        extra->expected.x = x;
+        extra->expected.w = w;
 
         if (bd->maximized & E_MAXIMIZE_VERTICAL) {
             e_border_unmaximize(bd, E_MAXIMIZE_HORIZONTAL);
         }
 
-        e_border_move_resize(bd, extra->x,
-                                 extra->y,
-                                 extra->w,
-                                 extra->h);
+        e_border_move_resize(bd, extra->expected.x,
+                                 extra->expected.y,
+                                 extra->expected.w,
+                                 extra->expected.h);
     }
     _G.tinfo->x[col] = x;
     _G.tinfo->w[col] = w;
@@ -352,10 +348,10 @@ static void _remove_column(void)
                     ERR("No extra for %p", bd);
                     continue;
                 }
-                e_border_move_resize(bd, extra->orig_x,
-                                         extra->orig_y,
-                                         extra->orig_w,
-                                         extra->orig_h);
+                e_border_move_resize(bd, extra->orig.x,
+                                         extra->orig.y,
+                                         extra->orig.w,
+                                         extra->orig.h);
             }
             eina_list_free(_G.tinfo->columns[i]);
             _G.tinfo->columns[i] = NULL;
@@ -403,10 +399,10 @@ void change_column_number(struct _Config_vdesk *newconf)
                     ERR("No extra for %p", bd);
                     continue;
                 }
-                e_border_move_resize(bd, extra->orig_x,
-                                         extra->orig_y,
-                                         extra->orig_w,
-                                         extra->orig_h);
+                e_border_move_resize(bd, extra->orig.x,
+                                         extra->orig.y,
+                                         extra->orig.w,
+                                         extra->orig.h);
             }
             eina_list_free(_G.tinfo->columns[i]);
             _G.tinfo->columns[i] = NULL;
@@ -451,14 +447,18 @@ _add_border(E_Border *bd)
     extra = E_NEW(Border_Extra, 1);
     *extra = (Border_Extra) {
         .border = bd,
-        .x = bd->x,
-        .y = bd->y,
-        .w = bd->w,
-        .h = bd->h,
-        .orig_x = bd->x,
-        .orig_y = bd->y,
-        .orig_w = bd->w,
-        .orig_h = bd->h
+        .expected = {
+            .x = bd->x,
+            .y = bd->y,
+            .w = bd->w,
+            .h = bd->h,
+        },
+        .orig = {
+            .x = bd->x,
+            .y = bd->y,
+            .w = bd->w,
+            .h = bd->h,
+        },
     };
 
     eina_hash_direct_add(_G.border_extras, &extra->border, extra);
@@ -502,15 +502,15 @@ _add_border(E_Border *bd)
 
             _G.tinfo->x[nb_cols] = x;
             _G.tinfo->w[nb_cols] = width;
-            extra->x = x;
-            extra->y = y;
-            extra->w = width;
-            extra->h = h;
+            extra->expected.x = x;
+            extra->expected.y = y;
+            extra->expected.w = width;
+            extra->expected.h = h;
             e_border_move_resize(bd,
-                                 extra->x,
-                                 extra->y,
-                                 extra->w,
-                                 extra->h);
+                                 extra->expected.x,
+                                 extra->expected.y,
+                                 extra->expected.w,
+                                 extra->expected.h);
             e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_VERTICAL);
 
             EINA_LIST_APPEND(_G.tinfo->columns[nb_cols], bd);
@@ -614,30 +614,30 @@ _move_resize_border_column(E_Border *bd, Border_Extra *extra,
     if (change == TILING_RESIZE) {
         if (col == TILING_MAX_COLUMNS || !_G.tinfo->columns[col + 1]) {
             /* You're not allowed to resize */
-            bd->w = extra->w;
+            bd->w = extra->expected.w;
         } else {
-            int delta = bd->w - extra->w;
+            int delta = bd->w - extra->expected.w;
 
             if (delta + 1 > _G.tinfo->w[col + 1])
                 delta = _G.tinfo->w[col + 1] - 1;
 
             _move_resize_column(_G.tinfo->columns[col], 0, delta);
             _move_resize_column(_G.tinfo->columns[col+1], delta, -delta);
-            extra->w = bd->w;
+            extra->expected.w = bd->w;
         }
     } else {
         if (col == 0) {
             /* You're not allowed to move */
-            bd->x = extra->x;
+            bd->x = extra->expected.x;
         } else {
-            int delta = bd->x - extra->x;
+            int delta = bd->x - extra->expected.x;
 
             if (delta + 1 > _G.tinfo->w[col - 1])
                 delta = _G.tinfo->w[col - 1] - 1;
 
             _move_resize_column(_G.tinfo->columns[col], delta, -delta);
             _move_resize_column(_G.tinfo->columns[col-1], 0, delta);
-            extra->x = bd->x;
+            extra->expected.x = bd->x;
         }
     }
 }
@@ -655,9 +655,9 @@ _move_resize_border_in_column(E_Border *bd, Border_Extra *extra,
     if (change == TILING_RESIZE) {
         if (!l->next) {
             /* You're not allowed to resize */
-            bd->h = extra->h;
+            bd->h = extra->expected.h;
         } else {
-            int delta = bd->h - extra->h;
+            int delta = bd->h - extra->expected.h;
             E_Border *nextbd = l->next->data;
             Border_Extra *nextextra;
             int min_height = MAX(nextbd->client.icccm.base_h, 1);
@@ -668,23 +668,26 @@ _move_resize_border_in_column(E_Border *bd, Border_Extra *extra,
                 return;
             }
 
-            if (nextextra->h - delta < min_height)
-                delta = nextextra->h - min_height;
+            if (nextextra->expected.h - delta < min_height)
+                delta = nextextra->expected.h - min_height;
 
-            nextextra->y += delta;
-            nextextra->h -= delta;
-            e_border_move_resize(nextbd, nextextra->x, nextextra->y,
-                                         nextextra->w, nextextra->h);
+            nextextra->expected.y += delta;
+            nextextra->expected.h -= delta;
+            e_border_move_resize(nextbd,
+                                 nextextra->expected.x,
+                                 nextextra->expected.y,
+                                 nextextra->expected.w,
+                                 nextextra->expected.h);
 
-            extra->h += delta;
-            bd->h = extra->h;
+            extra->expected.h += delta;
+            bd->h = extra->expected.h;
         }
     } else {
         if (!l->prev) {
             /* You're not allowed to move */
-            bd->y = extra->y;
+            bd->y = extra->expected.y;
         } else {
-            int delta = bd->y - extra->y;
+            int delta = bd->y - extra->expected.y;
             E_Border *prevbd = l->prev->data;
             Border_Extra *prevextra;
             int min_height = MAX(prevbd->client.icccm.base_h, 1);
@@ -695,17 +698,20 @@ _move_resize_border_in_column(E_Border *bd, Border_Extra *extra,
                 return;
             }
 
-            if (prevextra->h - delta < min_height)
-                delta = prevextra->h - min_height;
+            if (prevextra->expected.h - delta < min_height)
+                delta = prevextra->expected.h - min_height;
 
-            prevextra->h += delta;
-            e_border_move_resize(prevbd, prevextra->x, prevextra->y,
-                                         prevextra->w, prevextra->h);
+            prevextra->expected.h += delta;
+            e_border_move_resize(prevbd,
+                                 prevextra->expected.x,
+                                 prevextra->expected.y,
+                                 prevextra->expected.w,
+                                 prevextra->expected.h);
 
-            extra->y += delta;
-            extra->h -= delta;
-            bd->y = extra->y;
-            bd->h = extra->h;
+            extra->expected.y += delta;
+            extra->expected.h -= delta;
+            bd->y = extra->expected.y;
+            bd->h = extra->expected.h;
         }
     }
 }
@@ -810,44 +816,45 @@ _e_module_tiling_cb_hook(void *data,
         if (col == 0 && !_G.tinfo->columns[1] && !_G.tinfo->columns[0]->next) {
             DBG("forever alone :)");
             if (bd->maximized) {
-                extra->x = bd->x;
-                extra->y = bd->y;
-                extra->w = bd->w;
-                extra->h = bd->h;
+                extra->expected.x = bd->x;
+                extra->expected.y = bd->y;
+                extra->expected.w = bd->w;
+                extra->expected.h = bd->h;
             } else {
                 /* TODO: what if a window doesn't want to be maximized? */
                 e_border_unmaximize(bd, E_MAXIMIZE_BOTH);
                 e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_BOTH);
             }
         }
-        if (bd->x == extra->x && bd->y == extra->y
-        &&  bd->w == extra->w && bd->h == extra->h)
+        if (bd->x == extra->expected.x && bd->y == extra->expected.y
+        &&  bd->w == extra->expected.w && bd->h == extra->expected.h)
         {
             return;
         }
 
         if (bd->changes.border && bd->changes.size) {
-            e_border_move_resize(bd, extra->x, extra->y,
-                                     extra->w, extra->h);
+            e_border_move_resize(bd, extra->expected.x, extra->expected.y,
+                                     extra->expected.w, extra->expected.h);
             return;
         }
 
         DBG("old:%dx%d+%d+%d vs new:%dx%d+%d+%d. step:%dx%d. base:%dx%d",
-            extra->w, extra->h, extra->x, extra->y,
+            extra->expected.w, extra->expected.h,
+            extra->expected.x, extra->expected.y,
             bd->w, bd->h, bd->x, bd->y,
             bd->client.icccm.step_w, bd->client.icccm.step_h,
             bd->client.icccm.base_w, bd->client.icccm.base_h);
 
-        if (abs(extra->w - bd->w) >= bd->client.icccm.step_w) {
+        if (abs(extra->expected.w - bd->w) >= bd->client.icccm.step_w) {
             _move_resize_border_column(bd, extra, col, TILING_RESIZE);
         }
-        if (abs(extra->h - bd->h) >= bd->client.icccm.step_h) {
+        if (abs(extra->expected.h - bd->h) >= bd->client.icccm.step_h) {
             _move_resize_border_in_column(bd, extra, col, TILING_RESIZE);
         }
-        if (extra->x != bd->x) {
+        if (extra->expected.x != bd->x) {
             _move_resize_border_column(bd, extra, col, TILING_MOVE);
         }
-        if (extra->y != bd->y) {
+        if (extra->expected.y != bd->y) {
             _move_resize_border_in_column(bd, extra, col, TILING_MOVE);
         }
     }
