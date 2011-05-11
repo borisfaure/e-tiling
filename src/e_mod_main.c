@@ -345,7 +345,26 @@ static void _remove_column(void)
     _G.tinfo->conf->nb_cols--;
 
     if (!_G.tinfo->conf->nb_cols) {
-        /* TODO: reorganize with no tiling*/
+        for (int i = 0; i < TILING_MAX_COLUMNS; i++) {
+            for (Eina_List *l = _G.tinfo->columns[i]; l; l = l->next) {
+                E_Border *bd = l->data;
+                Border_Extra *extra;
+
+                extra = eina_hash_find(_G.border_extras, &bd);
+                if (!extra) {
+                    ERR("No extra for %p", bd);
+                    continue;
+                }
+                e_border_move_resize(bd, extra->orig_x,
+                                         extra->orig_y,
+                                         extra->orig_w,
+                                         extra->orig_h);
+            }
+            eina_list_free(_G.tinfo->columns[i]);
+            _G.tinfo->columns[i] = NULL;
+            _G.tinfo->nb[i] = 0;
+        }
+        e_place_zone_region_smart_cleanup(_G.tinfo->desk->zone);
     } else {
         int col = _G.tinfo->conf->nb_cols;
 
@@ -378,7 +397,26 @@ void change_column_number(struct _Config_vdesk *newconf)
     old_nb_cols = _G.tinfo->conf->nb_cols;
 
     if (newconf->nb_cols == 0) {
-        /* TODO: reorganize with no tiling*/
+        for (int i = 0; i < TILING_MAX_COLUMNS; i++) {
+            for (Eina_List *l = _G.tinfo->columns[i]; l; l = l->next) {
+                E_Border *bd = l->data;
+                Border_Extra *extra;
+
+                extra = eina_hash_find(_G.border_extras, &bd);
+                if (!extra) {
+                    ERR("No extra for %p", bd);
+                    continue;
+                }
+                e_border_move_resize(bd, extra->orig_x,
+                                         extra->orig_y,
+                                         extra->orig_w,
+                                         extra->orig_h);
+            }
+            eina_list_free(_G.tinfo->columns[i]);
+            _G.tinfo->columns[i] = NULL;
+            _G.tinfo->nb[i] = 0;
+        }
+        e_place_zone_region_smart_cleanup(z);
     } else if (newconf->nb_cols > old_nb_cols) {
         for (int i = newconf->nb_cols; i > old_nb_cols; i--) {
             _add_column();
