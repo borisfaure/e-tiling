@@ -48,9 +48,9 @@ static struct
 
    Eina_Hash           *border_extras;
 
-   E_Action            *act_toggletiling,
-                       *act_togglefloat,
-                       *act_switchtiling;
+   E_Action            *act_togglefloat,
+                       *act_addcolumn,
+                       *act_removecolumn;
 } tiling_mod_main_g = {
 #define _G tiling_mod_main_g
    .hook = NULL,
@@ -65,9 +65,9 @@ static struct
    .info_hash = NULL,
    .border_extras = NULL,
 
-   .act_toggletiling = NULL,
    .act_togglefloat = NULL,
-   .act_switchtiling = NULL,
+   .act_addcolumn = NULL,
+   .act_removecolumn= NULL,
 };
 
 static void
@@ -756,6 +756,28 @@ _e_mod_action_toggle_floating_cb(E_Object   *obj,
     toggle_floating(e_border_focused_get());
 }
 
+static void
+_e_mod_action_add_column_cb(E_Object   *obj,
+                            const char *params)
+{
+    E_Desk *desk = get_current_desk();
+
+    check_tinfo(desk);
+
+    _add_column();
+}
+
+static void
+_e_mod_action_remove_column_cb(E_Object   *obj,
+                               const char *params)
+{
+    E_Desk *desk = get_current_desk();
+
+    check_tinfo(desk);
+
+    _remove_column();
+}
+
 /* }}} */
 /* Hooks {{{*/
 
@@ -1067,6 +1089,10 @@ e_modapi_init(E_Module *m)
     /* Module's actions */
     ACTION_ADD(_G.act_togglefloat, _e_mod_action_toggle_floating_cb,
                "Toggle floating", "toggle_floating");
+    ACTION_ADD(_G.act_addcolumn,   _e_mod_action_add_column_cb,
+               "Add a Column", "add_column");
+    ACTION_ADD(_G.act_removecolumn,   _e_mod_action_remove_column_cb,
+               "Remove a Column", "remove_column");
 #undef ACTION_ADD
 
     /* Configuration entries */
@@ -1141,9 +1167,9 @@ if (act) {                                              \
      e_action_del(value);                               \
      act = NULL;                                        \
 }
-    ACTION_DEL(_G.act_toggletiling, "Toggle tiling", "toggle_tiling");
     ACTION_DEL(_G.act_togglefloat, "Toggle floating", "toggle_floating");
-    ACTION_DEL(_G.act_switchtiling, "Switch tiling mode", "switch_tiling");
+    ACTION_DEL(_G.act_addcolumn, "Add a Column", "add_column");
+    ACTION_DEL(_G.act_removecolumn, "Remove a Column", "remove_column");
 #undef ACTION_DEL
 
     e_configure_registry_item_del("windows/tiling");
