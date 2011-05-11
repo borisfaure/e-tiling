@@ -12,7 +12,6 @@ filesdir = $(datadir)
 files_DATA = module.desktop e-module-tiling.edj
 
 EXTRA_DIST = module.desktop.in \
-	     e_modules-tiling.spec.in \
 	     e-module-tiling.edc \
 	     images/module_icon.png
 
@@ -20,7 +19,7 @@ e-module-tiling.edj:  e-module-tiling.edc
 	$(EDJE_CC) $(EDJE_FLAGS) $< $@
 
 clean-local:
-	 rm -rf e-module-tiling.edj module.desktop e_modules-tiling.spec *~
+	 rm -rf e-module-tiling.edj module.desktop *~
 
 uninstall:
 	 rm -rf $(DESTDIR)$(datadir)
