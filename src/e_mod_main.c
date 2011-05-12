@@ -116,7 +116,6 @@ check_tinfo(const E_Desk *desk)
         _G.tinfo = eina_hash_find(_G.info_hash, &desk);
         if (!_G.tinfo) {
             /* lazy init */
-            DBG("need new info for %s\n", desk->name);
             _G.tinfo = _initialize_tinfo(desk);
         }
         if (!_G.tinfo->conf) {
@@ -183,7 +182,6 @@ _reorganize_column(int col)
         return;
 
     e_zone_useful_geometry_get(_G.tinfo->desk->zone, &zx, &zy, &zw, &zh);
-    DBG("useful geometry: %dx%d+%d+%d", zw, zh, zx, zy);
 
     count = eina_list_count(_G.tinfo->columns[col]);
 
@@ -191,8 +189,6 @@ _reorganize_column(int col)
     ch = 0;
     w = _G.tinfo->w[col];
     h = zh / count;
-    DBG("zh = %d, count = %d, h = %d",
-         zh, count, h);
 
     for (Eina_List *l = _G.tinfo->columns[col]; l; l = l->next, i++) {
         E_Border *bd = l->data;
@@ -216,9 +212,6 @@ _reorganize_column(int col)
         extra->expected.w = w;
         extra->expected.h = h + d;
         ch += extra->expected.h;
-        DBG("%p: d = %d, ch = %d, (%dx%d+%d+%d)", bd, d, ch,
-            extra->expected.w, extra->expected.h,
-            extra->expected.x, extra->expected.y);
 
         e_border_move_resize(bd, extra->expected.x,
                                  extra->expected.y,
@@ -431,16 +424,13 @@ _add_border(E_Border *bd)
         return;
     }
     if (is_floating_window(bd)) {
-        DBG("floating window");
         return;
     }
     if (is_untilable_dialog(bd)) {
-        DBG("untilable_dialog");
         return;
     }
 
     if (!_G.tinfo->conf || !_G.tinfo->conf->nb_cols) {
-        DBG("no tiling");
         return;
     }
 
@@ -464,7 +454,6 @@ _add_border(E_Border *bd)
     eina_hash_direct_add(_G.border_extras, &extra->border, extra);
 
     /* New Border! */
-    DBG("new border");
 
     if ((bd->bordername && strcmp(bd->bordername, "pixel"))
     ||  !bd->bordername)
@@ -546,6 +535,7 @@ _remove_border(E_Border *bd)
     _G.tinfo->borders--;
     EINA_LIST_REMOVE(_G.tinfo->columns[col], bd);
     eina_hash_del(_G.border_extras, bd, NULL);
+
     if (_G.tinfo->columns[col]) {
         _reorganize_column(col);
     } else {
@@ -788,21 +778,17 @@ _e_module_tiling_cb_hook(void *data,
     E_Border *bd = border;
     int col = -1;
 
-    DBG("cb-Hook for %p", bd);
     if (!bd) {
         return;
     }
     if (is_floating_window(bd)) {
-        DBG("floating window");
         return;
     }
     if (is_untilable_dialog(bd)) {
-        DBG("untilable_dialog");
         return;
     }
 
     if (!_G.tinfo->conf || !_G.tinfo->conf->nb_cols) {
-        DBG("no tiling");
         return;
     }
 
@@ -817,7 +803,6 @@ _e_module_tiling_cb_hook(void *data,
 
     if (!bd->changes.size && !bd->changes.pos && !bd->changes.border
     && (col >= 0)) {
-        DBG("nothing to do");
         return;
     }
 
@@ -827,7 +812,6 @@ _e_module_tiling_cb_hook(void *data,
         Border_Extra *extra;
 
         /* Move or Resize */
-        DBG("move or resize");
 
         extra = eina_hash_find(_G.border_extras, &bd);
         if (!extra) {
@@ -836,7 +820,6 @@ _e_module_tiling_cb_hook(void *data,
         }
 
         if (col == 0 && !_G.tinfo->columns[1] && !_G.tinfo->columns[0]->next) {
-            DBG("forever alone :)");
             if (bd->maximized) {
                 extra->expected.x = bd->x;
                 extra->expected.y = bd->y;
@@ -893,8 +876,6 @@ _e_module_tiling_hide_hook(void *data,
     if (_G.currently_switching_desktop)
         return EINA_TRUE;
 
-    DBG("hide-hook for %p", bd);
-
     check_tinfo(bd->desk);
 
     if (EINA_LIST_IS_IN(_G.tinfo->floating_windows, bd)) {
@@ -940,7 +921,6 @@ _clear_bd_from_info_hash(const Eina_Hash *hash,
 
     if (ti->desk == ev->desk) {
         ti->need_rearrange = 1;
-        DBG("set need_rearrange=1\n");
         return EINA_TRUE;
     }
 
@@ -978,12 +958,10 @@ _e_module_tiling_desk_set(void *data,
     tinfo = eina_hash_find(_G.info_hash, &ev->desk);
 
     if (!tinfo) {
-        DBG("create new info for %s\n", ev->desk->name);
         tinfo = _initialize_tinfo(ev->desk);
     }
 
     eina_hash_foreach(_G.info_hash, _clear_bd_from_info_hash, ev);
-    DBG("desk set\n");
 
     return EINA_TRUE;
 }
@@ -1129,7 +1107,6 @@ e_modapi_init(E_Module *m)
     _G.current_zone = desk->zone;
     _G.tinfo = _initialize_tinfo(desk);
 
-    DBG("initialized");
     return m;
 }
 
@@ -1138,7 +1115,6 @@ e_modapi_shutdown(E_Module *m)
 {
 
     if (tiling_g.log_domain >= 0) {
-        DBG("shutdown!");
         eina_log_domain_unregister(tiling_g.log_domain);
         tiling_g.log_domain = -1;
     }

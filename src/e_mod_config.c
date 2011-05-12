@@ -28,8 +28,6 @@ get_vdesk(Eina_List *vdesks,
           int y,
           unsigned int zone_num)
 {
-    DBG("getting vdesk x %d / y %d / zone_num %d\n", x, y, zone_num);
-
     for (Eina_List *l = vdesks; l; l = l->next) {
         struct _Config_vdesk *vd = l->data;
 
@@ -39,7 +37,6 @@ get_vdesk(Eina_List *vdesks,
         if (vd->x == x && vd->y == y && vd->zone_num == zone_num)
             return vd;
     }
-    DBG("NOT FOUND!!!");
 
     return NULL;
 }
