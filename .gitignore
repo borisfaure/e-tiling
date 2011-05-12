@@ -16,8 +16,7 @@ autom4te.cache/
 /config.sub
 /configure
 /depcomp
-/e_modules-tiling.spec
-/e-module-tiling.edj
+/e-module-e-tiling.edj
 /install-sh
 /libtool
 /ltmain.sh
@@ -71,7 +70,7 @@ autom4te.cache/
 /po/*.po~
 /po/remove-potcdate.sed
 /po/stamp-po
-/po/tiling.pot
+/po/e-tiling.pot
 /src/.deps/
 /src/.libs/
 /stamp-h1

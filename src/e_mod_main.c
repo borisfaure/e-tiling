@@ -1003,7 +1003,7 @@ _clear_border_extras(const Eina_Hash *hash,
 EAPI E_Module_Api e_modapi =
 {
     E_MODULE_API_VERSION,
-    "Tiling"
+    "E-Tiling"
 };
 
 EAPI void *
@@ -1015,9 +1015,9 @@ e_modapi_init(E_Module *m)
     tiling_g.module = m;
 
     if (tiling_g.log_domain < 0) {
-        tiling_g.log_domain = eina_log_domain_register("tiling", NULL);
+        tiling_g.log_domain = eina_log_domain_register("e-tiling", NULL);
         if (tiling_g.log_domain < 0) {
-            EINA_LOG_CRIT("could not register log domain 'tiling'");
+            EINA_LOG_CRIT("could not register log domain 'e-tiling'");
         }
     }
 
@@ -1059,7 +1059,7 @@ e_modapi_init(E_Module *m)
    if ((_action = e_action_add(_name)))                                      \
      {                                                                       \
         _action->func.go = _cb;                                              \
-        e_action_predef_name_set(D_("Tiling"), D_(_title), _name,            \
+        e_action_predef_name_set(D_("E-Tiling"), D_(_title), _name,          \
                                  NULL, NULL, 0);                             \
      }                                                                       \
 }
@@ -1074,11 +1074,12 @@ e_modapi_init(E_Module *m)
 #undef ACTION_ADD
 
     /* Configuration entries */
-    snprintf(buf, sizeof(buf), "%s/e-module-tiling.edj", e_module_dir_get(m));
+    snprintf(buf, sizeof(buf), "%s/e-module-e-tiling.edj",
+             e_module_dir_get(m));
     e_configure_registry_category_add("windows", 50, D_("Windows"), NULL,
                                       "preferences-system-windows");
-    e_configure_registry_item_add("windows/tiling", 150, D_("Tiling"), NULL,
-                                  buf, e_int_config_tiling_module);
+    e_configure_registry_item_add("windows/e-tiling", 150, D_("E-Tiling"),
+                                  NULL, buf, e_int_config_tiling_module);
 
     /* Configuration itself */
     _G.config_edd = E_CONFIG_DD_NEW("Tiling_Config", Config);
@@ -1093,7 +1094,7 @@ e_modapi_init(E_Module *m)
     E_CONFIG_VAL(_G.vdesk_edd, struct _Config_vdesk, zone_num, INT);
     E_CONFIG_VAL(_G.vdesk_edd, struct _Config_vdesk, nb_cols, INT);
 
-    tiling_g.config = e_config_domain_load("module.tiling", _G.config_edd);
+    tiling_g.config = e_config_domain_load("module.e-tiling", _G.config_edd);
     if (!tiling_g.config) {
         tiling_g.config = E_NEW(Config, 1);
         tiling_g.config->float_too_big_windows = 1;
@@ -1139,7 +1140,7 @@ if (x) {                         \
 
 #define ACTION_DEL(act, title, value)                   \
 if (act) {                                              \
-     e_action_predef_name_del(D_("Tiling"), D_(title)); \
+     e_action_predef_name_del(D_("E-Tiling"), D_(title)); \
      e_action_del(value);                               \
      act = NULL;                                        \
 }
@@ -1148,7 +1149,7 @@ if (act) {                                              \
     ACTION_DEL(_G.act_removecolumn, "Remove a Column", "remove_column");
 #undef ACTION_DEL
 
-    e_configure_registry_item_del("windows/tiling");
+    e_configure_registry_item_del("windows/e-tiling");
     e_configure_registry_category_del("windows");
 
     E_FREE(tiling_g.config);
@@ -1173,7 +1174,7 @@ if (act) {                                              \
 EAPI int
 e_modapi_save(E_Module *m)
 {
-    e_config_domain_save("module.tiling", _G.config_edd, tiling_g.config);
+    e_config_domain_save("module.e-tiling", _G.config_edd, tiling_g.config);
     /* TODO */
     DBG("SAVE");
 
