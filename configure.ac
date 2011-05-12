@@ -3,7 +3,7 @@ dnl Process this file with autoconf to produce a configure script.
 # get rid of that stupid cache mechanism
 rm -f config.cache
 
-AC_INIT(tiling, 0.0.1, michael+e17@stapelberg.de)
+AC_INIT(e-tiling, 0.1, billiob@efl.so)
 AC_PREREQ(2.52)
 AC_CONFIG_SRCDIR(configure.ac)
 AC_CANONICAL_BUILD
@@ -55,7 +55,6 @@ AC_ARG_ENABLE(homedir-install,
 AC_OUTPUT([
 Makefile
 src/Makefile
-e_modules-tiling.spec
 po/Makefile.in
 module.desktop
 ], [
