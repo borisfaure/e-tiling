@@ -969,11 +969,8 @@ _e_module_tiling_desk_set(void *data,
 /* }}} */
 /* Module setup {{{*/
 
-static Eina_Bool
-_clear_info_hash(const Eina_Hash *hash,
-                 const void      *key,
-                 void            *data,
-                 void            *fdata)
+static void
+_clear_info_hash(void *data)
 {
     Tiling_Info *ti = data;
 
@@ -983,21 +980,14 @@ _clear_info_hash(const Eina_Hash *hash,
         ti->columns[i] = NULL;
     }
     E_FREE(ti);
-
-    return EINA_TRUE;
 }
 
-static Eina_Bool
-_clear_border_extras(const Eina_Hash *hash,
-                     const void      *key,
-                     void            *data,
-                     void            *fdata)
+static void
+_clear_border_extras(void *data)
 {
     Border_Extra *be = data;
 
     E_FREE(be);
-
-    return EINA_TRUE;
 }
 
 EAPI E_Module_Api e_modapi =
@@ -1026,9 +1016,9 @@ e_modapi_init(E_Module *m)
     bindtextdomain(PACKAGE, buf);
     bind_textdomain_codeset(PACKAGE, "UTF-8");
 
-    _G.info_hash = eina_hash_pointer_new(NULL);
+    _G.info_hash = eina_hash_pointer_new(_clear_info_hash);
 
-    _G.border_extras = eina_hash_pointer_new(NULL);
+    _G.border_extras = eina_hash_pointer_new(_clear_border_extras);
 
     /* Callback for new windows or changes */
     _G.hook = e_border_hook_add(E_BORDER_HOOK_EVAL_POST_BORDER_ASSIGN,
@@ -1158,11 +1148,9 @@ if (act) {                                              \
 
     tiling_g.module = NULL;
 
-    eina_hash_foreach(_G.info_hash, _clear_info_hash, NULL);
     eina_hash_free(_G.info_hash);
     _G.info_hash = NULL;
 
-    eina_hash_foreach(_G.info_hash, _clear_border_extras, NULL);
     eina_hash_free(_G.border_extras);
     _G.border_extras = NULL;
 
