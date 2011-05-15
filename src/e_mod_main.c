@@ -31,43 +31,45 @@ struct tiling_g tiling_g = {
 
 static struct
 {
-   E_Config_DD         *config_edd,
-                       *vdesk_edd;
-   E_Border_Hook       *hook;
-   int                  currently_switching_desktop;
-   Ecore_Event_Handler *handler_hide,
-                       *handler_desk_show,
-                       *handler_desk_before_show,
-                       *handler_mouse_move,
-                       *handler_desk_set;
-   E_Zone              *current_zone;
+    E_Config_DD         *config_edd,
+                        *vdesk_edd;
+    E_Border_Hook       *hook;
+    int                  currently_switching_desktop;
+    Ecore_Event_Handler *handler_hide,
+                        *handler_desk_show,
+                        *handler_desk_before_show,
+                        *handler_mouse_move,
+                        *handler_desk_set;
+    E_Zone              *current_zone;
 
-   Tiling_Info         *tinfo;
-   /* This hash holds the Tiling_Info-pointers for each desktop */
-   Eina_Hash           *info_hash;
+    Tiling_Info         *tinfo;
+    /* This hash holds the Tiling_Info-pointers for each desktop */
+    Eina_Hash           *info_hash;
 
-   Eina_Hash           *border_extras;
+    Eina_Hash           *border_extras;
 
-   E_Action            *act_togglefloat,
-                       *act_addcolumn,
-                       *act_removecolumn;
+    E_Action            *act_togglefloat,
+                        *act_addcolumn,
+                        *act_removecolumn,
+                        *act_swap;
 } tiling_mod_main_g = {
 #define _G tiling_mod_main_g
-   .hook = NULL,
-   .currently_switching_desktop = 0,
-   .handler_hide = NULL,
-   .handler_desk_show = NULL,
-   .handler_desk_before_show = NULL,
-   .handler_mouse_move = NULL,
-   .handler_desk_set = NULL,
-   .current_zone = NULL,
-   .tinfo = NULL,
-   .info_hash = NULL,
-   .border_extras = NULL,
+    .hook = NULL,
+    .currently_switching_desktop = 0,
+    .handler_hide = NULL,
+    .handler_desk_show = NULL,
+    .handler_desk_before_show = NULL,
+    .handler_mouse_move = NULL,
+    .handler_desk_set = NULL,
+    .current_zone = NULL,
+    .tinfo = NULL,
+    .info_hash = NULL,
+    .border_extras = NULL,
 
-   .act_togglefloat = NULL,
-   .act_addcolumn = NULL,
-   .act_removecolumn= NULL,
+    .act_togglefloat = NULL,
+    .act_addcolumn = NULL,
+    .act_removecolumn= NULL,
+    .act_swap = NULL,
 };
 
 static void
