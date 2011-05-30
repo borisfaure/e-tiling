@@ -21,6 +21,8 @@ typedef struct Border_Extra {
      struct {
          int x, y, w, h;
      } expected, orig;
+     E_Popup *popup;
+     Evas_Object *obj;
 } Border_Extra;
 
 struct tiling_g tiling_g = {
@@ -52,6 +54,11 @@ static struct
                         *act_addcolumn,
                         *act_removecolumn,
                         *act_swap;
+
+    E_Border            *swap_from;
+
+    unsigned int        has_overlay    :1;
+    unsigned int        is_swapping    :1;
 } tiling_mod_main_g = {
 #define _G tiling_mod_main_g
     .hook = NULL,
@@ -170,6 +177,19 @@ get_column_count(void)
             return i;
     }
     return TILING_MAX_COLUMNS;
+}
+
+static int
+get_window_count(void)
+{
+    int res = 0;
+
+    for (int i = 0; i < TILING_MAX_COLUMNS; i++) {
+        if (!_G.tinfo->columns[i])
+            break;
+        res += eina_list_count(_G.tinfo->columns[i]);
+    }
+    return res;
 }
 /* }}} */
 /* Reorganize columns {{{*/
@@ -770,6 +790,88 @@ _e_mod_action_remove_column_cb(E_Object   *obj,
     _remove_column();
 }
 
+static void _e_mod_action_swap_cb(E_Object   *obj,
+                                  const char *params)
+{
+    E_Desk *desk;
+    E_Border *focused_bd;
+    int nb_win;
+
+    desk = get_current_desk();
+    if (!desk)
+        return;
+
+    focused_bd = e_border_focused_get();
+    if (!focused_bd || focused_bd->desk != desk)
+        return;
+
+    check_tinfo(desk);
+
+    if (!_G.tinfo->conf || !_G.tinfo->conf->nb_cols) {
+        return;
+    }
+    DBG("swap");
+
+    nb_win = get_window_count();
+    if (nb_win < 2) {
+        return;
+    }
+    _G.has_overlay = true;
+
+    for (int i = 0; i < TILING_MAX_COLUMNS; i++) {
+        Eina_List *l;
+        E_Border *bd;
+
+        if (!_G.tinfo->columns[i])
+            break;
+        EINA_LIST_FOREACH(_G.tinfo->columns[i], l, bd) {
+            if (bd != focused_bd) {
+                Border_Extra *extra;
+                Evas_Coord ew, eh;
+                char buf[40];
+
+                extra = eina_hash_find(_G.border_extras, &bd);
+                if (!extra) {
+                    ERR("No extra for %p", bd);
+                    continue;
+                }
+
+                extra->popup = e_popup_new(bd->zone, 0, 0, 1, 1);
+                if (!extra->popup)
+                    continue;
+
+                e_popup_layer_set(extra->popup, 255);
+                extra->obj = edje_object_add(extra->popup->evas);
+                e_theme_edje_object_set(extra->obj, "base/theme/borders",
+                                        "e/widgets/border/default/resize");
+
+                snprintf(buf, sizeof(buf), "a");
+                edje_object_part_text_set(extra->obj, "e.text.label", buf);
+                edje_object_size_min_calc(extra->obj, &ew, &eh);
+                evas_object_move(extra->obj, 0, 0);
+                evas_object_resize(extra->obj, ew, eh);
+                evas_object_show(extra->obj);
+                e_popup_edje_bg_object_set(extra->popup, extra->obj);
+
+                evas_object_show(extra->obj);
+                e_popup_show(extra->popup);
+
+                e_popup_move_resize(extra->popup,
+                                    (bd->x - extra->popup->zone->x) +
+                                    ((bd->w - ew) / 2),
+                                    (bd->y - extra->popup->zone->y) +
+                                    ((bd->h - eh) / 2),
+                                    ew, eh);
+
+                e_popup_show(extra->popup);
+            }
+        }
+    }
+    /* TODO:
+     * add overlay,
+     * add overlay timeout
+     * …*/
+}
 /* }}} */
 /* Hooks {{{*/
 
@@ -1063,6 +1165,8 @@ e_modapi_init(E_Module *m)
                "Add a Column", "add_column");
     ACTION_ADD(_G.act_removecolumn,   _e_mod_action_remove_column_cb,
                "Remove a Column", "remove_column");
+    ACTION_ADD(_G.act_swap,   _e_mod_action_swap_cb,
+               "Swap a window with an other", "swap");
 #undef ACTION_ADD
 
     /* Configuration entries */
@@ -1139,6 +1243,7 @@ if (act) {                                              \
     ACTION_DEL(_G.act_togglefloat, "Toggle floating", "toggle_floating");
     ACTION_DEL(_G.act_addcolumn, "Add a Column", "add_column");
     ACTION_DEL(_G.act_removecolumn, "Remove a Column", "remove_column");
+    ACTION_DEL(_G.act_swap, "Swap a window with an other", "swap");
 #undef ACTION_DEL
 
     e_configure_registry_item_del("windows/e-tiling");
