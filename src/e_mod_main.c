@@ -109,7 +109,6 @@ _initialize_tinfo(const E_Desk *desk)
 
     tinfo = E_NEW(Tiling_Info, 1);
     tinfo->desk = desk;
-    tinfo->need_rearrange = 0;
     eina_hash_direct_add(_G.info_hash, &tinfo->desk, tinfo);
 
     tinfo->conf = get_vdesk(tiling_g.config->vdesks, desk->x, desk->y,
@@ -1074,23 +1073,10 @@ _clear_bd_from_info_hash(const Eina_Hash *hash,
         return EINA_TRUE;
 
     if (ti->desk == ev->desk) {
-        ti->need_rearrange = 1;
         return EINA_TRUE;
     }
 
-    /* TODO
-    if (eina_list_data_find(ti->client_list, ev->border) == ev->border) {
-        ti->client_list = eina_list_remove(ti->client_list, ev->border);
-        if (ti->desk == get_current_desk()) {
-            E_Border *first;
-
-            if ((first = get_first_window(NULL, ti->desk)))
-                rearrange_windows(first, EINA_FALSE);
-        }
-    }
-    */
-
-    if (eina_list_data_find(ti->floating_windows, ev->border) == ev->border) {
+    if (EINA_LIST_IS_IN(ti->floating_windows, ev->border)) {
         ti->floating_windows = eina_list_remove(ti->floating_windows,
                                                 ev->border);
     }
@@ -1103,6 +1089,7 @@ _e_module_tiling_desk_set(void *data,
                           int   type,
                           void *event)
 {
+    /* TODO: remove this stuff?? */
     /* We use this event to ensure that border desk changes are done correctly
      * because a user can move the window to another desk (and events are
      * fired) involving zone changes or not (depends on the mouse position) */
