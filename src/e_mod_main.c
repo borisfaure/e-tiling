@@ -154,8 +154,8 @@ change_window_border(E_Border   *bd,
                      const char *bordername)
 {
    eina_stringshare_replace(&bd->bordername, bordername);
-   bd->client.border.changed = 1;
-   bd->changed = 1;
+   bd->client.border.changed = true;
+   bd->changed = true;
 }
 
 static int
@@ -949,7 +949,7 @@ _e_module_tiling_cb_hook(void *data,
         col, bd->maximized);
 
     if (!bd->changes.size && !bd->changes.pos && !bd->changes.border
-    && (col >= 0)) {
+    && col >= 0) {
         return;
     }
 
