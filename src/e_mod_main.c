@@ -759,12 +759,48 @@ toggle_floating(E_Border *bd)
 }
 
 /* }}} */
+/* Overlays {{{*/
+
+static Eina_Bool
+destroy_overlay(const Eina_Hash *hash,
+                const void      *key,
+                void            *data,
+                void            *fdata)
+{
+    Border_Extra *extra = data;
+
+    if (extra->obj) {
+        evas_object_del(extra->obj);
+        extra->obj = NULL;
+    }
+    if (extra->popup) {
+        e_object_del(E_OBJECT(extra->popup));
+        extra->popup = NULL;
+    }
+
+    return EINA_TRUE;
+}
+
+
+static void
+destroy_overlays(void)
+{
+    if (!_G.has_overlay)
+        return;
+
+    eina_hash_foreach(_G.border_extras, destroy_overlay, NULL);
+    _G.has_overlay = false;
+}
+
+/* }}} */
 /* Action callbacks {{{*/
 
 static void
 _e_mod_action_toggle_floating_cb(E_Object   *obj,
                                  const char *params)
 {
+    destroy_overlays();
+
     toggle_floating(e_border_focused_get());
 }
 
@@ -773,6 +809,8 @@ _e_mod_action_add_column_cb(E_Object   *obj,
                             const char *params)
 {
     E_Desk *desk = get_current_desk();
+
+    destroy_overlays();
 
     check_tinfo(desk);
 
@@ -785,6 +823,8 @@ _e_mod_action_remove_column_cb(E_Object   *obj,
 {
     E_Desk *desk = get_current_desk();
 
+    destroy_overlays();
+
     check_tinfo(desk);
 
     _remove_column();
@@ -796,6 +836,8 @@ static void _e_mod_action_swap_cb(E_Object   *obj,
     E_Desk *desk;
     E_Border *focused_bd;
     int nb_win;
+
+    destroy_overlays();
 
     desk = get_current_desk();
     if (!desk)
@@ -881,6 +923,8 @@ _e_module_tiling_cb_hook(void *data,
 {
     E_Border *bd = border;
     int col = -1;
+
+    destroy_overlays();
 
     if (!bd) {
         return;
@@ -977,6 +1021,8 @@ _e_module_tiling_hide_hook(void *data,
     E_Event_Border_Hide *ev = event;
     E_Border *bd = ev->border;
 
+    destroy_overlays();
+
     if (_G.currently_switching_desktop)
         return EINA_TRUE;
 
@@ -998,6 +1044,8 @@ _e_module_tiling_desk_show(void *data,
 {
     _G.currently_switching_desktop = 0;
 
+    destroy_overlays();
+
     return EINA_TRUE;
 }
 
@@ -1006,6 +1054,8 @@ _e_module_tiling_desk_before_show(void *data,
                                   int   type,
                                   void *event)
 {
+    destroy_overlays();
+
     _G.currently_switching_desktop = 1;
 
     return EINA_TRUE;
@@ -1058,6 +1108,8 @@ _e_module_tiling_desk_set(void *data,
      * fired) involving zone changes or not (depends on the mouse position) */
     E_Event_Border_Desk_Set *ev = event;
     Tiling_Info *tinfo;
+
+    destroy_overlays();
 
     tinfo = eina_hash_find(_G.info_hash, &ev->desk);
 
@@ -1248,6 +1300,8 @@ if (act) {                                              \
 
     e_configure_registry_item_del("windows/e-tiling");
     e_configure_registry_category_del("windows");
+
+    destroy_overlays();
 
     E_FREE(tiling_g.config);
     E_CONFIG_DD_FREE(_G.config_edd);
