@@ -23,6 +23,7 @@ typedef struct Border_Extra {
      } expected, orig;
      E_Popup *popup;
      Evas_Object *obj;
+     char key;
 } Border_Extra;
 
 struct tiling_g tiling_g = {
@@ -889,6 +890,7 @@ static void _e_mod_action_swap_cb(E_Object   *obj,
                                         "e/widgets/border/default/resize");
 
                 snprintf(buf, sizeof(buf), "%c", *c);
+                extra->key = *c;
                 c++;
                 edje_object_part_text_set(extra->obj, "e.text.label", buf);
                 edje_object_size_min_calc(extra->obj, &ew, &eh);
