@@ -835,6 +835,8 @@ static void _e_mod_action_swap_cb(E_Object   *obj,
     E_Desk *desk;
     E_Border *focused_bd;
     int nb_win;
+    char keys[] = "asdfghkl;'qwertyuiop[]\\zxcvbnm,./`1234567890-=";
+    char *c = keys;
 
     destroy_overlays();
 
@@ -866,7 +868,7 @@ static void _e_mod_action_swap_cb(E_Object   *obj,
         if (!_G.tinfo->columns[i])
             break;
         EINA_LIST_FOREACH(_G.tinfo->columns[i], l, bd) {
-            if (bd != focused_bd) {
+            if (bd != focused_bd && *c) {
                 Border_Extra *extra;
                 Evas_Coord ew, eh;
                 char buf[40];
@@ -886,7 +888,8 @@ static void _e_mod_action_swap_cb(E_Object   *obj,
                 e_theme_edje_object_set(extra->obj, "base/theme/borders",
                                         "e/widgets/border/default/resize");
 
-                snprintf(buf, sizeof(buf), "a");
+                snprintf(buf, sizeof(buf), "%c", *c);
+                c++;
                 edje_object_part_text_set(extra->obj, "e.text.label", buf);
                 edje_object_size_min_calc(extra->obj, &ew, &eh);
                 evas_object_move(extra->obj, 0, 0);
