@@ -17,19 +17,19 @@ typedef enum {
 /* actual module specifics */
 
 typedef struct Border_Extra {
-     E_Border *border;
-     struct {
-         int x, y, w, h;
-     } expected, orig;
-     E_Popup *popup;
-     Evas_Object *obj;
-     char key[2];
+    E_Border *border;
+    struct {
+        int x, y, w, h;
+    } expected, orig;
+    E_Popup *popup;
+    Evas_Object *obj;
+    char key[2];
 } Border_Extra;
 
 struct tiling_g tiling_g = {
-   .module = NULL,
-   .config = NULL,
-   .log_domain = -1,
+    .module = NULL,
+    .config = NULL,
+    .log_domain = -1,
 };
 
 static struct
@@ -120,7 +120,7 @@ _initialize_tinfo(const E_Desk *desk)
     eina_hash_direct_add(_G.info_hash, &tinfo->desk, tinfo);
 
     tinfo->conf = get_vdesk(tiling_g.config->vdesks, desk->x, desk->y,
-                          desk->zone->num);
+                            desk->zone->num);
 
     return tinfo;
 }
@@ -153,17 +153,17 @@ static int
 is_untilable_dialog(const E_Border *bd)
 {
     return (!tiling_g.config->tile_dialogs
-    && ((bd->client.icccm.transient_for != 0)
-         || (bd->client.netwm.type == ECORE_X_WINDOW_TYPE_DIALOG)));
+            && ((bd->client.icccm.transient_for != 0)
+                || (bd->client.netwm.type == ECORE_X_WINDOW_TYPE_DIALOG)));
 }
 
 static void
 change_window_border(E_Border   *bd,
                      const char *bordername)
 {
-   eina_stringshare_replace(&bd->bordername, bordername);
-   bd->client.border.changed = true;
-   bd->changed = true;
+    eina_stringshare_replace(&bd->bordername, bordername);
+    bd->client.border.changed = true;
+    bd->changed = true;
 }
 
 static int
@@ -223,7 +223,7 @@ _reorganize_column(int col)
         E_Border *bd = l->data;
         Border_Extra *extra;
         int d = (i * 2 * zh) % count
-              - (2 * ch) % count;
+            - (2 * ch) % count;
 
         extra = eina_hash_find(_G.border_extras, &bd);
         if (!extra) {
@@ -930,8 +930,8 @@ _do_overlay(E_Border *focused_bd,
     }
     /* TODO: timeout */
 
-   _G.handler_key = ecore_event_handler_add(ECORE_EVENT_KEY_DOWN,
-                                            _key_down, NULL);
+    _G.handler_key = ecore_event_handler_add(ECORE_EVENT_KEY_DOWN,
+                                             _key_down, NULL);
 }
 /* }}} */
 /* Action callbacks {{{*/
@@ -1275,16 +1275,15 @@ e_modapi_init(E_Module *m)
                                               _e_module_tiling_desk_set, NULL);
 
 #define ACTION_ADD(_act, _cb, _title, _value)                                \
-{                                                                            \
-   E_Action *_action = _act;                                                 \
-   const char *_name = _value;                                               \
-   if ((_action = e_action_add(_name)))                                      \
-     {                                                                       \
-        _action->func.go = _cb;                                              \
-        e_action_predef_name_set(D_("E-Tiling"), D_(_title), _name,          \
-                                 NULL, NULL, 0);                             \
-     }                                                                       \
-}
+    {                                                                        \
+        E_Action *_action = _act;                                            \
+        const char *_name = _value;                                          \
+        if ((_action = e_action_add(_name))) {                               \
+            _action->func.go = _cb;                                          \
+            e_action_predef_name_set(D_("E-Tiling"), D_(_title), _name,      \
+                                     NULL, NULL, 0);                         \
+        }                                                                    \
+    }
 
     /* Module's actions */
     ACTION_ADD(_G.act_togglefloat, _e_mod_action_toggle_floating_cb,
@@ -1349,11 +1348,11 @@ e_modapi_shutdown(E_Module *m)
         _G.hook = NULL;
     }
 
-#define FREE_HANDLER(x)          \
-if (x) {                         \
-     ecore_event_handler_del(x); \
-     x = NULL;                   \
-}
+#define FREE_HANDLER(x)              \
+    if (x) {                         \
+        ecore_event_handler_del(x);  \
+        x = NULL;                    \
+    }
     FREE_HANDLER(_G.handler_hide);
     FREE_HANDLER(_G.handler_desk_show);
     FREE_HANDLER(_G.handler_desk_before_show);
@@ -1362,12 +1361,12 @@ if (x) {                         \
 #undef FREE_HANDLER
 
 
-#define ACTION_DEL(act, title, value)                   \
-if (act) {                                              \
-     e_action_predef_name_del(D_("E-Tiling"), D_(title)); \
-     e_action_del(value);                               \
-     act = NULL;                                        \
-}
+#define ACTION_DEL(act, title, value)                        \
+    if (act) {                                               \
+        e_action_predef_name_del(D_("E-Tiling"), D_(title)); \
+        e_action_del(value);                                 \
+        act = NULL;                                          \
+    }
     ACTION_DEL(_G.act_togglefloat, "Toggle floating", "toggle_floating");
     ACTION_DEL(_G.act_addcolumn, "Add a Column", "add_column");
     ACTION_DEL(_G.act_removecolumn, "Remove a Column", "remove_column");
