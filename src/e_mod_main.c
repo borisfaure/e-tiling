@@ -15,12 +15,13 @@ typedef enum {
 } tiling_change_t;
 
 /* actual module specifics */
+typedef struct geom_t {
+    int x, y, w, h;
+} geom_t;
 
 typedef struct Border_Extra {
     E_Border *border;
-    struct {
-        int x, y, w, h;
-    } expected, orig;
+    geom_t expected, orig;
     E_Popup *popup;
     Evas_Object *obj;
     char key[2];
@@ -803,6 +804,9 @@ destroy_overlays(void)
         _G.action_input_win = 0;
     }
 
+    _G.focused_bd = NULL;
+    _G.action_cb = NULL;
+
     _G.has_overlay = false;
 }
 
@@ -817,7 +821,6 @@ _key_down(void *data,
     if (ev->event_window != _G.action_input_win)
         return ECORE_CALLBACK_PASS_ON;
 
-    DBG("ev->key='%s'", ev->key);
     if (ev->modifiers)
         return ECORE_CALLBACK_PASS_ON;
 
@@ -825,6 +828,8 @@ _key_down(void *data,
         goto stop;
     if (strcmp(ev->key, "Escape") == 0)
         goto stop;
+
+    DBG("ev->key='%s'", ev->key);
 
     extra = eina_hash_find(_G.overlays, ev->key);
     if (extra) {
@@ -846,8 +851,6 @@ _do_overlay(E_Border *focused_bd,
     Ecore_X_Window parent;
 
     destroy_overlays();
-
-    DBG("swap");
 
     nb_win = get_window_count();
     if (nb_win < 2) {
@@ -887,7 +890,7 @@ _do_overlay(E_Border *focused_bd,
                                         "e/widgets/border/default/resize");
 
                 extra->key[0] = *c;
-                extra->key[0] = '\0';
+                extra->key[1] = '\0';
                 c++;
 
                 eina_hash_add(_G.overlays, extra->key, extra);
@@ -972,10 +975,52 @@ _e_mod_action_remove_column_cb(E_Object   *obj,
 }
 
 static void
-_action_swap(E_Border *focused_bd,
-             Border_Extra *extra)
+_action_swap(E_Border *bd_1,
+             Border_Extra *extra_2)
 {
-    DBG("swap");
+    Border_Extra *extra_1;
+    E_Border *bd_2 = extra_2->border;
+    Eina_List *l_1 = NULL, *l_2 = NULL;
+    geom_t gt;
+
+    extra_1 = eina_hash_find(_G.border_extras, &bd_1);
+    if (!extra_1) {
+        ERR("No extra for %p", bd_1);
+        return;
+    }
+
+    for (int i = 0; i < TILING_MAX_COLUMNS; i++) {
+        if ((l_1 = eina_list_data_find_list(_G.tinfo->columns[i], bd_1))) {
+            break;
+        }
+    }
+    for (int i = 0; i < TILING_MAX_COLUMNS; i++) {
+        if ((l_2 = eina_list_data_find_list(_G.tinfo->columns[i], bd_2))) {
+            break;
+        }
+    }
+
+    if (!l_1 || !l_2) {
+        return;
+    }
+
+    l_1->data = bd_2;
+    l_2->data = bd_1;
+
+    gt = extra_2->expected;
+    extra_2->expected = extra_1->expected;
+    extra_1->expected = gt;
+
+    e_border_move_resize(bd_1,
+                         extra_1->expected.x,
+                         extra_1->expected.y,
+                         extra_1->expected.w,
+                         extra_1->expected.h);
+    e_border_move_resize(bd_2,
+                         extra_2->expected.x,
+                         extra_2->expected.y,
+                         extra_2->expected.w,
+                         extra_2->expected.h);
 }
 
 static void
