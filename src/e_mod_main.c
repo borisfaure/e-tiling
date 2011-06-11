@@ -23,7 +23,7 @@ typedef struct Border_Extra {
      } expected, orig;
      E_Popup *popup;
      Evas_Object *obj;
-     char key;
+     char key[2];
 } Border_Extra;
 
 struct tiling_g tiling_g = {
@@ -51,12 +51,19 @@ static struct
 
     Eina_Hash           *border_extras;
 
+    Eina_Hash           *overlays;
+
     E_Action            *act_togglefloat,
                         *act_addcolumn,
                         *act_removecolumn,
                         *act_swap;
 
     E_Border            *swap_from;
+
+    Ecore_X_Window       action_input_win;
+    Ecore_Event_Handler *handler_key;
+    E_Border            *focused_bd;
+    void (*action_cb)(E_Border *bd, Border_Extra *extra);
 
     unsigned int        has_overlay    :1;
     unsigned int        is_swapping    :1;
@@ -761,11 +768,8 @@ toggle_floating(E_Border *bd)
 /* }}} */
 /* Overlays {{{*/
 
-static Eina_Bool
-destroy_overlay(const Eina_Hash *hash,
-                const void      *key,
-                void            *data,
-                void            *fdata)
+static void
+_overlays_free_cb(void *data)
 {
     Border_Extra *extra = data;
 
@@ -778,9 +782,8 @@ destroy_overlay(const Eina_Hash *hash,
         extra->popup = NULL;
     }
 
-    return EINA_TRUE;
+    extra->key[0] = '\0';
 }
-
 
 static void
 destroy_overlays(void)
@@ -788,10 +791,148 @@ destroy_overlays(void)
     if (!_G.has_overlay)
         return;
 
-    eina_hash_foreach(_G.border_extras, destroy_overlay, NULL);
+    eina_hash_free(_G.overlays);
+
+    if (_G.handler_key) {
+        ecore_event_handler_del(_G.handler_key);
+        _G.handler_key = NULL;
+    }
+    if (_G.action_input_win) {
+        e_grabinput_release(_G.action_input_win, _G.action_input_win);
+        ecore_x_window_free(_G.action_input_win);
+        _G.action_input_win = 0;
+    }
+
     _G.has_overlay = false;
 }
 
+static Eina_Bool
+_key_down(void *data,
+          int type,
+          void *event)
+{
+    Ecore_Event_Key *ev = event;
+    Border_Extra *extra;
+
+    if (ev->event_window != _G.action_input_win)
+        return ECORE_CALLBACK_PASS_ON;
+
+    DBG("ev->key='%s'", ev->key);
+    if (ev->modifiers)
+        return ECORE_CALLBACK_PASS_ON;
+
+    if (strcmp(ev->key, "Return") == 0)
+        goto stop;
+    if (strcmp(ev->key, "Escape") == 0)
+        goto stop;
+
+    extra = eina_hash_find(_G.overlays, ev->key);
+    if (extra) {
+        _G.action_cb(_G.focused_bd, extra);
+    }
+
+stop:
+    destroy_overlays();
+    return ECORE_CALLBACK_DONE;
+}
+
+static void
+_do_overlay(E_Border *focused_bd,
+            void (*action_cb)(E_Border *, Border_Extra *))
+{
+    int nb_win;
+    char keys[] = "asdfghkl;'qwertyuiop[]\\zxcvbnm,./`1234567890-=";
+    char *c = keys;
+    Ecore_X_Window parent;
+
+    destroy_overlays();
+
+    DBG("swap");
+
+    nb_win = get_window_count();
+    if (nb_win < 2) {
+        return;
+    }
+    _G.has_overlay = true;
+
+    _G.focused_bd = focused_bd;
+    _G.action_cb = action_cb;
+
+    _G.overlays = eina_hash_string_small_new(_overlays_free_cb);
+
+    for (int i = 0; i < TILING_MAX_COLUMNS; i++) {
+        Eina_List *l;
+        E_Border *bd;
+
+        if (!_G.tinfo->columns[i])
+            break;
+        EINA_LIST_FOREACH(_G.tinfo->columns[i], l, bd) {
+            if (bd != focused_bd && *c) {
+                Border_Extra *extra;
+                Evas_Coord ew, eh;
+
+                extra = eina_hash_find(_G.border_extras, &bd);
+                if (!extra) {
+                    ERR("No extra for %p", bd);
+                    continue;
+                }
+
+                extra->popup = e_popup_new(bd->zone, 0, 0, 1, 1);
+                if (!extra->popup)
+                    continue;
+
+                e_popup_layer_set(extra->popup, 255);
+                extra->obj = edje_object_add(extra->popup->evas);
+                e_theme_edje_object_set(extra->obj, "base/theme/borders",
+                                        "e/widgets/border/default/resize");
+
+                extra->key[0] = *c;
+                extra->key[0] = '\0';
+                c++;
+
+                eina_hash_add(_G.overlays, extra->key, extra);
+                edje_object_part_text_set(extra->obj, "e.text.label",
+                                          extra->key);
+                edje_object_size_min_calc(extra->obj, &ew, &eh);
+                evas_object_move(extra->obj, 0, 0);
+                evas_object_resize(extra->obj, ew, eh);
+                evas_object_show(extra->obj);
+                e_popup_edje_bg_object_set(extra->popup, extra->obj);
+
+                evas_object_show(extra->obj);
+                e_popup_show(extra->popup);
+
+                e_popup_move_resize(extra->popup,
+                                    (bd->x - extra->popup->zone->x) +
+                                    ((bd->w - ew) / 2),
+                                    (bd->y - extra->popup->zone->y) +
+                                    ((bd->h - eh) / 2),
+                                    ew, eh);
+
+                e_popup_show(extra->popup);
+            }
+        }
+    }
+
+    /* Get input */
+    parent = focused_bd->zone->container->win;
+    _G.action_input_win = ecore_x_window_input_new(parent, 0, 0, 1, 1);
+    if (!_G.action_input_win) {
+        destroy_overlays();
+        return;
+    }
+
+    ecore_x_window_show(_G.action_input_win);
+    if (!e_grabinput_get(_G.action_input_win, 0, _G.action_input_win)) {
+        destroy_overlays();
+
+        return;
+    }
+    /* TODO: timeout */
+
+   _G.handler_key = ecore_event_handler_add(ECORE_EVENT_KEY_DOWN,
+                                            _key_down, NULL);
+}
 /* }}} */
 /* Action callbacks {{{*/
 
@@ -830,16 +971,19 @@ _e_mod_action_remove_column_cb(E_Object   *obj,
     _remove_column();
 }
 
-static void _e_mod_action_swap_cb(E_Object   *obj,
-                                  const char *params)
+static void
+_action_swap(E_Border *focused_bd,
+             Border_Extra *extra)
+{
+    DBG("swap");
+}
+
+static void
+_e_mod_action_swap_cb(E_Object   *obj,
+                      const char *params)
 {
     E_Desk *desk;
     E_Border *focused_bd;
-    int nb_win;
-    char keys[] = "asdfghkl;'qwertyuiop[]\\zxcvbnm,./`1234567890-=";
-    char *c = keys;
-
-    destroy_overlays();
 
     desk = get_current_desk();
     if (!desk)
@@ -854,70 +998,10 @@ static void _e_mod_action_swap_cb(E_Object   *obj,
     if (!_G.tinfo->conf || !_G.tinfo->conf->nb_cols) {
         return;
     }
-    DBG("swap");
 
-    nb_win = get_window_count();
-    if (nb_win < 2) {
-        return;
-    }
-    _G.has_overlay = true;
-
-    for (int i = 0; i < TILING_MAX_COLUMNS; i++) {
-        Eina_List *l;
-        E_Border *bd;
-
-        if (!_G.tinfo->columns[i])
-            break;
-        EINA_LIST_FOREACH(_G.tinfo->columns[i], l, bd) {
-            if (bd != focused_bd && *c) {
-                Border_Extra *extra;
-                Evas_Coord ew, eh;
-                char buf[40];
-
-                extra = eina_hash_find(_G.border_extras, &bd);
-                if (!extra) {
-                    ERR("No extra for %p", bd);
-                    continue;
-                }
-
-                extra->popup = e_popup_new(bd->zone, 0, 0, 1, 1);
-                if (!extra->popup)
-                    continue;
-
-                e_popup_layer_set(extra->popup, 255);
-                extra->obj = edje_object_add(extra->popup->evas);
-                e_theme_edje_object_set(extra->obj, "base/theme/borders",
-                                        "e/widgets/border/default/resize");
-
-                snprintf(buf, sizeof(buf), "%c", *c);
-                extra->key = *c;
-                c++;
-                edje_object_part_text_set(extra->obj, "e.text.label", buf);
-                edje_object_size_min_calc(extra->obj, &ew, &eh);
-                evas_object_move(extra->obj, 0, 0);
-                evas_object_resize(extra->obj, ew, eh);
-                evas_object_show(extra->obj);
-                e_popup_edje_bg_object_set(extra->popup, extra->obj);
-
-                evas_object_show(extra->obj);
-                e_popup_show(extra->popup);
-
-                e_popup_move_resize(extra->popup,
-                                    (bd->x - extra->popup->zone->x) +
-                                    ((bd->w - ew) / 2),
-                                    (bd->y - extra->popup->zone->y) +
-                                    ((bd->h - eh) / 2),
-                                    ew, eh);
-
-                e_popup_show(extra->popup);
-            }
-        }
-    }
-    /* TODO:
-     * add overlay,
-     * add overlay timeout
-     * …*/
+    _do_overlay(focused_bd, _action_swap);
 }
+
 /* }}} */
 /* Hooks {{{*/
 
