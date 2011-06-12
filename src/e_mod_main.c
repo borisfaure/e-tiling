@@ -63,6 +63,7 @@ static struct
 
     Ecore_X_Window       action_input_win;
     Ecore_Event_Handler *handler_key;
+    Ecore_Timer         *action_timer;
     E_Border            *focused_bd;
     void (*action_cb)(E_Border *bd, Border_Extra *extra);
 
@@ -803,6 +804,10 @@ destroy_overlays(void)
         ecore_x_window_free(_G.action_input_win);
         _G.action_input_win = 0;
     }
+    if(_G.action_timer) {
+        ecore_timer_del(_G.action_timer);
+        _G.action_timer = NULL;
+    }
 
     _G.focused_bd = NULL;
     _G.action_cb = NULL;
@@ -839,6 +844,13 @@ _key_down(void *data,
 stop:
     destroy_overlays();
     return ECORE_CALLBACK_DONE;
+}
+
+static Eina_Bool
+_timeout_cb(void *data)
+{
+    destroy_overlays();
+    return ECORE_CALLBACK_CANCEL;
 }
 
 static void
@@ -931,7 +943,7 @@ _do_overlay(E_Border *focused_bd,
 
         return;
     }
-    /* TODO: timeout */
+    _G.action_timer = ecore_timer_add(5.0, _timeout_cb, NULL);
 
     _G.handler_key = ecore_event_handler_add(ECORE_EVENT_KEY_DOWN,
                                              _key_down, NULL);
