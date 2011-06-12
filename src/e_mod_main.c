@@ -1111,6 +1111,11 @@ _e_module_tiling_cb_hook(void *data,
             return;
         }
 
+        DBG("expected: %dx%d+%d+%d",
+            extra->expected.w,
+            extra->expected.h,
+            extra->expected.x,
+            extra->expected.y);
         if (col == 0 && !_G.tinfo->columns[1] && !_G.tinfo->columns[0]->next) {
             if (bd->maximized) {
                 extra->expected.x = bd->x;
