@@ -982,6 +982,7 @@ _action_swap(E_Border *bd_1,
     E_Border *bd_2 = extra_2->border;
     Eina_List *l_1 = NULL, *l_2 = NULL;
     geom_t gt;
+    unsigned int bd_2_maximized;
 
     extra_1 = eina_hash_find(_G.border_extras, &bd_1);
     if (!extra_1) {
@@ -1011,6 +1012,16 @@ _action_swap(E_Border *bd_1,
     extra_2->expected = extra_1->expected;
     extra_1->expected = gt;
 
+    bd_2_maximized = bd_2->maximized;
+    if (bd_2->maximized)
+        e_border_unmaximize(bd_2, E_MAXIMIZE_BOTH);
+    if (bd_1->maximized) {
+        e_border_unmaximize(bd_1, E_MAXIMIZE_BOTH);
+        e_border_maximize(bd_2, bd_1->maximized);
+    }
+    if (bd_2_maximized) {
+        e_border_maximize(bd_1, bd_2_maximized);
+    }
     e_border_move_resize(bd_1,
                          extra_1->expected.x,
                          extra_1->expected.y,
