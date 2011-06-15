@@ -1139,6 +1139,10 @@ _e_module_tiling_cb_hook(void *data,
     }
 
     col = get_column(bd);
+    if (!bd->changes.size && !bd->changes.pos && !bd->changes.border
+    && col >= 0) {
+        return;
+    }
 
     DBG("cb-Hook for %p / %s / %s, changes(size=%d, position=%d, border=%d)"
         " g:%dx%d+%d+%d bdname:%s (%d) %d",
@@ -1146,11 +1150,6 @@ _e_module_tiling_cb_hook(void *data,
         bd->changes.size, bd->changes.pos, bd->changes.border,
         bd->w, bd->h, bd->x, bd->y, bd->bordername,
         col, bd->maximized);
-
-    if (!bd->changes.size && !bd->changes.pos && !bd->changes.border
-    && col >= 0) {
-        return;
-    }
 
     if (col < 0) {
         _add_border(bd);
@@ -1170,6 +1169,12 @@ _e_module_tiling_cb_hook(void *data,
             extra->expected.h,
             extra->expected.x,
             extra->expected.y);
+        DBG("delta:%dx%d,%d,%d. step:%dx%d. base:%dx%d",
+            bd->w - extra->expected.w, bd->h - extra->expected.h,
+            bd->x - extra->expected.x, bd->y - extra->expected.y,
+            bd->client.icccm.step_w, bd->client.icccm.step_h,
+            bd->client.icccm.base_w, bd->client.icccm.base_h);
+
         if (col == 0 && !_G.tinfo->columns[1] && !_G.tinfo->columns[0]->next) {
             if (bd->maximized) {
                 extra->expected.x = bd->x;
@@ -1193,13 +1198,6 @@ _e_module_tiling_cb_hook(void *data,
                                      extra->expected.w, extra->expected.h);
             return;
         }
-
-        DBG("old:%dx%d+%d+%d vs new:%dx%d+%d+%d. step:%dx%d. base:%dx%d",
-            extra->expected.w, extra->expected.h,
-            extra->expected.x, extra->expected.y,
-            bd->w, bd->h, bd->x, bd->y,
-            bd->client.icccm.step_w, bd->client.icccm.step_h,
-            bd->client.icccm.base_w, bd->client.icccm.base_h);
 
         if (abs(extra->expected.w - bd->w) >= bd->client.icccm.step_w) {
             _move_resize_border_column(bd, extra, col, TILING_RESIZE);
