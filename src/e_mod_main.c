@@ -678,9 +678,33 @@ _move_resize_border_in_column(E_Border *bd, Border_Extra *extra,
     switch (change) {
       case TILING_RESIZE:
         if (!l->next) {
-            /* You're not allowed to resize */
-            bd->h = extra->expected.h;
-            /* TODO: accept resize, but move and resize upper */
+            if (l->prev) {
+                int delta = bd->h - extra->expected.h;
+                E_Border *prevbd = l->prev->data;
+                Border_Extra *prevextra;
+
+                prevextra = eina_hash_find(_G.border_extras, &prevbd);
+                if (!prevextra) {
+                    ERR("No extra for %p", prevbd);
+                    return;
+                }
+
+                prevextra->expected.h -= delta;
+                e_border_resize(prevbd,
+                                prevextra->expected.w,
+                                prevextra->expected.h);
+
+                extra->expected.y -= delta;
+
+                e_border_move(bd,
+                              extra->expected.x,
+                              extra->expected.y);
+            } else {
+                /* You're not allowed to resize */
+                e_border_resize(bd,
+                                extra->expected.w,
+                                extra->expected.h);
+            }
         } else {
             int delta = bd->h - extra->expected.h;
             E_Border *nextbd = l->next->data;
@@ -716,6 +740,9 @@ _move_resize_border_in_column(E_Border *bd, Border_Extra *extra,
         if (!l->prev) {
             /* You're not allowed to move */
             bd->y = extra->expected.y;
+            e_border_move(bd,
+                          extra->expected.x,
+                          extra->expected.y);
             DBG("trying to move %p, but !l->prev", bd);
         } else {
             int delta = bd->y - extra->expected.y;
@@ -733,11 +760,9 @@ _move_resize_border_in_column(E_Border *bd, Border_Extra *extra,
                 delta = prevextra->expected.h - min_height;
 
             prevextra->expected.h += delta;
-            e_border_move_resize(prevbd,
-                                 prevextra->expected.x,
-                                 prevextra->expected.y,
-                                 prevextra->expected.w,
-                                 prevextra->expected.h);
+            e_border_resize(prevbd,
+                            prevextra->expected.w,
+                            prevextra->expected.h);
 
             extra->expected.y += delta;
             extra->expected.h -= delta;
