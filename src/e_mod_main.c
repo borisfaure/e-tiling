@@ -670,13 +670,17 @@ _move_resize_border_in_column(E_Border *bd, Border_Extra *extra,
     Eina_List *l;
 
     l = eina_list_data_find_list(_G.tinfo->columns[col], bd);
-    if (!l)
+    if (!l) {
+        ERR("unable to bd %p in column %d", bd, col);
         return;
+    }
 
-    if (change == TILING_RESIZE) {
+    switch (change) {
+      case TILING_RESIZE:
         if (!l->next) {
             /* You're not allowed to resize */
             bd->h = extra->expected.h;
+            /* TODO: accept resize, but move and resize upper */
         } else {
             int delta = bd->h - extra->expected.h;
             E_Border *nextbd = l->next->data;
@@ -701,12 +705,18 @@ _move_resize_border_in_column(E_Border *bd, Border_Extra *extra,
                                  nextextra->expected.h);
 
             extra->expected.h += delta;
-            bd->h = extra->expected.h;
+            e_border_move_resize(bd,
+                                 extra->expected.x,
+                                 extra->expected.y,
+                                 extra->expected.w,
+                                 extra->expected.h);
         }
-    } else {
+        break;
+      case TILING_MOVE:
         if (!l->prev) {
             /* You're not allowed to move */
             bd->y = extra->expected.y;
+            DBG("trying to move %p, but !l->prev", bd);
         } else {
             int delta = bd->y - extra->expected.y;
             E_Border *prevbd = l->prev->data;
@@ -731,9 +741,16 @@ _move_resize_border_in_column(E_Border *bd, Border_Extra *extra,
 
             extra->expected.y += delta;
             extra->expected.h -= delta;
-            bd->y = extra->expected.y;
-            bd->h = extra->expected.h;
+
+            e_border_move_resize(bd,
+                                 extra->expected.x,
+                                 extra->expected.y,
+                                 extra->expected.w,
+                                 extra->expected.h);
         }
+        break;
+      default:
+        ERR("invalid tiling change: %d", change);
     }
 }
 
