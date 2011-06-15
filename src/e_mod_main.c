@@ -695,6 +695,7 @@ _move_resize_border_in_column(E_Border *bd, Border_Extra *extra,
                                 prevextra->expected.h);
 
                 extra->expected.y -= delta;
+                extra->expected.h = bd->h;
 
                 e_border_move(bd,
                               extra->expected.x,
