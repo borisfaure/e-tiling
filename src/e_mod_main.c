@@ -502,6 +502,7 @@ _add_border(E_Border *bd)
             }
             EINA_LIST_APPEND(_G.tinfo->columns[col], bd);
             _reorganize_column(col);
+            e_border_unmaximize(bd, E_MAXIMIZE_BOTH);
         } else {
             /* Add column */
             int nb_cols = get_column_count();
@@ -1191,6 +1192,15 @@ _e_module_tiling_cb_hook(void *data,
         if (bd->x == extra->expected.x && bd->y == extra->expected.y
         &&  bd->w == extra->expected.w && bd->h == extra->expected.h)
         {
+            return;
+        }
+        if (bd->maximized && (eina_list_count(_G.tinfo->columns[col]) > 1)) {
+            e_border_unmaximize(bd, E_MAXIMIZE_BOTH);
+            e_border_move_resize(bd,
+                                 extra->expected.x,
+                                 extra->expected.y,
+                                 extra->expected.w,
+                                 extra->expected.h);
             return;
         }
 
