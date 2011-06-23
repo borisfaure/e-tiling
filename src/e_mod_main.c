@@ -833,11 +833,8 @@ _overlays_free_cb(void *data)
 }
 
 static void
-destroy_overlays(void)
+end_special_input(void)
 {
-    if (!_G.has_overlay)
-        return;
-
     eina_hash_free(_G.overlays);
 
     if (_G.handler_key) {
@@ -887,14 +884,14 @@ overlay_key_down(void *data,
     }
 
 stop:
-    destroy_overlays();
+    end_special_input();
     return ECORE_CALLBACK_DONE;
 }
 
 static Eina_Bool
 _timeout_cb(void *data)
 {
-    destroy_overlays();
+    end_special_input();
     return ECORE_CALLBACK_CANCEL;
 }
 
@@ -907,7 +904,7 @@ _do_overlay(E_Border *focused_bd,
     char *c = keys;
     Ecore_X_Window parent;
 
-    destroy_overlays();
+    end_special_input();
 
     nb_win = get_window_count();
     if (nb_win < 2) {
@@ -978,13 +975,13 @@ _do_overlay(E_Border *focused_bd,
     parent = focused_bd->zone->container->win;
     _G.action_input_win = ecore_x_window_input_new(parent, 0, 0, 1, 1);
     if (!_G.action_input_win) {
-        destroy_overlays();
+        end_special_input();
         return;
     }
 
     ecore_x_window_show(_G.action_input_win);
     if (!e_grabinput_get(_G.action_input_win, 0, _G.action_input_win)) {
-        destroy_overlays();
+        end_special_input();
         return;
     }
     _G.action_timer = ecore_timer_add(OVERLAY_TIMEOUT, _timeout_cb, NULL);
@@ -1138,7 +1135,7 @@ move_key_down(void *data,
     }
 
 stop:
-    destroy_overlays();
+    end_special_input();
     return ECORE_CALLBACK_DONE;
 }
 
@@ -1149,7 +1146,7 @@ static void
 _e_mod_action_toggle_floating_cb(E_Object   *obj,
                                  const char *params)
 {
-    destroy_overlays();
+    end_special_input();
 
     toggle_floating(e_border_focused_get());
 }
@@ -1160,7 +1157,7 @@ _e_mod_action_add_column_cb(E_Object   *obj,
 {
     E_Desk *desk = get_current_desk();
 
-    destroy_overlays();
+    end_special_input();
 
     check_tinfo(desk);
 
@@ -1173,7 +1170,7 @@ _e_mod_action_remove_column_cb(E_Object   *obj,
 {
     E_Desk *desk = get_current_desk();
 
-    destroy_overlays();
+    end_special_input();
 
     check_tinfo(desk);
 
@@ -1295,13 +1292,13 @@ _e_mod_action_move_cb(E_Object   *obj,
     parent = focused_bd->zone->container->win;
     _G.action_input_win = ecore_x_window_input_new(parent, 0, 0, 1, 1);
     if (!_G.action_input_win) {
-        destroy_overlays();
+        end_special_input();
         return;
     }
 
     ecore_x_window_show(_G.action_input_win);
     if (!e_grabinput_get(_G.action_input_win, 0, _G.action_input_win)) {
-        destroy_overlays();
+        end_special_input();
         return;
     }
     _G.action_timer = ecore_timer_add(OVERLAY_TIMEOUT, _timeout_cb, NULL);
@@ -1321,7 +1318,7 @@ _e_module_tiling_cb_hook(void *data,
     E_Border *bd = border;
     int col = -1;
 
-    destroy_overlays();
+    end_special_input();
 
     if (!bd) {
         return;
@@ -1430,7 +1427,7 @@ _e_module_tiling_hide_hook(void *data,
     E_Event_Border_Hide *ev = event;
     E_Border *bd = ev->border;
 
-    destroy_overlays();
+    end_special_input();
 
     if (_G.currently_switching_desktop)
         return EINA_TRUE;
@@ -1453,7 +1450,7 @@ _e_module_tiling_desk_show(void *data,
 {
     _G.currently_switching_desktop = 0;
 
-    destroy_overlays();
+    end_special_input();
 
     return EINA_TRUE;
 }
@@ -1463,7 +1460,7 @@ _e_module_tiling_desk_before_show(void *data,
                                   int   type,
                                   void *event)
 {
-    destroy_overlays();
+    end_special_input();
 
     _G.currently_switching_desktop = 1;
 
@@ -1506,7 +1503,7 @@ _e_module_tiling_desk_set(void *data,
     E_Event_Border_Desk_Set *ev = event;
     Tiling_Info *tinfo;
 
-    destroy_overlays();
+    end_special_input();
 
     tinfo = eina_hash_find(_G.info_hash, &ev->desk);
 
@@ -1700,7 +1697,7 @@ e_modapi_shutdown(E_Module *m)
     e_configure_registry_item_del("windows/e-tiling");
     e_configure_registry_category_del("windows");
 
-    destroy_overlays();
+    end_special_input();
 
     E_FREE(tiling_g.config);
     E_CONFIG_DD_FREE(_G.config_edd);
