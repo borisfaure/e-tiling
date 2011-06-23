@@ -1294,7 +1294,9 @@ _e_mod_action_move_cb(E_Object   *obj,
 
     _G.focused_bd = focused_bd;
 
-    /* TODO */
+    /* TODO: popups */
+
+    _G.input_mode = INPUT_MODE_MOVING;
 
     /* Get input */
     parent = focused_bd->zone->container->win;
@@ -1326,7 +1328,9 @@ _e_module_tiling_cb_hook(void *data,
     E_Border *bd = border;
     int col = -1;
 
-    end_special_input();
+    if (_G.input_mode == INPUT_MODE_NONE
+    ||  _G.input_mode == INPUT_MODE_MOVING)
+        end_special_input();
 
     if (!bd) {
         return;
