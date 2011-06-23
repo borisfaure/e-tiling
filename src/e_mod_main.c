@@ -58,9 +58,8 @@ static struct
     E_Action            *act_togglefloat,
                         *act_addcolumn,
                         *act_removecolumn,
-                        *act_swap;
-
-    E_Border            *swap_from;
+                        *act_swap,
+                        *act_move;
 
     Ecore_X_Window       action_input_win;
     Ecore_Event_Handler *handler_key;
@@ -88,6 +87,7 @@ static struct
     .act_addcolumn = NULL,
     .act_removecolumn= NULL,
     .act_swap = NULL,
+    .act_move = NULL,
 };
 
 static void
@@ -861,7 +861,7 @@ destroy_overlays(void)
 }
 
 static Eina_Bool
-_key_down(void *data,
+overlay_key_down(void *data,
           int type,
           void *event)
 {
@@ -990,8 +990,158 @@ _do_overlay(E_Border *focused_bd,
     _G.action_timer = ecore_timer_add(OVERLAY_TIMEOUT, _timeout_cb, NULL);
 
     _G.handler_key = ecore_event_handler_add(ECORE_EVENT_KEY_DOWN,
-                                             _key_down, NULL);
+                                             overlay_key_down, NULL);
 }
+
+/* }}} */
+/* Move {{{*/
+
+static void _move_up(void)
+{
+    E_Border *bd_1 = _G.focused_bd,
+             *bd_2 = NULL;
+    Border_Extra *extra_1 = NULL,
+                 *extra_2 = NULL;
+    Eina_List *l_1 = NULL,
+              *l_2 = NULL;
+    int col;
+
+    col = get_column(_G.focused_bd);
+    if (col < 0)
+        return;
+
+    if (_G.tinfo->columns[col]->data == _G.focused_bd)
+        return;
+
+    l_1 = eina_list_data_find_list(_G.tinfo->columns[col], bd_1);
+    if (!l_1->prev)
+        return;
+    l_2 = l_1->prev;
+    bd_2 = l_2->data;
+
+    extra_1 = eina_hash_find(_G.border_extras, &bd_1);
+    if (!extra_1) {
+        ERR("No extra for %p", bd_1);
+        return;
+    }
+    extra_2 = eina_hash_find(_G.border_extras, &bd_2);
+    if (!extra_2) {
+        ERR("No extra for %p", bd_2);
+        return;
+    }
+
+    l_1->data = bd_2;
+    l_2->data = bd_1;
+
+    extra_1->expected.y = extra_2->expected.y;
+    extra_2->expected.y += extra_1->expected.h;
+
+    e_border_move(bd_1,
+                  extra_1->expected.x,
+                  extra_1->expected.y);
+    e_border_move(bd_2,
+                  extra_2->expected.x,
+                  extra_2->expected.y);
+}
+
+static void _move_down(void)
+{
+    E_Border *bd_1 = _G.focused_bd,
+             *bd_2 = NULL;
+    Border_Extra *extra_1 = NULL,
+                 *extra_2 = NULL;
+    Eina_List *l_1 = NULL,
+              *l_2 = NULL;
+    int col;
+
+    col = get_column(_G.focused_bd);
+    if (col < 0)
+        return;
+
+    l_1 = eina_list_data_find_list(_G.tinfo->columns[col], bd_1);
+    if (!l_1->next)
+        return;
+    l_2 = l_1->next;
+    bd_2 = l_2->data;
+
+    extra_1 = eina_hash_find(_G.border_extras, &bd_1);
+    if (!extra_1) {
+        ERR("No extra for %p", bd_1);
+        return;
+    }
+    extra_2 = eina_hash_find(_G.border_extras, &bd_2);
+    if (!extra_2) {
+        ERR("No extra for %p", bd_2);
+        return;
+    }
+
+    l_1->data = bd_2;
+    l_2->data = bd_1;
+
+    extra_2->expected.y = extra_1->expected.y;
+    extra_1->expected.y += extra_2->expected.h;
+
+    e_border_move(bd_1,
+                  extra_1->expected.x,
+                  extra_1->expected.y);
+    e_border_move(bd_2,
+                  extra_2->expected.x,
+                  extra_2->expected.y);
+}
+
+static Eina_Bool
+move_key_down(void *data,
+              int type,
+              void *event)
+{
+    Ecore_Event_Key *ev = event;
+    Border_Extra *extra;
+
+    if (ev->event_window != _G.action_input_win)
+        return ECORE_CALLBACK_PASS_ON;
+
+    if (ev->modifiers)
+        return ECORE_CALLBACK_PASS_ON;
+
+    if ((strcmp(ev->key, "Up") == 0)
+    ||  (strcmp(ev->key, "k") == 0))
+    {
+        _move_up();
+        return ECORE_CALLBACK_PASS_ON;
+    } else if ((strcmp(ev->key, "Down") == 0)
+           ||  (strcmp(ev->key, "j") == 0))
+    {
+        _move_down();
+        return ECORE_CALLBACK_PASS_ON;
+    } else if ((strcmp(ev->key, "Left") == 0)
+           ||  (strcmp(ev->key, "h") == 0))
+    {
+        /* TODO: move left */
+        return ECORE_CALLBACK_PASS_ON;
+    } else if ((strcmp(ev->key, "Right") == 0)
+           ||  (strcmp(ev->key, "l") == 0))
+    {
+        /* TODO: move right */
+        return ECORE_CALLBACK_PASS_ON;
+    }
+
+    if (strcmp(ev->key, "Return") == 0)
+        goto stop;
+    if (strcmp(ev->key, "Escape") == 0)
+        goto stop; /* TODO: fallback */
+
+    DBG("ev->key='%s'", ev->key);
+
+    extra = eina_hash_find(_G.overlays, ev->key);
+    if (extra) {
+        _G.action_cb(_G.focused_bd, extra);
+    }
+
+stop:
+    destroy_overlays();
+    return ECORE_CALLBACK_DONE;
+}
+
 /* }}} */
 /* Action callbacks {{{*/
 
@@ -1036,7 +1186,8 @@ _action_swap(E_Border *bd_1,
 {
     Border_Extra *extra_1;
     E_Border *bd_2 = extra_2->border;
-    Eina_List *l_1 = NULL, *l_2 = NULL;
+    Eina_List *l_1 = NULL,
+              *l_2 = NULL;
     geom_t gt;
     unsigned int bd_2_maximized;
 
@@ -1113,6 +1264,52 @@ _e_mod_action_swap_cb(E_Object   *obj,
 
     _do_overlay(focused_bd, _action_swap);
 }
+
+static void
+_e_mod_action_move_cb(E_Object   *obj,
+                      const char *params)
+{
+    E_Desk *desk;
+    E_Border *focused_bd;
+    Ecore_X_Window parent;
+
+    desk = get_current_desk();
+    if (!desk)
+        return;
+
+    focused_bd = e_border_focused_get();
+    if (!focused_bd || focused_bd->desk != desk)
+        return;
+
+    check_tinfo(desk);
+
+    if (!_G.tinfo->conf || !_G.tinfo->conf->nb_cols) {
+        return;
+    }
+
+    _G.focused_bd = focused_bd;
+
+    /* TODO */
+
+    /* Get input */
+    parent = focused_bd->zone->container->win;
+    _G.action_input_win = ecore_x_window_input_new(parent, 0, 0, 1, 1);
+    if (!_G.action_input_win) {
+        destroy_overlays();
+        return;
+    }
+
+    ecore_x_window_show(_G.action_input_win);
+    if (!e_grabinput_get(_G.action_input_win, 0, _G.action_input_win)) {
+        destroy_overlays();
+        return;
+    }
+    _G.action_timer = ecore_timer_add(OVERLAY_TIMEOUT, _timeout_cb, NULL);
+
+    _G.handler_key = ecore_event_handler_add(ECORE_EVENT_KEY_DOWN,
+                                             move_key_down, NULL);
+}
+
 
 /* }}} */
 /* Hooks {{{*/
@@ -1418,6 +1615,8 @@ e_modapi_init(E_Module *m)
                "Remove a Column", "remove_column");
     ACTION_ADD(_G.act_swap,   _e_mod_action_swap_cb,
                "Swap a window with an other", "swap");
+    ACTION_ADD(_G.act_move,   _e_mod_action_move_cb,
+               "Move window", "move");
 #undef ACTION_ADD
 
     /* Configuration entries */
@@ -1495,6 +1694,7 @@ e_modapi_shutdown(E_Module *m)
     ACTION_DEL(_G.act_addcolumn, "Add a Column", "add_column");
     ACTION_DEL(_G.act_removecolumn, "Remove a Column", "remove_column");
     ACTION_DEL(_G.act_swap, "Swap a window with an other", "swap");
+    ACTION_DEL(_G.act_move, "Move window", "move");
 #undef ACTION_DEL
 
     e_configure_registry_item_del("windows/e-tiling");
