@@ -1328,8 +1328,8 @@ _e_module_tiling_cb_hook(void *data,
     E_Border *bd = border;
     int col = -1;
 
-    if (_G.input_mode == INPUT_MODE_NONE
-    ||  _G.input_mode == INPUT_MODE_MOVING)
+    if (_G.input_mode != INPUT_MODE_NONE
+    &&  _G.input_mode != INPUT_MODE_MOVING)
         end_special_input();
 
     if (!bd) {
