@@ -15,6 +15,14 @@ typedef enum {
     TILING_MOVE,
 } tiling_change_t;
 
+typedef enum {
+    INPUT_MODE_NONE,
+    INPUT_MODE_SWAPPING,
+    INPUT_MODE_MOVING,
+    INPUT_MODE_GOING, /* TODO */
+    INPUT_MODE_TRANSITION, /* TODO */
+} tiling_input_mode_t;
+
 /* actual module specifics */
 typedef struct geom_t {
     int x, y, w, h;
@@ -67,8 +75,7 @@ static struct
     E_Border            *focused_bd;
     void (*action_cb)(E_Border *bd, Border_Extra *extra);
 
-    unsigned int        has_overlay    :1;
-    unsigned int        is_swapping    :1;
+    tiling_input_mode_t  input_mode;
 } tiling_mod_main_g = {
 #define _G tiling_mod_main_g
     .hook = NULL,
@@ -88,6 +95,8 @@ static struct
     .act_removecolumn= NULL,
     .act_swap = NULL,
     .act_move = NULL,
+
+    .input_mode = INPUT_MODE_NONE,
 };
 
 static void
@@ -835,6 +844,9 @@ _overlays_free_cb(void *data)
 static void
 end_special_input(void)
 {
+    if (_G.input_mode == INPUT_MODE_NONE)
+        return;
+
     eina_hash_free(_G.overlays);
 
     if (_G.handler_key) {
@@ -854,7 +866,7 @@ end_special_input(void)
     _G.focused_bd = NULL;
     _G.action_cb = NULL;
 
-    _G.has_overlay = false;
+    _G.input_mode = INPUT_MODE_NONE;
 }
 
 static Eina_Bool
@@ -897,7 +909,8 @@ _timeout_cb(void *data)
 
 static void
 _do_overlay(E_Border *focused_bd,
-            void (*action_cb)(E_Border *, Border_Extra *))
+            void (*action_cb)(E_Border *, Border_Extra *),
+            tiling_input_mode_t input_mode)
 {
     int nb_win;
     char keys[] = "asdfghkl;'qwertyuiop[]\\zxcvbnm,./`1234567890-=";
@@ -910,7 +923,8 @@ _do_overlay(E_Border *focused_bd,
     if (nb_win < 2) {
         return;
     }
-    _G.has_overlay = true;
+
+    _G.input_mode = input_mode;
 
     _G.focused_bd = focused_bd;
     _G.action_cb = action_cb;
@@ -1253,7 +1267,7 @@ _e_mod_action_swap_cb(E_Object   *obj,
         return;
     }
 
-    _do_overlay(focused_bd, _action_swap);
+    _do_overlay(focused_bd, _action_swap, INPUT_MODE_SWAPPING);
 }
 
 static void
