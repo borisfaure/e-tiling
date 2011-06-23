@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <assert.h>
 
+#define OVERLAY_TIMEOUT 5.0
 typedef enum {
     TILING_RESIZE,
     TILING_MOVE,
@@ -984,10 +985,9 @@ _do_overlay(E_Border *focused_bd,
     ecore_x_window_show(_G.action_input_win);
     if (!e_grabinput_get(_G.action_input_win, 0, _G.action_input_win)) {
         destroy_overlays();
-
         return;
     }
-    _G.action_timer = ecore_timer_add(5.0, _timeout_cb, NULL);
+    _G.action_timer = ecore_timer_add(OVERLAY_TIMEOUT, _timeout_cb, NULL);
 
     _G.handler_key = ecore_event_handler_add(ECORE_EVENT_KEY_DOWN,
                                              _key_down, NULL);
