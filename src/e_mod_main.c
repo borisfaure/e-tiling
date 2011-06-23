@@ -1092,13 +1092,14 @@ move_key_down(void *data,
               void *event)
 {
     Ecore_Event_Key *ev = event;
-    Border_Extra *extra;
 
     if (ev->event_window != _G.action_input_win)
         return ECORE_CALLBACK_PASS_ON;
 
     if (ev->modifiers)
         return ECORE_CALLBACK_PASS_ON;
+
+    DBG("ev->key='%s'", ev->key);
 
     if ((strcmp(ev->key, "Up") == 0)
     ||  (strcmp(ev->key, "k") == 0))
@@ -1126,13 +1127,6 @@ move_key_down(void *data,
         goto stop;
     if (strcmp(ev->key, "Escape") == 0)
         goto stop; /* TODO: fallback */
-
-    DBG("ev->key='%s'", ev->key);
-
-    extra = eina_hash_find(_G.overlays, ev->key);
-    if (extra) {
-        _G.action_cb(_G.focused_bd, extra);
-    }
 
 stop:
     end_special_input();
