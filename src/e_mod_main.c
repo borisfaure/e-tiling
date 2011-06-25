@@ -1100,6 +1100,49 @@ static void _move_down(void)
                   extra_2->expected.y);
 }
 
+static void _move_left(void)
+{
+    E_Border *bd = _G.focused_bd;
+    int col;
+
+    col = get_column(_G.focused_bd);
+    if (col <= 0)
+        return;
+
+
+    EINA_LIST_REMOVE(_G.tinfo->columns[col], bd);
+    EINA_LIST_APPEND(_G.tinfo->columns[col - 1], bd);
+
+    if (!_G.tinfo->columns[col]) {
+        int x, y, w, h;
+        int width = 0;
+        int nb_cols;
+
+        /* Remove column */
+        nb_cols = get_column_count();
+        nb_cols--;
+
+        e_zone_useful_geometry_get(bd->zone, &x, &y, &w, &h);
+
+        for (int i = col; i < nb_cols; i++) {
+            _G.tinfo->columns[i] = _G.tinfo->columns[i+1];
+        }
+        _G.tinfo->columns[nb_cols] = NULL;
+        for (int i = 0; i < nb_cols; i++) {
+
+            width = w / (nb_cols - i);
+
+            _set_column_geometry(i, x, width);
+
+            w -= width;
+            x += width;
+        }
+    } else {
+        _reorganize_column(col);
+        _reorganize_column(col - 1);
+    }
+}
+
 static Eina_Bool
 move_key_down(void *data,
               int type,
@@ -1128,7 +1171,7 @@ move_key_down(void *data,
     } else if ((strcmp(ev->key, "Left") == 0)
            ||  (strcmp(ev->key, "h") == 0))
     {
-        /* TODO: move left */
+        _move_left();
         return ECORE_CALLBACK_PASS_ON;
     } else if ((strcmp(ev->key, "Right") == 0)
            ||  (strcmp(ev->key, "l") == 0))
