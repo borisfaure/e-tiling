@@ -1277,6 +1277,7 @@ move_key_down(void *data,
     if (strcmp(ev->key, "Escape") == 0)
         goto stop; /* TODO: fallback */
 
+    return ECORE_CALLBACK_PASS_ON;
 stop:
     end_special_input();
     return ECORE_CALLBACK_DONE;
