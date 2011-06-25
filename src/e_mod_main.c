@@ -216,55 +216,76 @@ get_window_count(void)
 static void
 _reorganize_column(int col)
 {
-    int zx, zy, zw, zh, x, w, h, ch, i = 0, count;
-
     if (col < 0 || col >= TILING_MAX_COLUMNS
         || !_G.tinfo->columns[col])
         return;
 
-    e_zone_useful_geometry_get(_G.tinfo->desk->zone, &zx, &zy, &zw, &zh);
+    if (_G.tinfo->columns[col]->next) {
+        int zx, zy, zw, zh, x, w, h, ch, i = 0, count;
 
-    count = eina_list_count(_G.tinfo->columns[col]);
+        e_zone_useful_geometry_get(_G.tinfo->desk->zone, &zx, &zy, &zw, &zh);
 
-    x = _G.tinfo->x[col];
-    ch = 0;
-    w = _G.tinfo->w[col];
-    h = zh / count;
+        count = eina_list_count(_G.tinfo->columns[col]);
 
-    for (Eina_List *l = _G.tinfo->columns[col]; l; l = l->next, i++) {
-        E_Border *bd = l->data;
+        x = _G.tinfo->x[col];
+        ch = 0;
+        w = _G.tinfo->w[col];
+        h = zh / count;
+
+        for (Eina_List *l = _G.tinfo->columns[col]; l; l = l->next, i++) {
+            E_Border *bd = l->data;
+            Border_Extra *extra;
+            int d = (i * 2 * zh) % count
+                - (2 * ch) % count;
+
+            extra = eina_hash_find(_G.border_extras, &bd);
+            if (!extra) {
+                ERR("No extra for %p", bd);
+                continue;
+            }
+
+            if ((bd->maximized & E_MAXIMIZE_VERTICAL) && count != 1) {
+                e_border_unmaximize(bd, E_MAXIMIZE_VERTICAL);
+            }
+            /* let's use a bresenham here */
+
+            extra->expected.x = x;
+            extra->expected.y = ch + zy;
+            extra->expected.w = w;
+            extra->expected.h = h + d;
+            ch += extra->expected.h;
+
+            e_border_move_resize(bd,
+                                 extra->expected.x,
+                                 extra->expected.y,
+                                 extra->expected.w,
+                                 extra->expected.h);
+        }
+    } else {
+        E_Border *bd = _G.tinfo->columns[col]->data;
         Border_Extra *extra;
-        int d = (i * 2 * zh) % count
-            - (2 * ch) % count;
 
         extra = eina_hash_find(_G.border_extras, &bd);
         if (!extra) {
             ERR("No extra for %p", bd);
-            continue;
+            return;
         }
+        extra->expected.x = _G.tinfo->x[col];
+        extra->expected.w = _G.tinfo->w[col];
 
-        if ((bd->maximized & E_MAXIMIZE_VERTICAL) && count != 1) {
-            e_border_unmaximize(bd, E_MAXIMIZE_VERTICAL);
-        }
-        /* let's use a bresenham here */
+        e_border_move_resize(bd,
+                             extra->expected.x,
+                             extra->expected.y,
+                             extra->expected.w,
+                             extra->expected.h);
 
-        extra->expected.x = x;
-        extra->expected.y = ch + zy;
-        extra->expected.w = w;
-        extra->expected.h = h + d;
-        ch += extra->expected.h;
-
-        e_border_move_resize(bd, extra->expected.x,
-                                 extra->expected.y,
-                                 extra->expected.w,
-                                 extra->expected.h);
+        e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_VERTICAL);
     }
 }
 
 static void
 _move_resize_column(Eina_List *list, int delta_x, int delta_w)
 {
-    /* TODO: is alone */
     for (Eina_List *l = list; l; l = l->next) {
         E_Border *bd = l->data;
         Border_Extra *extra;
