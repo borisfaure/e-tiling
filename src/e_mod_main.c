@@ -1007,7 +1007,8 @@ _do_overlay(E_Border *focused_bd,
 /* }}} */
 /* Move {{{*/
 
-static void _move_up(void)
+static void
+_move_up(void)
 {
     E_Border *bd_1 = _G.focused_bd,
              *bd_2 = NULL;
@@ -1055,7 +1056,8 @@ static void _move_up(void)
                   extra_2->expected.y);
 }
 
-static void _move_down(void)
+static void
+_move_down(void)
 {
     E_Border *bd_1 = _G.focused_bd,
              *bd_2 = NULL;
@@ -1100,7 +1102,8 @@ static void _move_down(void)
                   extra_2->expected.y);
 }
 
-static void _move_left(void)
+static void
+_move_left(void)
 {
     E_Border *bd = _G.focused_bd;
     int col;
@@ -1143,6 +1146,95 @@ static void _move_left(void)
     }
 }
 
+static void
+_move_right(void)
+{
+    E_Border *bd = _G.focused_bd;
+    int col;
+    int nb_cols;
+
+    col = get_column(_G.focused_bd);
+    if (col == TILING_MAX_COLUMNS - 1)
+        return;
+
+    nb_cols = get_column_count();
+    if (col == nb_cols - 1 && !_G.tinfo->columns[col]->next)
+        return;
+
+    EINA_LIST_REMOVE(_G.tinfo->columns[col], bd);
+    EINA_LIST_APPEND(_G.tinfo->columns[col + 1], bd);
+
+    if (_G.tinfo->columns[col] && _G.tinfo->columns[col + 1]->next) {
+        _reorganize_column(col);
+        _reorganize_column(col + 1);
+    } else
+    if (!_G.tinfo->columns[col]) {
+        /* left shift columns on the right */
+        int x, y, w, h;
+        int width = 0;
+
+        /* Remove column */
+        nb_cols--;
+
+        e_zone_useful_geometry_get(bd->zone, &x, &y, &w, &h);
+
+        for (int i = col; i < nb_cols; i++) {
+            _G.tinfo->columns[i] = _G.tinfo->columns[i+1];
+        }
+        _G.tinfo->columns[nb_cols] = NULL;
+        for (int i = 0; i < nb_cols; i++) {
+
+            width = w / (nb_cols - i);
+
+            _set_column_geometry(i, x, width);
+
+            w -= width;
+            x += width;
+        }
+    } else {
+        /* Add column */
+        int x, y, w, h;
+        int width = 0;
+        Border_Extra *extra;
+
+        extra = eina_hash_find(_G.border_extras, &bd);
+        if (!extra) {
+            ERR("No extra for %p", bd);
+            return;
+        }
+
+        e_zone_useful_geometry_get(bd->zone, &x, &y, &w, &h);
+
+        for (int i = 0; i < nb_cols; i++) {
+
+            width = w / (nb_cols + 1 - i);
+
+            _set_column_geometry(i, x, width);
+
+            w -= width;
+            x += width;
+        }
+
+        _G.tinfo->x[nb_cols] = x;
+        _G.tinfo->w[nb_cols] = width;
+        extra->expected.x = x;
+        extra->expected.y = y;
+        extra->expected.w = width;
+        extra->expected.h = h;
+        e_border_move_resize(bd,
+                             extra->expected.x,
+                             extra->expected.y,
+                             extra->expected.w,
+                             extra->expected.h);
+        e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_VERTICAL);
+
+        EINA_LIST_APPEND(_G.tinfo->columns[nb_cols], bd);
+
+        if (nb_cols + 1 > _G.tinfo->conf->nb_cols)
+            _G.tinfo->conf->nb_cols = nb_cols + 1;
+    }
+}
+
 static Eina_Bool
 move_key_down(void *data,
               int type,
@@ -1176,7 +1268,7 @@ move_key_down(void *data,
     } else if ((strcmp(ev->key, "Right") == 0)
            ||  (strcmp(ev->key, "l") == 0))
     {
-        /* TODO: move right */
+        _move_right();
         return ECORE_CALLBACK_PASS_ON;
     }
 
