@@ -16,7 +16,8 @@ autom4te.cache/
 /config.sub
 /configure
 /depcomp
-/e-module-e-tiling.edj
+/data/e-module-e-tiling.edj
+/data/module.desktop
 /install-sh
 /libtool
 /ltmain.sh
@@ -55,7 +56,6 @@ autom4te.cache/
 /m4/xsize.m4
 /missing
 /mkinstalldirs
-/module.desktop
 /po/Makefile.in.in
 /po/Makevars.template
 /po/POTFILES

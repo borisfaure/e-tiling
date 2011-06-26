@@ -56,6 +56,7 @@ AC_OUTPUT([
 Makefile
 src/Makefile
 po/Makefile.in
-module.desktop
+data/Makefile
+data/module.desktop
 ], [
 ])
