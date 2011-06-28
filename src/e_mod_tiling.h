@@ -1,5 +1,5 @@
-#ifndef E_MOD_MAIN_H
-#define E_MOD_MAIN_H
+#ifndef E_MOD_TILING_H
+#define E_MOD_TILING_H
 #include <libintl.h>
 #define D_(str) dgettext(PACKAGE, str)
 

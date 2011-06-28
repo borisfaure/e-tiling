@@ -1,6 +1,6 @@
 #include "e.h"
 #include "config.h"
-#include "e_mod_main.h"
+#include "e_mod_tiling.h"
 #include "e_mod_config.h"
 #include "e_border.h"
 #include "e_shelf.h"

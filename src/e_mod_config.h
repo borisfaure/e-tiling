@@ -2,7 +2,7 @@
 #else
 #ifndef E_MOD_CONFIG_H
 #define E_MOD_CONFIG_H
-#include "e_mod_main.h"
+#include "e_mod_tiling.h"
 
 struct _E_Config_Dialog_Data
 {

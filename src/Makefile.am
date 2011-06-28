@@ -6,8 +6,8 @@ INCLUDES = -I. \
 
 pkgdir = $(datadir)/$(MODULE_ARCH)
 pkg_LTLIBRARIES = module.la
-module_la_SOURCES = e_mod_main.c \
-		    e_mod_main.h \
+module_la_SOURCES = e_mod_tiling.c \
+		    e_mod_tiling.h \
 		    e_mod_config.c \
 		    e_mod_config.h
 
