@@ -90,11 +90,11 @@ collections {
                     color: 255 255 255 0;
                     rel1 {
                         relative: 0 0;
-                        offset: 5 15;
+                        offset: 0 29;
                     }
                     rel2 {
                         relative: 0 0;
-                        offset: 29 40;
+                        offset: 24 54;
                     }
                     image.normal: "arrow_sw.png";
                     fill.smooth: 0;
@@ -295,6 +295,278 @@ collections {
                 action: STATE_SET "default" 0.0;
                 transition: DECELERATE 0.6;
                 target: "arrow_s";
+            }
+        }
+    }
+
+    group {
+        name: "e-tiling/move/right";
+        min: 101 54;
+        parts {
+            part {
+                name: arrow_se;
+                mouse_events: 0;
+                description {
+                    state: "default" 0.0;
+                    visible: 0;
+                    color: 255 255 255 0;
+                    rel1 {
+                        relative: 0 0;
+                        offset: 0 0;
+                    }
+                    rel2 {
+                        relative: 0 0;
+                        offset: 24 25;
+                    }
+                    image.normal: "arrow_se.png";
+                    fill.smooth: 0;
+                }
+                description {
+                    state: "visible" 0.0;
+                    inherit: "default" 0.0;
+                    visible: 1;
+                    color: 255 255 255 255;
+                }
+            }
+            part {
+                name: arrow_e;
+                mouse_events: 0;
+                description {
+                    state: "default" 0.0;
+                    visible: 0;
+                    color: 255 255 255 0;
+                    rel1 {
+                        relative: 0 0;
+                        offset: 38 25;
+                    }
+                    rel2 {
+                        relative: 0 0;
+                        offset:  59 54;
+                    }
+                    image.normal: "arrow_e.png";
+                    fill.smooth: 0;
+                }
+                description {
+                    state: "visible" 0.0;
+                    inherit: "default" 0.0;
+                    visible: 1;
+                    color: 255 255 255 255;
+                }
+            }
+            part {
+                name: arrow_ne;
+                mouse_events: 0;
+                description {
+                    state: "default" 0.0;
+                    visible: 0;
+                    color: 255 255 255 0;
+                    rel1 {
+                        relative: 0 0;
+                        offset:  77 0;
+                    }
+                    rel2 {
+                        relative: 0 0;
+                        offset: 101 24;
+                    }
+                    image.normal: "arrow_ne.png";
+                    fill.smooth: 0;
+                }
+                description {
+                    state: "visible" 0.0;
+                    inherit: "default" 0.0;
+                    visible: 1;
+                    color: 255 255 255 255;
+                }
+            }
+        }
+        programs {
+            program {
+                name: "init";
+                signal: "load";
+                source: "";
+                action: STATE_SET "default" 0.0;
+                target: "arrow_se";
+                target: "arrow_e";
+                target: "arrow_ne";
+                after: "in1a";
+            }
+            program {
+                name: "in1a";
+                action: STATE_SET "visible" 0.0;
+                transition: SINUSOIDAL 0.4;
+                target: "arrow_se";
+                after: "in2a";
+                after: "in2b";
+            }
+            program {
+                name: "in1b";
+                action: STATE_SET "default" 0.0;
+                transition: DECELERATE 0.6;
+                target: "arrow_ne";
+            }
+            program {
+                name: "in2a";
+                action: STATE_SET "visible" 0.0;
+                transition: SINUSOIDAL 0.4;
+                target: "arrow_e";
+                after: "in3a";
+                after: "in3b";
+            }
+            program {
+                name: "in2b";
+                action: STATE_SET "default" 0.0;
+                transition: DECELERATE 0.4;
+                target: "arrow_se";
+            }
+            program {
+                name: "in3a";
+                action: STATE_SET "visible" 0.0;
+                transition: SINUSOIDAL 0.4;
+                target: "arrow_ne";
+                after: "in1a";
+                after: "in1b";
+            }
+            program {
+                name: "in3b";
+                action: STATE_SET "default" 0.0;
+                transition: DECELERATE 0.6;
+                target: "arrow_e";
+            }
+        }
+    }
+
+    group {
+        name: "e-tiling/move/up";
+        min: 54 101;
+        parts {
+            part {
+                name: arrow_ne;
+                mouse_events: 0;
+                description {
+                    state: "default" 0.0;
+                    visible: 0;
+                    color: 255 255 255 0;
+                    rel1 {
+                        relative: 0 0;
+                        offset: 0 76;
+                    }
+                    rel2 {
+                        relative: 0 0;
+                        offset: 24 101;
+                    }
+                    image.normal: "arrow_ne.png";
+                    fill.smooth: 0;
+                }
+                description {
+                    state: "visible" 0.0;
+                    inherit: "default" 0.0;
+                    visible: 1;
+                    color: 255 255 255 255;
+                }
+            }
+            part {
+                name: arrow_n;
+                mouse_events: 0;
+                description {
+                    state: "default" 0.0;
+                    visible: 0;
+                    color: 255 255 255 0;
+                    rel1 {
+                        relative: 0 0;
+                        offset: 25 38;
+                    }
+                    rel2 {
+                        relative: 0 0;
+                        offset:  54 59;
+                    }
+                    image.normal: "arrow_n.png";
+                    fill.smooth: 0;
+                }
+                description {
+                    state: "visible" 0.0;
+                    inherit: "default" 0.0;
+                    visible: 1;
+                    color: 255 255 255 255;
+                }
+            }
+            part {
+                name: arrow_nw;
+                mouse_events: 0;
+                description {
+                    state: "default" 0.0;
+                    visible: 0;
+                    color: 255 255 255 0;
+                    rel1 {
+                        relative: 0 0;
+                        offset:  0 0;
+                    }
+                    rel2 {
+                        relative: 0 0;
+                        offset: 24 25;
+                    }
+                    image.normal: "arrow_nw.png";
+                    fill.smooth: 0;
+                }
+                description {
+                    state: "visible" 0.0;
+                    inherit: "default" 0.0;
+                    visible: 1;
+                    color: 255 255 255 255;
+                }
+            }
+        }
+        programs {
+            program {
+                name: "init";
+                signal: "load";
+                source: "";
+                action: STATE_SET "default" 0.0;
+                target: "arrow_ne";
+                target: "arrow_n";
+                target: "arrow_nw";
+                after: "in1a";
+            }
+            program {
+                name: "in1a";
+                action: STATE_SET "visible" 0.0;
+                transition: SINUSOIDAL 0.4;
+                target: "arrow_ne";
+                after: "in2a";
+                after: "in2b";
+            }
+            program {
+                name: "in1b";
+                action: STATE_SET "default" 0.0;
+                transition: DECELERATE 0.6;
+                target: "arrow_nw";
+            }
+            program {
+                name: "in2a";
+                action: STATE_SET "visible" 0.0;
+                transition: SINUSOIDAL 0.4;
+                target: "arrow_n";
+                after: "in3a";
+                after: "in3b";
+            }
+            program {
+                name: "in2b";
+                action: STATE_SET "default" 0.0;
+                transition: DECELERATE 0.4;
+                target: "arrow_ne";
+            }
+            program {
+                name: "in3a";
+                action: STATE_SET "visible" 0.0;
+                transition: SINUSOIDAL 0.4;
+                target: "arrow_nw";
+                after: "in1a";
+                after: "in1b";
+            }
+            program {
+                name: "in3b";
+                action: STATE_SET "default" 0.0;
+                transition: DECELERATE 0.6;
+                target: "arrow_n";
             }
         }
     }
