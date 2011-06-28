@@ -32,6 +32,25 @@ collections {
         min: 101 54;
         parts {
             part {
+                name: "_";
+                type: RECT;
+                mouse_events: 0;
+                description {
+                    min: 101 54;
+                    max: 101 54;
+                    state: "default" 0.0;
+                    color: 255 255 255 0;
+                    rel1 {
+                        relative: 0.0 0.0;
+                        offset: 0 0;
+                    }
+                    rel2 {
+                        relative: 1 1;
+                        offset: -1 -1;
+                    }
+                }
+            }
+            part {
                 name: arrow_nw;
                 mouse_events: 0;
                 description {
@@ -41,10 +60,12 @@ collections {
                     rel1 {
                         relative: 0 0;
                         offset: 77 29;
+                        to: "_";
                     }
                     rel2 {
                         relative: 0 0;
                         offset: 101 54;
+                        to: "_";
                     }
                     image.normal: "arrow_nw.png";
                     fill.smooth: 0;
@@ -66,10 +87,12 @@ collections {
                     rel1 {
                         relative: 0 0;
                         offset: 42 0;
+                        to: "_";
                     }
                     rel2 {
                         relative: 0 0;
                         offset: 63 29;
+                        to: "_";
                     }
                     image.normal: "arrow_w.png";
                     fill.smooth: 0;
@@ -91,10 +114,12 @@ collections {
                     rel1 {
                         relative: 0 0;
                         offset: 0 29;
+                        to: "_";
                     }
                     rel2 {
                         relative: 0 0;
                         offset: 24 54;
+                        to: "_";
                     }
                     image.normal: "arrow_sw.png";
                     fill.smooth: 0;
@@ -168,6 +193,25 @@ collections {
         min: 54 101;
         parts {
             part {
+                name: "_";
+                type: RECT;
+                mouse_events: 0;
+                description {
+                    min: 54 101;
+                    max: 54 101;
+                    state: "default" 0.0;
+                    color: 255 255 255 0;
+                    rel1 {
+                        relative: 0.0 0.0;
+                        offset: 0 0;
+                    }
+                    rel2 {
+                        relative: 1 1;
+                        offset: -1 -1;
+                    }
+                }
+            }
+            part {
                 name: arrow_sw;
                 mouse_events: 0;
                 description {
@@ -177,10 +221,12 @@ collections {
                     rel1 {
                         relative: 0 0;
                         offset: 29 0;
+                        to: "_";
                     }
                     rel2 {
                         relative: 0 0;
                         offset: 53 25;
+                        to: "_";
                     }
                     image.normal: "arrow_sw.png";
                     fill.smooth: 0;
@@ -202,10 +248,12 @@ collections {
                     rel1 {
                         relative: 0 0;
                         offset: 0 38;
+                        to: "_";
                     }
                     rel2 {
                         relative: 0 0;
                         offset:  29 59;
+                        to: "_";
                     }
                     image.normal: "arrow_s.png";
                     fill.smooth: 0;
@@ -227,10 +275,12 @@ collections {
                     rel1 {
                         relative: 0 0;
                         offset: 29 76;
+                        to: "_";
                     }
                     rel2 {
                         relative: 0 0;
                         offset: 53 101;
+                        to: "_";
                     }
                     image.normal: "arrow_se.png";
                     fill.smooth: 0;
@@ -304,6 +354,25 @@ collections {
         min: 101 54;
         parts {
             part {
+                name: "_";
+                type: RECT;
+                mouse_events: 0;
+                description {
+                    min: 101 54;
+                    max: 101 54;
+                    state: "default" 0.0;
+                    color: 255 255 255 0;
+                    rel1 {
+                        relative: 0.0 0.0;
+                        offset: 0 0;
+                    }
+                    rel2 {
+                        relative: 1 1;
+                        offset: -1 -1;
+                    }
+                }
+            }
+            part {
                 name: arrow_se;
                 mouse_events: 0;
                 description {
@@ -313,10 +382,12 @@ collections {
                     rel1 {
                         relative: 0 0;
                         offset: 0 0;
+                        to: "_";
                     }
                     rel2 {
                         relative: 0 0;
                         offset: 24 25;
+                        to: "_";
                     }
                     image.normal: "arrow_se.png";
                     fill.smooth: 0;
@@ -338,10 +409,12 @@ collections {
                     rel1 {
                         relative: 0 0;
                         offset: 38 25;
+                        to: "_";
                     }
                     rel2 {
                         relative: 0 0;
                         offset:  59 54;
+                        to: "_";
                     }
                     image.normal: "arrow_e.png";
                     fill.smooth: 0;
@@ -363,10 +436,12 @@ collections {
                     rel1 {
                         relative: 0 0;
                         offset:  77 0;
+                        to: "_";
                     }
                     rel2 {
                         relative: 0 0;
                         offset: 101 24;
+                        to: "_";
                     }
                     image.normal: "arrow_ne.png";
                     fill.smooth: 0;
@@ -440,6 +515,25 @@ collections {
         min: 54 101;
         parts {
             part {
+                name: "_";
+                type: RECT;
+                mouse_events: 0;
+                description {
+                    min: 54 101;
+                    max: 54 101;
+                    state: "default" 0.0;
+                    color: 255 255 255 0;
+                    rel1 {
+                        relative: 0.0 0.0;
+                        offset: 0 0;
+                    }
+                    rel2 {
+                        relative: 1 1;
+                        offset: -1 -1;
+                    }
+                }
+            }
+            part {
                 name: arrow_ne;
                 mouse_events: 0;
                 description {
@@ -449,10 +543,12 @@ collections {
                     rel1 {
                         relative: 0 0;
                         offset: 0 76;
+                        to: "_";
                     }
                     rel2 {
                         relative: 0 0;
                         offset: 24 101;
+                        to: "_";
                     }
                     image.normal: "arrow_ne.png";
                     fill.smooth: 0;
@@ -474,10 +570,12 @@ collections {
                     rel1 {
                         relative: 0 0;
                         offset: 25 38;
+                        to: "_";
                     }
                     rel2 {
                         relative: 0 0;
                         offset:  54 59;
+                        to: "_";
                     }
                     image.normal: "arrow_n.png";
                     fill.smooth: 0;
@@ -499,10 +597,12 @@ collections {
                     rel1 {
                         relative: 0 0;
                         offset:  0 0;
+                        to: "_";
                     }
                     rel2 {
                         relative: 0 0;
                         offset: 24 25;
+                        to: "_";
                     }
                     image.normal: "arrow_nw.png";
                     fill.smooth: 0;
