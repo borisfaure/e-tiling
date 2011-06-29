@@ -9,7 +9,10 @@
 #include <stdbool.h>
 #include <assert.h>
 
+/* types {{{ */
+
 #define OVERLAY_TIMEOUT 5.0
+
 typedef enum {
     TILING_RESIZE,
     TILING_MOVE,
@@ -23,16 +26,19 @@ typedef enum {
     INPUT_MODE_TRANSITION, /* TODO */
 } tiling_input_mode_t;
 
-/* actual module specifics */
 typedef struct geom_t {
     int x, y, w, h;
 } geom_t;
 
+typedef struct overlay_t {
+    E_Popup *popup;
+    Evas_Object *obj;
+} overlay_t;
+
 typedef struct Border_Extra {
     E_Border *border;
     geom_t expected, orig;
-    E_Popup *popup;
-    Evas_Object *obj;
+    overlay_t overlay;
     char key[2];
 } Border_Extra;
 
@@ -41,6 +47,12 @@ struct tiling_g tiling_g = {
     .config = NULL,
     .log_domain = -1,
 };
+
+static void
+_add_border(E_Border *bd);
+
+/* }}} */
+/* Globals {{{ */
 
 static struct
 {
@@ -99,9 +111,7 @@ static struct
     .input_mode = INPUT_MODE_NONE,
 };
 
-static void
-_add_border(E_Border *bd);
-
+/* }}} */
 /* Utils {{{ */
 
 #define EINA_LIST_IS_IN(_list, _el) \
@@ -850,13 +860,13 @@ _overlays_free_cb(void *data)
 {
     Border_Extra *extra = data;
 
-    if (extra->obj) {
-        evas_object_del(extra->obj);
-        extra->obj = NULL;
+    if (extra->overlay.obj) {
+        evas_object_del(extra->overlay.obj);
+        extra->overlay.obj = NULL;
     }
-    if (extra->popup) {
-        e_object_del(E_OBJECT(extra->popup));
-        extra->popup = NULL;
+    if (extra->overlay.popup) {
+        e_object_del(E_OBJECT(extra->overlay.popup));
+        extra->overlay.popup = NULL;
     }
 
     extra->key[0] = '\0';
@@ -969,13 +979,15 @@ _do_overlay(E_Border *focused_bd,
                     continue;
                 }
 
-                extra->popup = e_popup_new(bd->zone, 0, 0, 1, 1);
-                if (!extra->popup)
+                extra->overlay.popup = e_popup_new(bd->zone, 0, 0, 1, 1);
+                if (!extra->overlay.popup)
                     continue;
 
-                e_popup_layer_set(extra->popup, 255);
-                extra->obj = edje_object_add(extra->popup->evas);
-                e_theme_edje_object_set(extra->obj, "base/theme/borders",
+                e_popup_layer_set(extra->overlay.popup, 255);
+                extra->overlay.obj =
+                    edje_object_add(extra->overlay.popup->evas);
+                e_theme_edje_object_set(extra->overlay.obj,
+                                        "base/theme/borders",
                                         "e/widgets/border/default/resize");
 
                 extra->key[0] = *c;
@@ -983,25 +995,27 @@ _do_overlay(E_Border *focused_bd,
                 c++;
 
                 eina_hash_add(_G.overlays, extra->key, extra);
-                edje_object_part_text_set(extra->obj, "e.text.label",
+                edje_object_part_text_set(extra->overlay.obj,
+                                          "e.text.label",
                                           extra->key);
-                edje_object_size_min_calc(extra->obj, &ew, &eh);
-                evas_object_move(extra->obj, 0, 0);
-                evas_object_resize(extra->obj, ew, eh);
-                evas_object_show(extra->obj);
-                e_popup_edje_bg_object_set(extra->popup, extra->obj);
+                edje_object_size_min_calc(extra->overlay.obj, &ew, &eh);
+                evas_object_move(extra->overlay.obj, 0, 0);
+                evas_object_resize(extra->overlay.obj, ew, eh);
+                evas_object_show(extra->overlay.obj);
+                e_popup_edje_bg_object_set(extra->overlay.popup,
+                                           extra->overlay.obj);
 
-                evas_object_show(extra->obj);
-                e_popup_show(extra->popup);
+                evas_object_show(extra->overlay.obj);
+                e_popup_show(extra->overlay.popup);
 
-                e_popup_move_resize(extra->popup,
-                                    (bd->x - extra->popup->zone->x) +
+                e_popup_move_resize(extra->overlay.popup,
+                                    (bd->x - extra->overlay.popup->zone->x) +
                                     ((bd->w - ew) / 2),
-                                    (bd->y - extra->popup->zone->y) +
+                                    (bd->y - extra->overlay.popup->zone->y) +
                                     ((bd->h - eh) / 2),
                                     ew, eh);
 
-                e_popup_show(extra->popup);
+                e_popup_show(extra->overlay.popup);
             }
         }
     }
