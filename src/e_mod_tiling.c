@@ -900,13 +900,28 @@ end_special_input(void)
         ecore_x_window_free(_G.action_input_win);
         _G.action_input_win = 0;
     }
-    if(_G.action_timer) {
+    if (_G.action_timer) {
         ecore_timer_del(_G.action_timer);
         _G.action_timer = NULL;
     }
 
     _G.focused_bd = NULL;
     _G.action_cb = NULL;
+
+    if (_G.input_mode == INPUT_MODE_MOVING) {
+        for (int i = 0; i < MOVE_COUNT; i++) {
+            overlay_t *overlay = &_G.move_overlays[i];
+
+            if (overlay->obj) {
+                evas_object_del(overlay->obj);
+                overlay->obj = NULL;
+            }
+            if (overlay->popup) {
+                e_object_del(E_OBJECT(overlay->popup));
+                overlay->popup = NULL;
+            }
+        }
+    }
 
     _G.input_mode = INPUT_MODE_NONE;
 }
