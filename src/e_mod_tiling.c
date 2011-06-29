@@ -26,6 +26,15 @@ typedef enum {
     INPUT_MODE_TRANSITION, /* TODO */
 } tiling_input_mode_t;
 
+typedef enum {
+    MOVE_UP,
+    MOVE_DOWN,
+    MOVE_LEFT,
+    MOVE_RIGHT,
+
+    MOVE_COUNT
+} tiling_move_t;
+
 typedef struct geom_t {
     int x, y, w, h;
 } geom_t;
@@ -56,6 +65,7 @@ _add_border(E_Border *bd);
 
 static struct
 {
+    char                 edj_path[PATH_MAX];
     E_Config_DD         *config_edd,
                         *vdesk_edd;
     E_Border_Hook       *hook;
@@ -81,6 +91,7 @@ static struct
                         *act_swap,
                         *act_move;
 
+    overlay_t            move_overlays[MOVE_COUNT];
     Ecore_X_Window       action_input_win;
     Ecore_Event_Handler *handler_key;
     Ecore_Timer         *action_timer;
@@ -1043,6 +1054,70 @@ _do_overlay(E_Border *focused_bd,
 /* Move {{{*/
 
 static void
+_check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
+{
+    Eina_List *l = NULL;
+
+    if (col < 0) {
+        col = get_column(_G.focused_bd);
+        if (col < 0)
+            return;
+    }
+    if (!extra) {
+        extra = eina_hash_find(_G.border_extras, &bd);
+        if (!extra) {
+            ERR("No extra for %p", bd);
+            return;
+        }
+    }
+    l = eina_list_data_find_list(_G.tinfo->columns[col], bd);
+    if (!l)
+        return;
+
+    if (col > 0) {
+        DBG("move left");
+        /* move left */
+        if (_G.move_overlays[MOVE_LEFT].popup) {
+            Evas_Coord ew, eh;
+
+            edje_object_size_min_calc(extra->overlay.obj, &ew, &eh);
+            e_popup_move_resize(extra->overlay.popup,
+                                extra->expected.x - ew/2,
+                                extra->expected.y,
+                                ew,
+                                extra->expected.h);
+        } else {
+            Evas_Coord ew, eh;
+            overlay_t *overlay = &_G.move_overlays[MOVE_LEFT];
+            DBG("no overlay");
+
+            overlay->popup = e_popup_new(bd->zone, 0, 0, 1, 1);
+            if (!overlay->popup)
+                return;
+
+            e_popup_layer_set(overlay->popup, 255);
+            overlay->obj = edje_object_add(overlay->popup->evas);
+            /* TODO: use theme */
+            edje_object_file_set(overlay->obj, _G.edj_path,
+                                 "e-tiling/move/left");
+            edje_object_size_min_calc(overlay->obj, &ew, &eh);
+            e_popup_edje_bg_object_set(overlay->popup,
+                                       overlay->obj);
+            evas_object_show(overlay->obj);
+            e_popup_move_resize(overlay->popup,
+                                extra->expected.x - ew/2,
+                                extra->expected.y,
+                                ew,
+                                extra->expected.h);
+            evas_object_resize(overlay->obj,
+                               ew, extra->expected.h);
+
+            e_popup_show(overlay->popup);
+        }
+    }
+}
+
+static void
 _move_up(void)
 {
     E_Border *bd_1 = _G.focused_bd,
@@ -1486,6 +1561,7 @@ _e_mod_action_move_cb(E_Object   *obj,
 
     _G.handler_key = ecore_event_handler_add(ECORE_EVENT_KEY_DOWN,
                                              move_key_down, NULL);
+    _check_moving_anims(focused_bd, NULL, -1);
 }
 
 
@@ -1598,6 +1674,10 @@ _e_module_tiling_cb_hook(void *data,
         }
         if (extra->expected.y != bd->y) {
             _move_resize_border_in_column(bd, extra, col, TILING_MOVE);
+        }
+
+        if (_G.input_mode == INPUT_MODE_MOVING) {
+            _check_moving_anims(bd, extra, col);
         }
     }
 }
@@ -1800,12 +1880,13 @@ e_modapi_init(E_Module *m)
 #undef ACTION_ADD
 
     /* Configuration entries */
-    snprintf(buf, sizeof(buf), "%s/e-module-e-tiling.edj",
+    snprintf(_G.edj_path, sizeof(_G.edj_path), "%s/e-module-e-tiling.edj",
              e_module_dir_get(m));
     e_configure_registry_category_add("windows", 50, D_("Windows"), NULL,
                                       "preferences-system-windows");
     e_configure_registry_item_add("windows/e-tiling", 150, D_("E-Tiling"),
-                                  NULL, buf, e_int_config_tiling_module);
+                                  NULL, _G.edj_path,
+                                  e_int_config_tiling_module);
 
     /* Configuration itself */
     _G.config_edd = E_CONFIG_DD_NEW("Tiling_Config", Config);
