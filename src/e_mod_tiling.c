@@ -889,7 +889,10 @@ end_special_input(void)
     if (_G.input_mode == INPUT_MODE_NONE)
         return;
 
-    eina_hash_free(_G.overlays);
+    if (_G.overlays) {
+        eina_hash_free(_G.overlays);
+        _G.overlays = NULL;
+    }
 
     if (_G.handler_key) {
         ecore_event_handler_del(_G.handler_key);
