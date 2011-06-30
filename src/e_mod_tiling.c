@@ -1012,7 +1012,7 @@ _do_overlay(E_Border *focused_bd,
                 if (!extra->overlay.popup)
                     continue;
 
-                e_popup_layer_set(extra->overlay.popup, 255);
+                e_popup_layer_set(extra->overlay.popup, 101);
                 extra->overlay.obj =
                     edje_object_add(extra->overlay.popup->evas);
                 e_theme_edje_object_set(extra->overlay.obj,
@@ -1113,7 +1113,7 @@ _check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
             if (!overlay->popup)
                 return;
 
-            e_popup_layer_set(overlay->popup, 255);
+            e_popup_layer_set(overlay->popup, 101);
             overlay->obj = edje_object_add(overlay->popup->evas);
             /* TODO: use theme */
             edje_object_file_set(overlay->obj, _G.edj_path,
