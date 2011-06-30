@@ -30,6 +30,9 @@ collections {
     group {
         name: "e-tiling/move/left";
         min: 101 54;
+        data {
+            item: "shaped" "0";
+        }
         parts {
             part {
                 name: "_";
@@ -191,6 +194,9 @@ collections {
     group {
         name: "e-tiling/move/down";
         min: 54 101;
+        data {
+            item: "shaped" "0";
+        }
         parts {
             part {
                 name: "_";
@@ -352,6 +358,9 @@ collections {
     group {
         name: "e-tiling/move/right";
         min: 101 54;
+        data {
+            item: "shaped" "0";
+        }
         parts {
             part {
                 name: "_";
@@ -513,6 +522,9 @@ collections {
     group {
         name: "e-tiling/move/up";
         min: 54 101;
+        data {
+            item: "shaped" "0";
+        }
         parts {
             part {
                 name: "_";
