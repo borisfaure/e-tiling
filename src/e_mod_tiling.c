@@ -1121,9 +1121,10 @@ _check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
             evas_object_show(overlay->obj);
             e_popup_move_resize(overlay->popup,
                                 extra->expected.x - ew/2,
-                                extra->expected.y,
+                                extra->expected.y + extra->expected.h/2
+                                                  - eh/2,
                                 ew,
-                                extra->expected.h);
+                                eh);
             evas_object_resize(overlay->obj,
                                ew, extra->expected.h);
 
