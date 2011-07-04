@@ -1093,7 +1093,6 @@ _check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
         return;
 
     if (col > 0) {
-        DBG("move left");
         /* move left */
         if (_G.move_overlays[MOVE_LEFT].popup) {
             Evas_Coord ew, eh;
@@ -1131,6 +1130,17 @@ _check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
                                ew, extra->expected.h);
 
             e_popup_show(overlay->popup);
+        }
+    } else if (_G.move_overlays[MOVE_LEFT].popup) {
+        overlay_t *overlay = &_G.move_overlays[MOVE_LEFT];
+
+        if (overlay->obj) {
+            evas_object_del(overlay->obj);
+            overlay->obj = NULL;
+        }
+        if (overlay->popup) {
+            e_object_del(E_OBJECT(overlay->popup));
+            overlay->popup = NULL;
         }
     }
 }
