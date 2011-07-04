@@ -1142,7 +1142,6 @@ _check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
         }
     }
 
-
     /* move up */
     if (l->prev) {
         if (_G.move_overlays[MOVE_UP].popup) {
@@ -1182,6 +1181,56 @@ _check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
         }
     } else if (_G.move_overlays[MOVE_UP].popup) {
         overlay_t *overlay = &_G.move_overlays[MOVE_UP];
+
+        if (overlay->obj) {
+            evas_object_del(overlay->obj);
+            overlay->obj = NULL;
+        }
+        if (overlay->popup) {
+            e_object_del(E_OBJECT(overlay->popup));
+            overlay->popup = NULL;
+        }
+    }
+
+    /* move down */
+    if (l->next) {
+        if (_G.move_overlays[MOVE_DOWN].popup) {
+            Evas_Coord ew, eh;
+
+            edje_object_size_min_calc(extra->overlay.obj, &ew, &eh);
+            e_popup_move(_G.move_overlays[MOVE_DOWN].popup,
+                         extra->expected.x + extra->expected.w/2 - ew/2,
+                         extra->expected.y + extra->expected.h - eh/2);
+        } else {
+            Evas_Coord ew, eh;
+            overlay_t *overlay = &_G.move_overlays[MOVE_DOWN];
+            DBG("no overlay");
+
+            overlay->popup = e_popup_new(bd->zone, 0, 0, 1, 1);
+            if (!overlay->popup)
+                return;
+
+            e_popup_layer_set(overlay->popup, 101);
+            overlay->obj = edje_object_add(overlay->popup->evas);
+            /* TODO: use theme */
+            edje_object_file_set(overlay->obj, _G.edj_path,
+                                 "e-tiling/move/down");
+            edje_object_size_min_calc(overlay->obj, &ew, &eh);
+            e_popup_edje_bg_object_set(overlay->popup,
+                                       overlay->obj);
+            evas_object_show(overlay->obj);
+            e_popup_move_resize(overlay->popup,
+                                extra->expected.x + extra->expected.w/2
+                                                  - ew/2,
+                                extra->expected.y + extra->expected.h - eh/2,
+                                ew,
+                                eh);
+            evas_object_resize(overlay->obj, ew, eh);
+
+            e_popup_show(overlay->popup);
+        }
+    } else if (_G.move_overlays[MOVE_DOWN].popup) {
+        overlay_t *overlay = &_G.move_overlays[MOVE_DOWN];
 
         if (overlay->obj) {
             evas_object_del(overlay->obj);
