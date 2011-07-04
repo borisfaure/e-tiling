@@ -1098,11 +1098,9 @@ _check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
             Evas_Coord ew, eh;
 
             edje_object_size_min_calc(extra->overlay.obj, &ew, &eh);
-            e_popup_move_resize(extra->overlay.popup,
-                                extra->expected.x - ew/2,
-                                extra->expected.y,
-                                ew,
-                                extra->expected.h);
+            e_popup_move(_G.move_overlays[MOVE_UP].popup,
+                         extra->expected.x - ew/2,
+                         extra->expected.y + extra->expected.h/2 - eh/2);
         } else {
             Evas_Coord ew, eh;
             overlay_t *overlay = &_G.move_overlays[MOVE_LEFT];
@@ -1123,11 +1121,11 @@ _check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
             evas_object_show(overlay->obj);
             e_popup_move_resize(overlay->popup,
                                 extra->expected.x - ew/2,
-                                extra->expected.y,
+                                extra->expected.y + extra->expected.h/2
+                                                  - eh/2,
                                 ew,
-                                extra->expected.h);
-            evas_object_resize(overlay->obj,
-                               ew, extra->expected.h);
+                                eh);
+            evas_object_resize(overlay->obj, ew, eh);
 
             e_popup_show(overlay->popup);
         }
@@ -1151,11 +1149,9 @@ _check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
             Evas_Coord ew, eh;
 
             edje_object_size_min_calc(extra->overlay.obj, &ew, &eh);
-            e_popup_move_resize(extra->overlay.popup,
-                                extra->expected.x,
-                                extra->expected.y - eh/2,
-                                extra->expected.w,
-                                eh);
+            e_popup_move(_G.move_overlays[MOVE_UP].popup,
+                         extra->expected.x + extra->expected.w/2 - ew/2,
+                         extra->expected.y - eh/2);
         } else {
             Evas_Coord ew, eh;
             overlay_t *overlay = &_G.move_overlays[MOVE_UP];
@@ -1175,12 +1171,12 @@ _check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
                                        overlay->obj);
             evas_object_show(overlay->obj);
             e_popup_move_resize(overlay->popup,
-                                extra->expected.x,
+                                extra->expected.x + extra->expected.w/2
+                                                  - ew/2,
                                 extra->expected.y - eh/2,
-                                extra->expected.w,
+                                ew,
                                 eh);
-            evas_object_resize(overlay->obj,
-                               extra->expected.w, eh);
+            evas_object_resize(overlay->obj, ew, eh);
 
             e_popup_show(overlay->popup);
         }
