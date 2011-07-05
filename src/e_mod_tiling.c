@@ -44,6 +44,13 @@ typedef struct overlay_t {
     Evas_Object *obj;
 } overlay_t;
 
+typedef struct transition_overlay_t {
+    overlay_t overlay;
+    int col;
+    E_Border *bd;
+    char key[2];
+} transition_overlay_t;
+
 typedef struct Border_Extra {
     E_Border *border;
     geom_t expected, orig;
@@ -89,7 +96,8 @@ static struct
                         *act_addcolumn,
                         *act_removecolumn,
                         *act_swap,
-                        *act_move;
+                        *act_move,
+                        *act_adjusttransitions;
 
     overlay_t            move_overlays[MOVE_COUNT];
     Ecore_X_Window       action_input_win;
@@ -925,6 +933,7 @@ end_special_input(void)
             }
         }
     }
+    /* TODO: INPUT_MODE_TRANSITION */
 
     _G.input_mode = INPUT_MODE_NONE;
 }
@@ -1566,6 +1575,155 @@ stop:
 }
 
 /* }}} */
+/* Adjust Transitions {{{ */
+
+static void
+_transition_overlays_free_cb(void *data)
+{
+    transition_overlay_t *trov = data;
+
+    if (trov->overlay.obj) {
+        evas_object_del(trov->overlay.obj);
+    }
+    if (trov->overlay.popup) {
+        e_object_del(E_OBJECT(trov->overlay.popup));
+    }
+    E_FREE(trov);
+}
+
+static Eina_Bool
+_transition_overlay_key_down(void *data,
+                             int type,
+                             void *event)
+{
+    Ecore_Event_Key *ev = event;
+    transition_overlay_t *trov = NULL;
+
+    if (ev->event_window != _G.action_input_win)
+        return ECORE_CALLBACK_PASS_ON;
+
+    if (ev->modifiers)
+        return ECORE_CALLBACK_PASS_ON;
+
+    if (strcmp(ev->key, "Return") == 0)
+        goto stop;
+    if (strcmp(ev->key, "Escape") == 0)
+        goto stop;
+
+    DBG("ev->key='%s'", ev->key);
+
+    trov = eina_hash_find(_G.overlays, ev->key);
+    if (trov) {
+        /* TODO */
+    }
+
+stop:
+    end_special_input();
+    return ECORE_CALLBACK_DONE;
+}
+
+static void
+_do_transition_overlay(void)
+{
+    int nb_win;
+    char keys[] = "asdfghkl;'qwertyuiop[]\\zxcvbnm,./`1234567890-=";
+    char *c = keys;
+    Ecore_X_Window parent;
+
+    end_special_input();
+
+    nb_win = get_window_count();
+    if (nb_win < 2) {
+        return;
+    }
+
+    _G.input_mode = INPUT_MODE_TRANSITION;
+
+    _G.overlays = eina_hash_string_small_new(_transition_overlays_free_cb);
+
+    for (int i = 0; i < TILING_MAX_COLUMNS; i++) {
+        Eina_List *l;
+        E_Border *bd;
+
+        if (!_G.tinfo->columns[i])
+            break;
+        EINA_LIST_FOREACH(_G.tinfo->columns[i], l, bd) {
+            if (l->next && *c) {
+                Border_Extra *extra;
+                Evas_Coord ew, eh;
+                transition_overlay_t *trov;
+
+                extra = eina_hash_find(_G.border_extras, &bd);
+                if (!extra) {
+                    ERR("No extra for %p", bd);
+                    continue;
+                }
+
+                trov = E_NEW(transition_overlay_t, 1);
+
+                trov->overlay.popup = e_popup_new(bd->zone, 0, 0, 1, 1);
+                if (!trov->overlay.popup)
+                    continue;
+
+                e_popup_layer_set(trov->overlay.popup, 101);
+                trov->overlay.obj = edje_object_add(trov->overlay.popup->evas);
+                e_theme_edje_object_set(trov->overlay.obj,
+                                        "base/theme/borders",
+                                        "e/widgets/border/default/resize");
+
+                trov->key[0] = *c;
+                trov->key[1] = '\0';
+                c++;
+
+                eina_hash_add(_G.overlays, trov->key, trov);
+                edje_object_part_text_set(trov->overlay.obj,
+                                          "e.text.label",
+                                          trov->key);
+                edje_object_size_min_calc(trov->overlay.obj, &ew, &eh);
+                evas_object_move(trov->overlay.obj, 0, 0);
+                evas_object_resize(trov->overlay.obj, ew, eh);
+                evas_object_show(trov->overlay.obj);
+                e_popup_edje_bg_object_set(trov->overlay.popup,
+                                           trov->overlay.obj);
+
+                evas_object_show(trov->overlay.obj);
+                e_popup_show(trov->overlay.popup);
+
+                e_popup_move_resize(trov->overlay.popup,
+                    (extra->expected.x - trov->overlay.popup->zone->x) +
+                        ((extra->expected.w - ew) / 2),
+                    (extra->expected.y - trov->overlay.popup->zone->y +
+                        extra->expected.h - (eh / 2)),
+                    ew, eh);
+
+                e_popup_show(trov->overlay.popup);
+            }
+        }
+        if (i != TILING_MAX_COLUMNS && _G.tinfo->columns[i+1] && *c) {
+            /* TODO */
+        }
+    }
+
+    /* Get input */
+    parent = _G.tinfo->desk->zone->container->win;
+    _G.action_input_win = ecore_x_window_input_new(parent, 0, 0, 1, 1);
+    if (!_G.action_input_win) {
+        end_special_input();
+        return;
+    }
+
+    ecore_x_window_show(_G.action_input_win);
+    if (!e_grabinput_get(_G.action_input_win, 0, _G.action_input_win)) {
+        end_special_input();
+        return;
+    }
+    _G.action_timer = ecore_timer_add(OVERLAY_TIMEOUT, _timeout_cb, NULL);
+
+    _G.handler_key = ecore_event_handler_add(ECORE_EVENT_KEY_DOWN,
+                                             _transition_overlay_key_down,
+                                             NULL);
+}
+/* }}} */
 /* Action callbacks {{{*/
 
 static void
@@ -1712,8 +1870,6 @@ _e_mod_action_move_cb(E_Object   *obj,
 
     _G.focused_bd = focused_bd;
 
-    /* TODO: popups */
-
     _G.input_mode = INPUT_MODE_MOVING;
 
     /* Get input */
@@ -1734,6 +1890,27 @@ _e_mod_action_move_cb(E_Object   *obj,
     _G.handler_key = ecore_event_handler_add(ECORE_EVENT_KEY_DOWN,
                                              move_key_down, NULL);
     _check_moving_anims(focused_bd, NULL, -1);
+}
+
+static void
+_e_mod_action_adjust_transitions(E_Object   *obj,
+                                 const char *params)
+{
+    E_Desk *desk;
+    E_Border *focused_bd;
+    Ecore_X_Window parent;
+
+    desk = get_current_desk();
+    if (!desk)
+        return;
+
+    check_tinfo(desk);
+
+    if (!_G.tinfo->conf || !_G.tinfo->conf->nb_cols) {
+        return;
+    }
+
+    _do_transition_overlay();
 }
 
 
@@ -2041,14 +2218,16 @@ e_modapi_init(E_Module *m)
     /* Module's actions */
     ACTION_ADD(_G.act_togglefloat, _e_mod_action_toggle_floating_cb,
                "Toggle floating", "toggle_floating");
-    ACTION_ADD(_G.act_addcolumn,   _e_mod_action_add_column_cb,
+    ACTION_ADD(_G.act_addcolumn, _e_mod_action_add_column_cb,
                "Add a Column", "add_column");
-    ACTION_ADD(_G.act_removecolumn,   _e_mod_action_remove_column_cb,
+    ACTION_ADD(_G.act_removecolumn, _e_mod_action_remove_column_cb,
                "Remove a Column", "remove_column");
-    ACTION_ADD(_G.act_swap,   _e_mod_action_swap_cb,
+    ACTION_ADD(_G.act_swap, _e_mod_action_swap_cb,
                "Swap a window with an other", "swap");
-    ACTION_ADD(_G.act_move,   _e_mod_action_move_cb,
+    ACTION_ADD(_G.act_move, _e_mod_action_move_cb,
                "Move window", "move");
+    ACTION_ADD(_G.act_adjusttransitions, _e_mod_action_adjust_transitions,
+               "Adjust transitions", "adjust_transitions");
 #undef ACTION_ADD
 
     /* Configuration entries */
@@ -2128,6 +2307,8 @@ e_modapi_shutdown(E_Module *m)
     ACTION_DEL(_G.act_removecolumn, "Remove a Column", "remove_column");
     ACTION_DEL(_G.act_swap, "Swap a window with an other", "swap");
     ACTION_DEL(_G.act_move, "Move window", "move");
+    ACTION_DEL(_G.act_adjusttransitions, "Adjust transitions",
+               "adjust_transitions");
 #undef ACTION_DEL
 
     e_configure_registry_item_del("windows/e-tiling");
