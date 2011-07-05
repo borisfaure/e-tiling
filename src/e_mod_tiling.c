@@ -23,7 +23,7 @@ typedef enum {
     INPUT_MODE_SWAPPING,
     INPUT_MODE_MOVING,
     INPUT_MODE_GOING, /* TODO */
-    INPUT_MODE_TRANSITION, /* TODO */
+    INPUT_MODE_TRANSITION,
 } tiling_input_mode_t;
 
 typedef enum {
@@ -919,7 +919,8 @@ end_special_input(void)
     _G.focused_bd = NULL;
     _G.action_cb = NULL;
 
-    if (_G.input_mode == INPUT_MODE_MOVING) {
+    switch(_G.input_mode) {
+      case INPUT_MODE_MOVING:
         for (int i = 0; i < MOVE_COUNT; i++) {
             overlay_t *overlay = &_G.move_overlays[i];
 
@@ -933,7 +934,6 @@ end_special_input(void)
             }
         }
     }
-    /* TODO: INPUT_MODE_TRANSITION */
 
     _G.input_mode = INPUT_MODE_NONE;
 }
