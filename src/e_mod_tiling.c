@@ -1673,6 +1673,8 @@ _do_transition_overlay(void)
 
                 trov->key[0] = *c;
                 trov->key[1] = '\0';
+                trov->col = i;
+                trov->bd = bd;
                 c++;
 
                 eina_hash_add(_G.overlays, trov->key, trov);
@@ -1700,7 +1702,49 @@ _do_transition_overlay(void)
             }
         }
         if (i != TILING_MAX_COLUMNS && _G.tinfo->columns[i+1] && *c) {
-            /* TODO */
+            Evas_Coord ew, eh;
+            transition_overlay_t *trov;
+
+            trov = E_NEW(transition_overlay_t, 1);
+
+            trov->overlay.popup = e_popup_new(_G.tinfo->desk->zone,
+                                              0, 0, 1, 1);
+            if (!trov->overlay.popup)
+                continue;
+
+            e_popup_layer_set(trov->overlay.popup, 101);
+            trov->overlay.obj = edje_object_add(trov->overlay.popup->evas);
+            e_theme_edje_object_set(trov->overlay.obj,
+                                    "base/theme/borders",
+                                    "e/widgets/border/default/resize");
+
+            trov->key[0] = *c;
+            trov->key[1] = '\0';
+            trov->col = i;
+            trov->bd = NULL;
+            c++;
+
+            eina_hash_add(_G.overlays, trov->key, trov);
+            edje_object_part_text_set(trov->overlay.obj,
+                                      "e.text.label",
+                                      trov->key);
+            edje_object_size_min_calc(trov->overlay.obj, &ew, &eh);
+            evas_object_move(trov->overlay.obj, 0, 0);
+            evas_object_resize(trov->overlay.obj, ew, eh);
+            evas_object_show(trov->overlay.obj);
+            e_popup_edje_bg_object_set(trov->overlay.popup,
+                                       trov->overlay.obj);
+
+            evas_object_show(trov->overlay.obj);
+            e_popup_show(trov->overlay.popup);
+
+            e_popup_move_resize(trov->overlay.popup,
+                                (_G.tinfo->x[i] + _G.tinfo->w[i] +
+                                  - trov->overlay.popup->zone->x - ew / 2),
+                                (trov->overlay.popup->zone->h / 2 - eh / 2),
+                                ew, eh);
+
+            e_popup_show(trov->overlay.popup);
         }
     }
 
