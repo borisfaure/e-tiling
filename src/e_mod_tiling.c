@@ -72,38 +72,39 @@ _add_border(E_Border *bd);
 
 static struct
 {
-    char                 edj_path[PATH_MAX];
-    E_Config_DD         *config_edd,
-                        *vdesk_edd;
-    E_Border_Hook       *hook;
-    int                  currently_switching_desktop;
-    Ecore_Event_Handler *handler_hide,
-                        *handler_desk_show,
-                        *handler_desk_before_show,
-                        *handler_mouse_move,
-                        *handler_desk_set;
-    E_Zone              *current_zone;
+    char                  edj_path[PATH_MAX];
+    E_Config_DD          *config_edd,
+                         *vdesk_edd;
+    E_Border_Hook        *hook;
+    int                   currently_switching_desktop;
+    Ecore_Event_Handler  *handler_hide,
+                         *handler_desk_show,
+                         *handler_desk_before_show,
+                         *handler_mouse_move,
+                         *handler_desk_set;
+    E_Zone               *current_zone;
 
-    Tiling_Info         *tinfo;
+    Tiling_Info          *tinfo;
     /* This hash holds the Tiling_Info-pointers for each desktop */
-    Eina_Hash           *info_hash;
+    Eina_Hash            *info_hash;
 
-    Eina_Hash           *border_extras;
+    Eina_Hash            *border_extras;
 
-    Eina_Hash           *overlays;
+    Eina_Hash            *overlays;
 
-    E_Action            *act_togglefloat,
-                        *act_addcolumn,
-                        *act_removecolumn,
-                        *act_swap,
-                        *act_move,
-                        *act_adjusttransitions;
+    E_Action             *act_togglefloat,
+                         *act_addcolumn,
+                         *act_removecolumn,
+                         *act_swap,
+                         *act_move,
+                         *act_adjusttransitions;
 
-    overlay_t            move_overlays[MOVE_COUNT];
-    Ecore_X_Window       action_input_win;
-    Ecore_Event_Handler *handler_key;
-    Ecore_Timer         *action_timer;
-    E_Border            *focused_bd;
+    overlay_t             move_overlays[MOVE_COUNT];
+    transition_overlay_t *transition_overlay;
+    Ecore_X_Window        action_input_win;
+    Ecore_Event_Handler  *handler_key;
+    Ecore_Timer          *action_timer;
+    E_Border             *focused_bd;
     void (*action_cb)(E_Border *bd, Border_Extra *extra);
 
     tiling_input_mode_t  input_mode;
@@ -933,6 +934,19 @@ end_special_input(void)
                 overlay->popup = NULL;
             }
         }
+        break;
+      case INPUT_MODE_SWAPPING:
+        if (_G.transition_overlay) {
+            if (_G.transition_overlay->overlay.obj) {
+                evas_object_del(_G.transition_overlay->overlay.obj);
+            }
+            if (_G.transition_overlay->overlay.popup) {
+                e_object_del(E_OBJECT(_G.transition_overlay->overlay.popup));
+            }
+            E_FREE(_G.transition_overlay);
+            _G.transition_overlay = NULL;
+        }
+        break;
     }
 
     _G.input_mode = INPUT_MODE_NONE;
@@ -1582,13 +1596,15 @@ _transition_overlays_free_cb(void *data)
 {
     transition_overlay_t *trov = data;
 
-    if (trov->overlay.obj) {
-        evas_object_del(trov->overlay.obj);
+    if (trov != _G.transition_overlay) {
+        if (trov->overlay.obj) {
+            evas_object_del(trov->overlay.obj);
+        }
+        if (trov->overlay.popup) {
+            e_object_del(E_OBJECT(trov->overlay.popup));
+        }
+        E_FREE(trov);
     }
-    if (trov->overlay.popup) {
-        e_object_del(E_OBJECT(trov->overlay.popup));
-    }
-    E_FREE(trov);
 }
 
 static Eina_Bool
@@ -1597,7 +1613,6 @@ _transition_overlay_key_down(void *data,
                              void *event)
 {
     Ecore_Event_Key *ev = event;
-    transition_overlay_t *trov = NULL;
 
     if (ev->event_window != _G.action_input_win)
         return ECORE_CALLBACK_PASS_ON;
@@ -1610,11 +1625,71 @@ _transition_overlay_key_down(void *data,
     if (strcmp(ev->key, "Escape") == 0)
         goto stop;
 
-    DBG("ev->key='%s'", ev->key);
-
-    trov = eina_hash_find(_G.overlays, ev->key);
-    if (trov) {
+    if (_G.transition_overlay) {
         /* TODO */
+        DBG("moving transition");
+        if (_G.transition_overlay->bd) {
+        } else {
+        }
+        return ECORE_CALLBACK_RENEW;
+    } else {
+        transition_overlay_t *trov = NULL;
+
+        trov = eina_hash_find(_G.overlays, ev->key);
+        if (trov) {
+            /* TODO: new popup */
+            E_Border *bd = _G.transition_overlay->bd;
+            Border_Extra *extra;
+            Evas_Coord ew, eh;
+
+            _G.transition_overlay = trov;
+            eina_hash_free(_G.overlays);
+            _G.overlays = NULL;
+
+            if (bd) {
+                extra = eina_hash_find(_G.border_extras, &bd);
+                if (!extra) {
+                    ERR("No extra for %p", bd);
+                    goto stop;
+                }
+            }
+            if (!trov->overlay.popup) {
+                trov->overlay.popup = e_popup_new(bd->zone, 0, 0, 1, 1);
+                e_popup_layer_set(trov->overlay.popup, 101);
+            }
+            if (!trov->overlay.obj) {
+                trov->overlay.obj =
+                    edje_object_add(trov->overlay.popup->evas);
+            }
+            /* TODO: use theme */
+            edje_object_file_set(trov->overlay.obj, _G.edj_path,
+                bd? "e-tiling/transition/horizontal":
+                    "e-tiling/transition/vertical");
+
+            edje_object_size_min_calc(trov->overlay.obj, &ew, &eh);
+            e_popup_edje_bg_object_set(trov->overlay.popup,
+                                       trov->overlay.obj);
+            evas_object_show(trov->overlay.obj);
+            if (bd) {
+                e_popup_move_resize(trov->overlay.popup,
+                                    extra->expected.x - ew/2,
+                                    extra->expected.y + extra->expected.h/2
+                                                      - eh/2,
+                                    ew,
+                                    eh);
+            } else {
+                e_popup_move_resize(trov->overlay.popup,
+                                    (_G.tinfo->x[trov->col]
+                                     + _G.tinfo->w[trov->col]
+                                     - trov->overlay.popup->zone->x - ew/2),
+                                    (trov->overlay.popup->zone->h/2 - eh/2),
+                                    ew, eh);
+            }
+            evas_object_resize(trov->overlay.obj, ew, eh);
+            e_popup_show(trov->overlay.popup);
+
+            return ECORE_CALLBACK_RENEW;
+        }
     }
 
 stop:
@@ -1739,7 +1814,7 @@ _do_transition_overlay(void)
             e_popup_show(trov->overlay.popup);
 
             e_popup_move_resize(trov->overlay.popup,
-                                (_G.tinfo->x[i] + _G.tinfo->w[i] +
+                                (_G.tinfo->x[i] + _G.tinfo->w[i]
                                   - trov->overlay.popup->zone->x - ew / 2),
                                 (trov->overlay.popup->zone->h / 2 - eh / 2),
                                 ew, eh);
