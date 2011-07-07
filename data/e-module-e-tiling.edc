@@ -27,8 +27,7 @@ collections {
         }
     }
 
-    group {
-        name: "e-tiling/move/left";
+    group { name: "e-tiling/move/left"; // {{{
         min: 101 54;
         data {
             item: "shaped" "1";
@@ -189,10 +188,9 @@ collections {
                 target: "arrow_w";
             }
         }
-    }
+    } // }}}
 
-    group {
-        name: "e-tiling/move/down";
+    group { name: "e-tiling/move/down"; // {{{
         min: 54 101;
         data {
             item: "shaped" "1";
@@ -353,10 +351,9 @@ collections {
                 target: "arrow_s";
             }
         }
-    }
+    } // }}}
 
-    group {
-        name: "e-tiling/move/right";
+    group { name: "e-tiling/move/right"; // {{{
         min: 101 54;
         data {
             item: "shaped" "1";
@@ -517,10 +514,9 @@ collections {
                 target: "arrow_e";
             }
         }
-    }
+    } // }}}
 
-    group {
-        name: "e-tiling/move/up";
+    group { name: "e-tiling/move/up"; // {{{
         min: 54 101;
         data {
             item: "shaped" "1";
@@ -681,10 +677,9 @@ collections {
                 target: "arrow_n";
             }
         }
-    }
+    } // }}}
 
-    group {
-        name: "e-tiling/transition/horizontal";
+    group { name: "e-tiling/transition/horizontal"; // {{{
         min: 29 214;
         data {
             item: "shaped" "1";
@@ -1070,10 +1065,9 @@ collections {
                 target: "arrow_s_2";
             }
         }
-    }
+    } // }}}
 
-    group {
-        name: "e-tiling/transition/vertical";
+    group { name: "e-tiling/transition/vertical"; // {{{
         min: 214 29;
         data {
             item: "shaped" "1";
@@ -1459,5 +1453,5 @@ collections {
                 target: "arrow_e_2";
             }
         }
-    }
+    } // }}}
 }
