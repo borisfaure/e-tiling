@@ -1638,7 +1638,7 @@ _transition_overlay_key_down(void *data,
         trov = eina_hash_find(_G.overlays, ev->key);
         if (trov) {
             /* TODO: new popup */
-            E_Border *bd = _G.transition_overlay->bd;
+            E_Border *bd = trov->bd;
             Border_Extra *extra;
             Evas_Coord ew, eh;
 
