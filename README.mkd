@@ -20,11 +20,8 @@ TODO
 ====
 
 - Respect more ICCCM.
-- Move a window to a different column or up and down in the current
-  column.
 - Focus a specified window by having a way to identify them quickly.
 - Select and Move transitions quickly.
-- Swap windows.
 - Toggle between horizontal and vertical columns.
 - Show how many columns are configured.
 - Remove remaining bugs ☺.
