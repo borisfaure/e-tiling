@@ -1675,8 +1675,9 @@ _transition_overlay_key_down(void *data,
             evas_object_show(trov->overlay.obj);
             if (bd) {
                 e_popup_move_resize(trov->overlay.popup,
-                                    extra->expected.x - ew/2,
-                                    extra->expected.y + extra->expected.h/2
+                                    extra->expected.x + extra->expected.w/2
+                                                      - ew/2,
+                                    extra->expected.y + extra->expected.h
                                                       - eh/2,
                                     ew,
                                     eh);
