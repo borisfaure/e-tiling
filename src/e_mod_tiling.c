@@ -935,7 +935,7 @@ end_special_input(void)
             }
         }
         break;
-      case INPUT_MODE_SWAPPING:
+      case INPUT_MODE_TRANSITION:
         if (_G.transition_overlay) {
             if (_G.transition_overlay->overlay.obj) {
                 evas_object_del(_G.transition_overlay->overlay.obj);
