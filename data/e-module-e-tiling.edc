@@ -680,7 +680,7 @@ collections {
     } // }}}
 
     group { name: "e-tiling/transition/horizontal"; // {{{
-        min: 29 214;
+        min: 29 221;
         data {
             item: "shaped" "1";
         }
@@ -690,8 +690,8 @@ collections {
                 type: RECT;
                 mouse_events: 0;
                 description {
-                    min: 29 214;
-                    max: 29 214;
+                    min: 29 221;
+                    max: 29 221;
                     state: "default" 0.0;
                     color: 255 255 255 0;
                     rel1 {
@@ -1068,7 +1068,7 @@ collections {
     } // }}}
 
     group { name: "e-tiling/transition/vertical"; // {{{
-        min: 214 29;
+        min: 221 29;
         data {
             item: "shaped" "1";
         }
@@ -1078,8 +1078,8 @@ collections {
                 type: RECT;
                 mouse_events: 0;
                 description {
-                    min: 214 29;
-                    max: 214 29;
+                    min: 221 29;
+                    max: 221 29;
                     state: "default" 0.0;
                     color: 255 255 255 0;
                     rel1 {
