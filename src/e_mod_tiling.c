@@ -1656,7 +1656,8 @@ _transition_overlay_key_down(void *data,
                 }
             }
             if (!trov->overlay.popup) {
-                trov->overlay.popup = e_popup_new(bd->zone, 0, 0, 1, 1);
+                trov->overlay.popup = e_popup_new(_G.tinfo->desk->zone,
+                                                  0, 0, 1, 1);
                 e_popup_layer_set(trov->overlay.popup, 101);
             }
             if (!trov->overlay.obj) {
