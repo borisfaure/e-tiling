@@ -1627,6 +1627,10 @@ _transition_overlay_key_down(void *data,
     if (strcmp(ev->key, "Escape") == 0)
         goto stop;
 
+    /* reset timer */
+    ecore_timer_delay(_G.action_timer, OVERLAY_TIMEOUT
+                      - ecore_timer_pending_get(_G.action_timer));
+
     if (_G.transition_overlay) {
         /* TODO */
         DBG("moving transition");
