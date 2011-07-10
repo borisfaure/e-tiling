@@ -423,7 +423,7 @@ _do_overlay(E_Border *focused_bd,
     }
 
     /* Get input */
-    parent = focused_bd->zone->container->win;
+    parent = _G.tinfo->desk->zone->container->win;
     _G.action_input_win = ecore_x_window_input_new(parent, 0, 0, 1, 1);
     if (!_G.action_input_win) {
         end_special_input();
