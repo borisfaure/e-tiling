@@ -293,16 +293,22 @@ _reorganize_column(int col)
                                  extra->expected.h);
         }
     } else {
-        E_Border *bd = _G.tinfo->columns[col]->data;
+        int y, h;
         Border_Extra *extra;
+        E_Border *bd = _G.tinfo->columns[col]->data;
 
         extra = eina_hash_find(_G.border_extras, &bd);
         if (!extra) {
             ERR("No extra for %p", bd);
             return;
         }
+
+        e_zone_useful_geometry_get(_G.tinfo->desk->zone, NULL, &y, NULL, &h);
+
         extra->expected.x = _G.tinfo->x[col];
+        extra->expected.y = y;
         extra->expected.w = _G.tinfo->w[col];
+        extra->expected.h = h;
 
         e_border_move_resize(bd,
                              extra->expected.x,
@@ -977,8 +983,6 @@ overlay_key_down(void *data,
     if (strcmp(ev->key, "Escape") == 0)
         goto stop;
 
-    DBG("ev->key='%s'", ev->key);
-
     extra = eina_hash_find(_G.overlays, ev->key);
     if (extra) {
         _G.action_cb(_G.focused_bd, extra);
@@ -1619,8 +1623,6 @@ _transition_move(tiling_move_t direction)
     int delta = TILING_RESIZE_STEP;
     int col;
     E_Popup *popup = NULL;
-
-    DBG("moving transition");
 
     if (!_G.transition_overlay)
         return;
