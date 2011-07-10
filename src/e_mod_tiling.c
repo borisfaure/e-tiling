@@ -225,6 +225,223 @@ get_window_count(void)
     return res;
 }
 /* }}} */
+/* Overlays {{{*/
+
+static void
+_overlays_free_cb(void *data)
+{
+    Border_Extra *extra = data;
+
+    if (extra->overlay.obj) {
+        evas_object_del(extra->overlay.obj);
+        extra->overlay.obj = NULL;
+    }
+    if (extra->overlay.popup) {
+        e_object_del(E_OBJECT(extra->overlay.popup));
+        extra->overlay.popup = NULL;
+    }
+
+    extra->key[0] = '\0';
+}
+
+static void
+end_special_input(void)
+{
+    if (_G.input_mode == INPUT_MODE_NONE)
+        return;
+
+    if (_G.overlays) {
+        eina_hash_free(_G.overlays);
+        _G.overlays = NULL;
+    }
+
+    if (_G.handler_key) {
+        ecore_event_handler_del(_G.handler_key);
+        _G.handler_key = NULL;
+    }
+    if (_G.action_input_win) {
+        e_grabinput_release(_G.action_input_win, _G.action_input_win);
+        ecore_x_window_free(_G.action_input_win);
+        _G.action_input_win = 0;
+    }
+    if (_G.action_timer) {
+        ecore_timer_del(_G.action_timer);
+        _G.action_timer = NULL;
+    }
+
+    _G.focused_bd = NULL;
+    _G.action_cb = NULL;
+
+    switch(_G.input_mode) {
+      case INPUT_MODE_MOVING:
+        for (int i = 0; i < MOVE_COUNT; i++) {
+            overlay_t *overlay = &_G.move_overlays[i];
+
+            if (overlay->obj) {
+                evas_object_del(overlay->obj);
+                overlay->obj = NULL;
+            }
+            if (overlay->popup) {
+                e_object_del(E_OBJECT(overlay->popup));
+                overlay->popup = NULL;
+            }
+        }
+        break;
+      case INPUT_MODE_TRANSITION:
+        if (_G.transition_overlay) {
+            if (_G.transition_overlay->overlay.obj) {
+                evas_object_del(_G.transition_overlay->overlay.obj);
+            }
+            if (_G.transition_overlay->overlay.popup) {
+                e_object_del(E_OBJECT(_G.transition_overlay->overlay.popup));
+            }
+            E_FREE(_G.transition_overlay);
+            _G.transition_overlay = NULL;
+        }
+        break;
+    }
+
+    _G.input_mode = INPUT_MODE_NONE;
+}
+
+static Eina_Bool
+overlay_key_down(void *data,
+          int type,
+          void *event)
+{
+    Ecore_Event_Key *ev = event;
+    Border_Extra *extra;
+
+    if (ev->event_window != _G.action_input_win)
+        return ECORE_CALLBACK_PASS_ON;
+
+    if (ev->modifiers)
+        return ECORE_CALLBACK_PASS_ON;
+
+    if (strcmp(ev->key, "Return") == 0)
+        goto stop;
+    if (strcmp(ev->key, "Escape") == 0)
+        goto stop;
+
+    extra = eina_hash_find(_G.overlays, ev->key);
+    if (extra) {
+        _G.action_cb(_G.focused_bd, extra);
+    }
+
+stop:
+    end_special_input();
+    return ECORE_CALLBACK_DONE;
+}
+
+static Eina_Bool
+_timeout_cb(void *data)
+{
+    end_special_input();
+    return ECORE_CALLBACK_CANCEL;
+}
+
+static void
+_do_overlay(E_Border *focused_bd,
+            void (*action_cb)(E_Border *, Border_Extra *),
+            tiling_input_mode_t input_mode)
+{
+    int nb_win;
+    char keys[] = "asdfghkl;'qwertyuiop[]\\zxcvbnm,./`1234567890-=";
+    char *c = keys;
+    Ecore_X_Window parent;
+
+    end_special_input();
+
+    nb_win = get_window_count();
+    if (nb_win < 2) {
+        return;
+    }
+
+    _G.input_mode = input_mode;
+
+    _G.focused_bd = focused_bd;
+    _G.action_cb = action_cb;
+
+    _G.overlays = eina_hash_string_small_new(_overlays_free_cb);
+
+    for (int i = 0; i < TILING_MAX_COLUMNS; i++) {
+        Eina_List *l;
+        E_Border *bd;
+
+        if (!_G.tinfo->columns[i])
+            break;
+        EINA_LIST_FOREACH(_G.tinfo->columns[i], l, bd) {
+            if (bd != focused_bd && *c) {
+                Border_Extra *extra;
+                Evas_Coord ew, eh;
+
+                extra = eina_hash_find(_G.border_extras, &bd);
+                if (!extra) {
+                    ERR("No extra for %p", bd);
+                    continue;
+                }
+
+                extra->overlay.popup = e_popup_new(bd->zone, 0, 0, 1, 1);
+                if (!extra->overlay.popup)
+                    continue;
+
+                e_popup_layer_set(extra->overlay.popup, 101);
+                extra->overlay.obj =
+                    edje_object_add(extra->overlay.popup->evas);
+                e_theme_edje_object_set(extra->overlay.obj,
+                                        "base/theme/borders",
+                                        "e/widgets/border/default/resize");
+
+                extra->key[0] = *c;
+                extra->key[1] = '\0';
+                c++;
+
+                eina_hash_add(_G.overlays, extra->key, extra);
+                edje_object_part_text_set(extra->overlay.obj,
+                                          "e.text.label",
+                                          extra->key);
+                edje_object_size_min_calc(extra->overlay.obj, &ew, &eh);
+                evas_object_move(extra->overlay.obj, 0, 0);
+                evas_object_resize(extra->overlay.obj, ew, eh);
+                evas_object_show(extra->overlay.obj);
+                e_popup_edje_bg_object_set(extra->overlay.popup,
+                                           extra->overlay.obj);
+
+                evas_object_show(extra->overlay.obj);
+                e_popup_show(extra->overlay.popup);
+
+                e_popup_move_resize(extra->overlay.popup,
+                                    (bd->x - extra->overlay.popup->zone->x) +
+                                    ((bd->w - ew) / 2),
+                                    (bd->y - extra->overlay.popup->zone->y) +
+                                    ((bd->h - eh) / 2),
+                                    ew, eh);
+
+                e_popup_show(extra->overlay.popup);
+            }
+        }
+    }
+
+    /* Get input */
+    parent = focused_bd->zone->container->win;
+    _G.action_input_win = ecore_x_window_input_new(parent, 0, 0, 1, 1);
+    if (!_G.action_input_win) {
+        end_special_input();
+        return;
+    }
+
+    ecore_x_window_show(_G.action_input_win);
+    if (!e_grabinput_get(_G.action_input_win, 0, _G.action_input_win)) {
+        end_special_input();
+        return;
+    }
+    _G.action_timer = ecore_timer_add(OVERLAY_TIMEOUT, _timeout_cb, NULL);
+
+    _G.handler_key = ecore_event_handler_add(ECORE_EVENT_KEY_DOWN,
+                                             overlay_key_down, NULL);
+}
+
+/* }}} */
 /* Reorganize columns {{{*/
 
 static void
@@ -501,6 +718,33 @@ change_column_number(struct _Config_vdesk *newconf)
         }
     }
 }
+
+static void
+_e_mod_action_add_column_cb(E_Object   *obj,
+                            const char *params)
+{
+    E_Desk *desk = get_current_desk();
+
+    end_special_input();
+
+    check_tinfo(desk);
+
+    _add_column();
+}
+
+static void
+_e_mod_action_remove_column_cb(E_Object   *obj,
+                               const char *params)
+{
+    E_Desk *desk = get_current_desk();
+
+    end_special_input();
+
+    check_tinfo(desk);
+
+    _remove_column();
+}
+
 /* }}} */
 /* Reorganize windows {{{*/
 
@@ -870,221 +1114,101 @@ toggle_floating(E_Border *bd)
     }
 }
 
+static void
+_e_mod_action_toggle_floating_cb(E_Object   *obj,
+                                 const char *params)
+{
+    end_special_input();
+
+    toggle_floating(e_border_focused_get());
+}
+
 /* }}} */
-/* Overlays {{{*/
+/* {{{ Swap */
 
 static void
-_overlays_free_cb(void *data)
+_action_swap(E_Border *bd_1,
+             Border_Extra *extra_2)
 {
-    Border_Extra *extra = data;
+    Border_Extra *extra_1;
+    E_Border *bd_2 = extra_2->border;
+    Eina_List *l_1 = NULL,
+              *l_2 = NULL;
+    geom_t gt;
+    unsigned int bd_2_maximized;
 
-    if (extra->overlay.obj) {
-        evas_object_del(extra->overlay.obj);
-        extra->overlay.obj = NULL;
-    }
-    if (extra->overlay.popup) {
-        e_object_del(E_OBJECT(extra->overlay.popup));
-        extra->overlay.popup = NULL;
-    }
-
-    extra->key[0] = '\0';
-}
-
-static void
-end_special_input(void)
-{
-    if (_G.input_mode == INPUT_MODE_NONE)
-        return;
-
-    if (_G.overlays) {
-        eina_hash_free(_G.overlays);
-        _G.overlays = NULL;
-    }
-
-    if (_G.handler_key) {
-        ecore_event_handler_del(_G.handler_key);
-        _G.handler_key = NULL;
-    }
-    if (_G.action_input_win) {
-        e_grabinput_release(_G.action_input_win, _G.action_input_win);
-        ecore_x_window_free(_G.action_input_win);
-        _G.action_input_win = 0;
-    }
-    if (_G.action_timer) {
-        ecore_timer_del(_G.action_timer);
-        _G.action_timer = NULL;
-    }
-
-    _G.focused_bd = NULL;
-    _G.action_cb = NULL;
-
-    switch(_G.input_mode) {
-      case INPUT_MODE_MOVING:
-        for (int i = 0; i < MOVE_COUNT; i++) {
-            overlay_t *overlay = &_G.move_overlays[i];
-
-            if (overlay->obj) {
-                evas_object_del(overlay->obj);
-                overlay->obj = NULL;
-            }
-            if (overlay->popup) {
-                e_object_del(E_OBJECT(overlay->popup));
-                overlay->popup = NULL;
-            }
-        }
-        break;
-      case INPUT_MODE_TRANSITION:
-        if (_G.transition_overlay) {
-            if (_G.transition_overlay->overlay.obj) {
-                evas_object_del(_G.transition_overlay->overlay.obj);
-            }
-            if (_G.transition_overlay->overlay.popup) {
-                e_object_del(E_OBJECT(_G.transition_overlay->overlay.popup));
-            }
-            E_FREE(_G.transition_overlay);
-            _G.transition_overlay = NULL;
-        }
-        break;
-    }
-
-    _G.input_mode = INPUT_MODE_NONE;
-}
-
-static Eina_Bool
-overlay_key_down(void *data,
-          int type,
-          void *event)
-{
-    Ecore_Event_Key *ev = event;
-    Border_Extra *extra;
-
-    if (ev->event_window != _G.action_input_win)
-        return ECORE_CALLBACK_PASS_ON;
-
-    if (ev->modifiers)
-        return ECORE_CALLBACK_PASS_ON;
-
-    if (strcmp(ev->key, "Return") == 0)
-        goto stop;
-    if (strcmp(ev->key, "Escape") == 0)
-        goto stop;
-
-    extra = eina_hash_find(_G.overlays, ev->key);
-    if (extra) {
-        _G.action_cb(_G.focused_bd, extra);
-    }
-
-stop:
-    end_special_input();
-    return ECORE_CALLBACK_DONE;
-}
-
-static Eina_Bool
-_timeout_cb(void *data)
-{
-    end_special_input();
-    return ECORE_CALLBACK_CANCEL;
-}
-
-static void
-_do_overlay(E_Border *focused_bd,
-            void (*action_cb)(E_Border *, Border_Extra *),
-            tiling_input_mode_t input_mode)
-{
-    int nb_win;
-    char keys[] = "asdfghkl;'qwertyuiop[]\\zxcvbnm,./`1234567890-=";
-    char *c = keys;
-    Ecore_X_Window parent;
-
-    end_special_input();
-
-    nb_win = get_window_count();
-    if (nb_win < 2) {
+    extra_1 = eina_hash_find(_G.border_extras, &bd_1);
+    if (!extra_1) {
+        ERR("No extra for %p", bd_1);
         return;
     }
-
-    _G.input_mode = input_mode;
-
-    _G.focused_bd = focused_bd;
-    _G.action_cb = action_cb;
-
-    _G.overlays = eina_hash_string_small_new(_overlays_free_cb);
 
     for (int i = 0; i < TILING_MAX_COLUMNS; i++) {
-        Eina_List *l;
-        E_Border *bd;
-
-        if (!_G.tinfo->columns[i])
+        if ((l_1 = eina_list_data_find_list(_G.tinfo->columns[i], bd_1))) {
             break;
-        EINA_LIST_FOREACH(_G.tinfo->columns[i], l, bd) {
-            if (bd != focused_bd && *c) {
-                Border_Extra *extra;
-                Evas_Coord ew, eh;
-
-                extra = eina_hash_find(_G.border_extras, &bd);
-                if (!extra) {
-                    ERR("No extra for %p", bd);
-                    continue;
-                }
-
-                extra->overlay.popup = e_popup_new(bd->zone, 0, 0, 1, 1);
-                if (!extra->overlay.popup)
-                    continue;
-
-                e_popup_layer_set(extra->overlay.popup, 101);
-                extra->overlay.obj =
-                    edje_object_add(extra->overlay.popup->evas);
-                e_theme_edje_object_set(extra->overlay.obj,
-                                        "base/theme/borders",
-                                        "e/widgets/border/default/resize");
-
-                extra->key[0] = *c;
-                extra->key[1] = '\0';
-                c++;
-
-                eina_hash_add(_G.overlays, extra->key, extra);
-                edje_object_part_text_set(extra->overlay.obj,
-                                          "e.text.label",
-                                          extra->key);
-                edje_object_size_min_calc(extra->overlay.obj, &ew, &eh);
-                evas_object_move(extra->overlay.obj, 0, 0);
-                evas_object_resize(extra->overlay.obj, ew, eh);
-                evas_object_show(extra->overlay.obj);
-                e_popup_edje_bg_object_set(extra->overlay.popup,
-                                           extra->overlay.obj);
-
-                evas_object_show(extra->overlay.obj);
-                e_popup_show(extra->overlay.popup);
-
-                e_popup_move_resize(extra->overlay.popup,
-                                    (bd->x - extra->overlay.popup->zone->x) +
-                                    ((bd->w - ew) / 2),
-                                    (bd->y - extra->overlay.popup->zone->y) +
-                                    ((bd->h - eh) / 2),
-                                    ew, eh);
-
-                e_popup_show(extra->overlay.popup);
-            }
+        }
+    }
+    for (int i = 0; i < TILING_MAX_COLUMNS; i++) {
+        if ((l_2 = eina_list_data_find_list(_G.tinfo->columns[i], bd_2))) {
+            break;
         }
     }
 
-    /* Get input */
-    parent = focused_bd->zone->container->win;
-    _G.action_input_win = ecore_x_window_input_new(parent, 0, 0, 1, 1);
-    if (!_G.action_input_win) {
-        end_special_input();
+    if (!l_1 || !l_2) {
         return;
     }
 
-    ecore_x_window_show(_G.action_input_win);
-    if (!e_grabinput_get(_G.action_input_win, 0, _G.action_input_win)) {
-        end_special_input();
+    l_1->data = bd_2;
+    l_2->data = bd_1;
+
+    gt = extra_2->expected;
+    extra_2->expected = extra_1->expected;
+    extra_1->expected = gt;
+
+    bd_2_maximized = bd_2->maximized;
+    if (bd_2->maximized)
+        e_border_unmaximize(bd_2, E_MAXIMIZE_BOTH);
+    if (bd_1->maximized) {
+        e_border_unmaximize(bd_1, E_MAXIMIZE_BOTH);
+        e_border_maximize(bd_2, bd_1->maximized);
+    }
+    if (bd_2_maximized) {
+        e_border_maximize(bd_1, bd_2_maximized);
+    }
+    e_border_move_resize(bd_1,
+                         extra_1->expected.x,
+                         extra_1->expected.y,
+                         extra_1->expected.w,
+                         extra_1->expected.h);
+    e_border_move_resize(bd_2,
+                         extra_2->expected.x,
+                         extra_2->expected.y,
+                         extra_2->expected.w,
+                         extra_2->expected.h);
+}
+
+static void
+_e_mod_action_swap_cb(E_Object   *obj,
+                      const char *params)
+{
+    E_Desk *desk;
+    E_Border *focused_bd;
+
+    desk = get_current_desk();
+    if (!desk)
+        return;
+
+    focused_bd = e_border_focused_get();
+    if (!focused_bd || focused_bd->desk != desk)
+        return;
+
+    check_tinfo(desk);
+
+    if (!_G.tinfo->conf || !_G.tinfo->conf->nb_cols) {
         return;
     }
-    _G.action_timer = ecore_timer_add(OVERLAY_TIMEOUT, _timeout_cb, NULL);
 
-    _G.handler_key = ecore_event_handler_add(ECORE_EVENT_KEY_DOWN,
-                                             overlay_key_down, NULL);
+    _do_overlay(focused_bd, _action_swap, INPUT_MODE_SWAPPING);
 }
 
 /* }}} */
@@ -1582,6 +1706,52 @@ stop:
     return ECORE_CALLBACK_DONE;
 }
 
+static void
+_e_mod_action_move_cb(E_Object   *obj,
+                      const char *params)
+{
+    E_Desk *desk;
+    E_Border *focused_bd;
+    Ecore_X_Window parent;
+
+    desk = get_current_desk();
+    if (!desk)
+        return;
+
+    focused_bd = e_border_focused_get();
+    if (!focused_bd || focused_bd->desk != desk)
+        return;
+
+    check_tinfo(desk);
+
+    if (!_G.tinfo->conf || !_G.tinfo->conf->nb_cols) {
+        return;
+    }
+
+    _G.focused_bd = focused_bd;
+
+    _G.input_mode = INPUT_MODE_MOVING;
+
+    /* Get input */
+    parent = focused_bd->zone->container->win;
+    _G.action_input_win = ecore_x_window_input_new(parent, 0, 0, 1, 1);
+    if (!_G.action_input_win) {
+        end_special_input();
+        return;
+    }
+
+    ecore_x_window_show(_G.action_input_win);
+    if (!e_grabinput_get(_G.action_input_win, 0, _G.action_input_win)) {
+        end_special_input();
+        return;
+    }
+    _G.action_timer = ecore_timer_add(OVERLAY_TIMEOUT, _timeout_cb, NULL);
+
+    _G.handler_key = ecore_event_handler_add(ECORE_EVENT_KEY_DOWN,
+                                             move_key_down, NULL);
+    _check_moving_anims(focused_bd, NULL, -1);
+}
+
 /* }}} */
 /* Adjust Transitions {{{ */
 
@@ -1947,174 +2117,6 @@ _do_transition_overlay(void)
                                              _transition_overlay_key_down,
                                              NULL);
 }
-/* }}} */
-/* Action callbacks {{{*/
-
-static void
-_e_mod_action_toggle_floating_cb(E_Object   *obj,
-                                 const char *params)
-{
-    end_special_input();
-
-    toggle_floating(e_border_focused_get());
-}
-
-static void
-_e_mod_action_add_column_cb(E_Object   *obj,
-                            const char *params)
-{
-    E_Desk *desk = get_current_desk();
-
-    end_special_input();
-
-    check_tinfo(desk);
-
-    _add_column();
-}
-
-static void
-_e_mod_action_remove_column_cb(E_Object   *obj,
-                               const char *params)
-{
-    E_Desk *desk = get_current_desk();
-
-    end_special_input();
-
-    check_tinfo(desk);
-
-    _remove_column();
-}
-
-static void
-_action_swap(E_Border *bd_1,
-             Border_Extra *extra_2)
-{
-    Border_Extra *extra_1;
-    E_Border *bd_2 = extra_2->border;
-    Eina_List *l_1 = NULL,
-              *l_2 = NULL;
-    geom_t gt;
-    unsigned int bd_2_maximized;
-
-    extra_1 = eina_hash_find(_G.border_extras, &bd_1);
-    if (!extra_1) {
-        ERR("No extra for %p", bd_1);
-        return;
-    }
-
-    for (int i = 0; i < TILING_MAX_COLUMNS; i++) {
-        if ((l_1 = eina_list_data_find_list(_G.tinfo->columns[i], bd_1))) {
-            break;
-        }
-    }
-    for (int i = 0; i < TILING_MAX_COLUMNS; i++) {
-        if ((l_2 = eina_list_data_find_list(_G.tinfo->columns[i], bd_2))) {
-            break;
-        }
-    }
-
-    if (!l_1 || !l_2) {
-        return;
-    }
-
-    l_1->data = bd_2;
-    l_2->data = bd_1;
-
-    gt = extra_2->expected;
-    extra_2->expected = extra_1->expected;
-    extra_1->expected = gt;
-
-    bd_2_maximized = bd_2->maximized;
-    if (bd_2->maximized)
-        e_border_unmaximize(bd_2, E_MAXIMIZE_BOTH);
-    if (bd_1->maximized) {
-        e_border_unmaximize(bd_1, E_MAXIMIZE_BOTH);
-        e_border_maximize(bd_2, bd_1->maximized);
-    }
-    if (bd_2_maximized) {
-        e_border_maximize(bd_1, bd_2_maximized);
-    }
-    e_border_move_resize(bd_1,
-                         extra_1->expected.x,
-                         extra_1->expected.y,
-                         extra_1->expected.w,
-                         extra_1->expected.h);
-    e_border_move_resize(bd_2,
-                         extra_2->expected.x,
-                         extra_2->expected.y,
-                         extra_2->expected.w,
-                         extra_2->expected.h);
-}
-
-static void
-_e_mod_action_swap_cb(E_Object   *obj,
-                      const char *params)
-{
-    E_Desk *desk;
-    E_Border *focused_bd;
-
-    desk = get_current_desk();
-    if (!desk)
-        return;
-
-    focused_bd = e_border_focused_get();
-    if (!focused_bd || focused_bd->desk != desk)
-        return;
-
-    check_tinfo(desk);
-
-    if (!_G.tinfo->conf || !_G.tinfo->conf->nb_cols) {
-        return;
-    }
-
-    _do_overlay(focused_bd, _action_swap, INPUT_MODE_SWAPPING);
-}
-
-static void
-_e_mod_action_move_cb(E_Object   *obj,
-                      const char *params)
-{
-    E_Desk *desk;
-    E_Border *focused_bd;
-    Ecore_X_Window parent;
-
-    desk = get_current_desk();
-    if (!desk)
-        return;
-
-    focused_bd = e_border_focused_get();
-    if (!focused_bd || focused_bd->desk != desk)
-        return;
-
-    check_tinfo(desk);
-
-    if (!_G.tinfo->conf || !_G.tinfo->conf->nb_cols) {
-        return;
-    }
-
-    _G.focused_bd = focused_bd;
-
-    _G.input_mode = INPUT_MODE_MOVING;
-
-    /* Get input */
-    parent = focused_bd->zone->container->win;
-    _G.action_input_win = ecore_x_window_input_new(parent, 0, 0, 1, 1);
-    if (!_G.action_input_win) {
-        end_special_input();
-        return;
-    }
-
-    ecore_x_window_show(_G.action_input_win);
-    if (!e_grabinput_get(_G.action_input_win, 0, _G.action_input_win)) {
-        end_special_input();
-        return;
-    }
-    _G.action_timer = ecore_timer_add(OVERLAY_TIMEOUT, _timeout_cb, NULL);
-
-    _G.handler_key = ecore_event_handler_add(ECORE_EVENT_KEY_DOWN,
-                                             move_key_down, NULL);
-    _check_moving_anims(focused_bd, NULL, -1);
-}
 
 static void
 _e_mod_action_adjust_transitions(E_Object   *obj,
@@ -2136,6 +2138,9 @@ _e_mod_action_adjust_transitions(E_Object   *obj,
 
     _do_transition_overlay();
 }
+
+/* }}} */
+/* Go {{{ */
 
 static void
 _action_go(E_Border *_,
