@@ -377,7 +377,8 @@ _set_column_geometry(int col, int x, int w)
     _G.tinfo->w[col] = w;
 }
 
-static void _add_column(void)
+static void
+_add_column(void)
 {
     if (_G.tinfo->conf->nb_cols == TILING_MAX_COLUMNS)
         return;
@@ -427,7 +428,8 @@ static void _add_column(void)
     }
 }
 
-static void _remove_column(void)
+static void
+_remove_column(void)
 {
     if (!_G.tinfo->conf->nb_cols)
         return;
@@ -465,7 +467,8 @@ static void _remove_column(void)
     }
 }
 
-void change_column_number(struct _Config_vdesk *newconf)
+void
+change_column_number(struct _Config_vdesk *newconf)
 {
     E_Manager *m;
     E_Container *c;
