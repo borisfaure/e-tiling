@@ -12,6 +12,7 @@
 /* types {{{ */
 
 #define OVERLAY_TIMEOUT 5.0
+#define TILING_RESIZE_STEP 5
 
 typedef enum {
     TILING_RESIZE,
@@ -314,8 +315,10 @@ _reorganize_column(int col)
 }
 
 static void
-_move_resize_column(Eina_List *list, int delta_x, int delta_w)
+_move_resize_column(int col, int delta_x, int delta_w)
 {
+    Eina_List *list = _G.tinfo->columns[col];
+
     for (Eina_List *l = list; l; l = l->next) {
         E_Border *bd = l->data;
         Border_Extra *extra;
@@ -334,6 +337,9 @@ _move_resize_column(Eina_List *list, int delta_x, int delta_w)
                                  extra->expected.w,
                                  extra->expected.h);
     }
+
+    _G.tinfo->x[col] += delta_x;
+    _G.tinfo->w[col] += delta_w;
 }
 
 static void
@@ -704,8 +710,8 @@ _move_resize_border_column(E_Border *bd, Border_Extra *extra,
             if (delta + 1 > _G.tinfo->w[col + 1])
                 delta = _G.tinfo->w[col + 1] - 1;
 
-            _move_resize_column(_G.tinfo->columns[col], 0, delta);
-            _move_resize_column(_G.tinfo->columns[col+1], delta, -delta);
+            _move_resize_column(col, 0, delta);
+            _move_resize_column(col+1, delta, -delta);
             extra->expected.w = bd->w;
         }
     } else {
@@ -718,8 +724,8 @@ _move_resize_border_column(E_Border *bd, Border_Extra *extra,
             if (delta + 1 > _G.tinfo->w[col - 1])
                 delta = _G.tinfo->w[col - 1] - 1;
 
-            _move_resize_column(_G.tinfo->columns[col], delta, -delta);
-            _move_resize_column(_G.tinfo->columns[col-1], 0, delta);
+            _move_resize_column(col, delta, -delta);
+            _move_resize_column(col-1, 0, delta);
             extra->expected.x = bd->x;
         }
     }
@@ -1553,8 +1559,6 @@ move_key_down(void *data,
     if (ev->modifiers)
         return ECORE_CALLBACK_PASS_ON;
 
-    DBG("ev->key='%s'", ev->key);
-
     if ((strcmp(ev->key, "Up") == 0)
     ||  (strcmp(ev->key, "k") == 0))
     {
@@ -1609,6 +1613,92 @@ _transition_overlays_free_cb(void *data)
     }
 }
 
+static void
+_transition_move(tiling_move_t direction)
+{
+    int delta = TILING_RESIZE_STEP;
+    int col;
+    E_Popup *popup = NULL;
+
+    DBG("moving transition");
+
+    if (!_G.transition_overlay)
+        return;
+
+    col = _G.transition_overlay->col;
+
+    if (_G.transition_overlay->bd) {
+        Eina_List *l = NULL;
+        E_Border *bd = _G.transition_overlay->bd,
+                 *nextbd = NULL;
+        Border_Extra *extra = NULL,
+                     *nextextra = NULL;
+        int min_height = 0;
+
+        l = eina_list_data_find_list(_G.tinfo->columns[col], bd);
+        if (!l) {
+            ERR("unable to bd %p in column %d", bd, col);
+            return;
+        }
+
+        if (direction == MOVE_UP) {
+            delta *= -1;
+        }
+
+        nextbd = l->next->data;
+        min_height = MAX(nextbd->client.icccm.base_h, 1);
+
+        extra = eina_hash_find(_G.border_extras, &bd);
+        if (!extra) {
+            ERR("No extra for %p", bd);
+            return;
+        }
+        nextextra = eina_hash_find(_G.border_extras, &nextbd);
+        if (!nextextra) {
+            ERR("No extra for %p", nextbd);
+            return;
+        }
+
+        if (nextextra->expected.h - delta < min_height)
+            delta = nextextra->expected.h - min_height;
+
+        nextextra->expected.y += delta;
+        nextextra->expected.h -= delta;
+        e_border_move_resize(nextbd,
+                             nextextra->expected.x,
+                             nextextra->expected.y,
+                             nextextra->expected.w,
+                             nextextra->expected.h);
+
+        extra->expected.h += delta;
+        e_border_move_resize(bd,
+                             extra->expected.x,
+                             extra->expected.y,
+                             extra->expected.w,
+                             extra->expected.h);
+
+        popup = _G.transition_overlay->overlay.popup;
+        e_popup_move(popup, popup->x, popup->y + delta);
+    } else {
+
+        if (col == TILING_MAX_COLUMNS || !_G.tinfo->columns[col + 1]) {
+            return;
+        }
+        if (direction == MOVE_LEFT) {
+            delta *= -1;
+        }
+
+        if (delta + 1 > _G.tinfo->w[col + 1])
+            delta = _G.tinfo->w[col + 1] - 1;
+
+        _move_resize_column(col, 0, delta);
+        _move_resize_column(col+1, delta, -delta);
+
+        popup = _G.transition_overlay->overlay.popup;
+        e_popup_move(popup, popup->x + delta, popup->y);
+    }
+}
+
 static Eina_Bool
 _transition_overlay_key_down(void *data,
                              int type,
@@ -1632,10 +1722,30 @@ _transition_overlay_key_down(void *data,
                       - ecore_timer_pending_get(_G.action_timer));
 
     if (_G.transition_overlay) {
-        /* TODO */
-        DBG("moving transition");
         if (_G.transition_overlay->bd) {
+            if ((strcmp(ev->key, "Up") == 0)
+            ||  (strcmp(ev->key, "k") == 0))
+            {
+                _move_up();
+                return ECORE_CALLBACK_PASS_ON;
+            } else if ((strcmp(ev->key, "Down") == 0)
+                   ||  (strcmp(ev->key, "j") == 0))
+            {
+                _move_down();
+                return ECORE_CALLBACK_PASS_ON;
+            }
         } else {
+            if ((strcmp(ev->key, "Left") == 0)
+            ||  (strcmp(ev->key, "h") == 0))
+            {
+                _transition_move(MOVE_LEFT);
+                return ECORE_CALLBACK_PASS_ON;
+            } else if ((strcmp(ev->key, "Right") == 0)
+                   ||  (strcmp(ev->key, "l") == 0))
+            {
+                _transition_move(MOVE_RIGHT);
+                return ECORE_CALLBACK_PASS_ON;
+            }
         }
         return ECORE_CALLBACK_RENEW;
     } else {
@@ -1643,7 +1753,6 @@ _transition_overlay_key_down(void *data,
 
         trov = eina_hash_find(_G.overlays, ev->key);
         if (trov) {
-            /* TODO: new popup */
             E_Border *bd = trov->bd;
             Border_Extra *extra;
             Evas_Coord ew, eh;
@@ -2052,8 +2161,11 @@ _e_module_tiling_cb_hook(void *data,
     int col = -1;
 
     if (_G.input_mode != INPUT_MODE_NONE
-    &&  _G.input_mode != INPUT_MODE_MOVING)
+    &&  _G.input_mode != INPUT_MODE_MOVING
+    &&  _G.input_mode != INPUT_MODE_TRANSITION)
+    {
         end_special_input();
+    }
 
     if (!bd) {
         return;
