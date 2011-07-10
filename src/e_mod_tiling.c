@@ -1726,12 +1726,12 @@ _transition_overlay_key_down(void *data,
             if ((strcmp(ev->key, "Up") == 0)
             ||  (strcmp(ev->key, "k") == 0))
             {
-                _move_up();
+                _transition_move(MOVE_UP);
                 return ECORE_CALLBACK_PASS_ON;
             } else if ((strcmp(ev->key, "Down") == 0)
                    ||  (strcmp(ev->key, "j") == 0))
             {
-                _move_down();
+                _transition_move(MOVE_DOWN);
                 return ECORE_CALLBACK_PASS_ON;
             }
         } else {
