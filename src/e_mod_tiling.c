@@ -1331,7 +1331,7 @@ _move_up(void)
         return;
 
     l_1 = eina_list_data_find_list(_G.tinfo->columns[col], bd_1);
-    if (!l_1->prev)
+    if (!l_1 || !l_1->prev)
         return;
     l_2 = l_1->prev;
     bd_2 = l_2->data;
@@ -1377,7 +1377,7 @@ _move_down(void)
         return;
 
     l_1 = eina_list_data_find_list(_G.tinfo->columns[col], bd_1);
-    if (!l_1->next)
+    if (!l_1 || !l_1->next)
         return;
     l_2 = l_1->next;
     bd_2 = l_2->data;
