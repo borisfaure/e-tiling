@@ -23,7 +23,7 @@ typedef enum {
     INPUT_MODE_NONE,
     INPUT_MODE_SWAPPING,
     INPUT_MODE_MOVING,
-    INPUT_MODE_GOING, /* TODO */
+    INPUT_MODE_GOING,
     INPUT_MODE_TRANSITION,
 } tiling_input_mode_t;
 
@@ -98,7 +98,8 @@ static struct
                          *act_removecolumn,
                          *act_swap,
                          *act_move,
-                         *act_adjusttransitions;
+                         *act_adjusttransitions,
+                         *act_go;
 
     overlay_t             move_overlays[MOVE_COUNT];
     transition_overlay_t *transition_overlay;
@@ -111,24 +112,6 @@ static struct
     tiling_input_mode_t  input_mode;
 } tiling_mod_main_g = {
 #define _G tiling_mod_main_g
-    .hook = NULL,
-    .currently_switching_desktop = 0,
-    .handler_hide = NULL,
-    .handler_desk_show = NULL,
-    .handler_desk_before_show = NULL,
-    .handler_mouse_move = NULL,
-    .handler_desk_set = NULL,
-    .current_zone = NULL,
-    .tinfo = NULL,
-    .info_hash = NULL,
-    .border_extras = NULL,
-
-    .act_togglefloat = NULL,
-    .act_addcolumn = NULL,
-    .act_removecolumn= NULL,
-    .act_swap = NULL,
-    .act_move = NULL,
-
     .input_mode = INPUT_MODE_NONE,
 };
 
@@ -2154,6 +2137,31 @@ _e_mod_action_adjust_transitions(E_Object   *obj,
     _do_transition_overlay();
 }
 
+static void
+_action_go(E_Border *_,
+           Border_Extra *extra_2)
+{
+    /* TODO */
+}
+
+static void
+_e_mod_action_go_cb(E_Object   *obj,
+                    const char *params)
+{
+    E_Desk *desk;
+
+    desk = get_current_desk();
+    if (!desk)
+        return;
+
+    check_tinfo(desk);
+
+    if (!_G.tinfo->conf || !_G.tinfo->conf->nb_cols) {
+        return;
+    }
+
+    _do_overlay(NULL, _action_go, INPUT_MODE_GOING);
+}
 
 /* }}} */
 /* Hooks {{{*/
@@ -2472,6 +2480,8 @@ e_modapi_init(E_Module *m)
                "Move window", "move");
     ACTION_ADD(_G.act_adjusttransitions, _e_mod_action_adjust_transitions,
                "Adjust transitions", "adjust_transitions");
+    ACTION_ADD(_G.act_go, _e_mod_action_go_cb,
+               "Focus a particular window", "go");
 #undef ACTION_ADD
 
     /* Configuration entries */
@@ -2553,6 +2563,7 @@ e_modapi_shutdown(E_Module *m)
     ACTION_DEL(_G.act_move, "Move window", "move");
     ACTION_DEL(_G.act_adjusttransitions, "Adjust transitions",
                "adjust_transitions");
+    ACTION_DEL(_G.act_go, "Focus a particular window", "go");
 #undef ACTION_DEL
 
     e_configure_registry_item_del("windows/e-tiling");
