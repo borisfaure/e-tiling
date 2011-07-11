@@ -101,6 +101,14 @@ static struct
                          *act_adjusttransitions,
                          *act_go;
 
+    int                   warp_x,
+                          warp_y,
+                          old_warp_x,
+                          old_warp_y,
+                          warp_to_x,
+                          warp_to_y;
+    Ecore_Timer          *warp_timer;
+
     overlay_t             move_overlays[MOVE_COUNT];
     transition_overlay_t *transition_overlay;
     Ecore_X_Window        action_input_win;
@@ -2142,11 +2150,44 @@ _e_mod_action_adjust_transitions(E_Object   *obj,
 /* }}} */
 /* Go {{{ */
 
+static Eina_Bool
+_warp_timer(void *_)
+{
+    if (_G.warp_timer) {
+        double spd = 0.10;
+
+        _G.old_warp_x = _G.warp_x;
+        _G.old_warp_y = _G.warp_y;
+        _G.warp_x = (_G.warp_x * (1.0 - spd)) + (_G.warp_to_x * spd);
+        _G.warp_y = (_G.warp_y * (1.0 - spd)) + (_G.warp_to_y * spd);
+
+        ecore_x_pointer_warp(_G.tinfo->desk->zone->container->win,
+                             _G.warp_x, _G.warp_y);
+
+        if (abs(_G.warp_x - _G.old_warp_x) <= 1
+        &&  abs(_G.warp_y - _G.old_warp_y) <= 1) {
+            _G.warp_timer = NULL;
+            return ECORE_CALLBACK_CANCEL;
+        }
+
+        return ECORE_CALLBACK_RENEW;
+    }
+    _G.warp_timer = NULL;
+    return ECORE_CALLBACK_CANCEL;
+}
+
 static void
 _action_go(E_Border *_,
            Border_Extra *extra_2)
 {
-    /* TODO */
+    E_Border *bd = extra_2->border;
+
+    _G.warp_to_x = bd->x + (bd->w / 2);
+    _G.warp_to_y = bd->y + (bd->h / 2);
+    ecore_x_pointer_xy_get(_G.tinfo->desk->zone->container->win,
+                           &_G.warp_x, &_G.warp_y);
+    e_border_focus_latest_set(bd);
+    _G.warp_timer = ecore_timer_add(0.01, _warp_timer, NULL);
 }
 
 static void
