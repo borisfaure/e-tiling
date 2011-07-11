@@ -11,8 +11,11 @@
 
 /* types {{{ */
 
-#define OVERLAY_TIMEOUT 5.0
+#define TILING_OVERLAY_TIMEOUT 5.0
 #define TILING_RESIZE_STEP 5
+#define TILING_POPUP_LAYER 101
+#define TILING_WRAP_SPEED 0.1
+static const char TILING_KEYS[] = "asdfghkl;'qwertyuiop[]\\zxcvbnm,./`1234567890-=";
 
 typedef enum {
     TILING_RESIZE,
@@ -364,8 +367,8 @@ _do_overlay(E_Border *focused_bd,
             tiling_input_mode_t input_mode)
 {
     int nb_win;
-    char keys[] = "asdfghkl;'qwertyuiop[]\\zxcvbnm,./`1234567890-=";
-    char *c = keys;
+    const char *keys = TILING_KEYS;
+    const char *c = keys;
     Ecore_X_Window parent;
 
     end_special_input();
@@ -403,7 +406,7 @@ _do_overlay(E_Border *focused_bd,
                 if (!extra->overlay.popup)
                     continue;
 
-                e_popup_layer_set(extra->overlay.popup, 101);
+                e_popup_layer_set(extra->overlay.popup, TILING_POPUP_LAYER);
                 extra->overlay.obj =
                     edje_object_add(extra->overlay.popup->evas);
                 e_theme_edje_object_set(extra->overlay.obj,
@@ -453,7 +456,8 @@ _do_overlay(E_Border *focused_bd,
         end_special_input();
         return;
     }
-    _G.action_timer = ecore_timer_add(OVERLAY_TIMEOUT, _timeout_cb, NULL);
+    _G.action_timer = ecore_timer_add(TILING_OVERLAY_TIMEOUT,
+                                      _timeout_cb, NULL);
 
     _G.handler_key = ecore_event_handler_add(ECORE_EVENT_KEY_DOWN,
                                              overlay_key_down, NULL);
@@ -1270,7 +1274,7 @@ _check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
             if (!overlay->popup)
                 return;
 
-            e_popup_layer_set(overlay->popup, 101);
+            e_popup_layer_set(overlay->popup, TILING_POPUP_LAYER);
             overlay->obj = edje_object_add(overlay->popup->evas);
             _theme_edje_object_set(overlay->obj, "e-tiling/move/left");
             edje_object_size_min_calc(overlay->obj, &ew, &eh);
@@ -1317,7 +1321,7 @@ _check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
             if (!overlay->popup)
                 return;
 
-            e_popup_layer_set(overlay->popup, 101);
+            e_popup_layer_set(overlay->popup, TILING_POPUP_LAYER);
             overlay->obj = edje_object_add(overlay->popup->evas);
             _theme_edje_object_set(overlay->obj, "e-tiling/move/right");
             edje_object_size_min_calc(overlay->obj, &ew, &eh);
@@ -1364,7 +1368,7 @@ _check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
             if (!overlay->popup)
                 return;
 
-            e_popup_layer_set(overlay->popup, 101);
+            e_popup_layer_set(overlay->popup, TILING_POPUP_LAYER);
             overlay->obj = edje_object_add(overlay->popup->evas);
             _theme_edje_object_set(overlay->obj, "e-tiling/move/up");
             edje_object_size_min_calc(overlay->obj, &ew, &eh);
@@ -1411,7 +1415,7 @@ _check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
             if (!overlay->popup)
                 return;
 
-            e_popup_layer_set(overlay->popup, 101);
+            e_popup_layer_set(overlay->popup, TILING_POPUP_LAYER);
             overlay->obj = edje_object_add(overlay->popup->evas);
             _theme_edje_object_set(overlay->obj, "e-tiling/move/down");
             edje_object_size_min_calc(overlay->obj, &ew, &eh);
@@ -1755,7 +1759,8 @@ _e_mod_action_move_cb(E_Object   *obj,
         end_special_input();
         return;
     }
-    _G.action_timer = ecore_timer_add(OVERLAY_TIMEOUT, _timeout_cb, NULL);
+    _G.action_timer = ecore_timer_add(TILING_OVERLAY_TIMEOUT,
+                                      _timeout_cb, NULL);
 
     _G.handler_key = ecore_event_handler_add(ECORE_EVENT_KEY_DOWN,
                                              move_key_down, NULL);
@@ -1886,7 +1891,7 @@ _transition_overlay_key_down(void *data,
         goto stop;
 
     /* reset timer */
-    ecore_timer_delay(_G.action_timer, OVERLAY_TIMEOUT
+    ecore_timer_delay(_G.action_timer, TILING_OVERLAY_TIMEOUT
                       - ecore_timer_pending_get(_G.action_timer));
 
     if (_G.transition_overlay) {
@@ -1939,7 +1944,7 @@ _transition_overlay_key_down(void *data,
             if (!trov->overlay.popup) {
                 trov->overlay.popup = e_popup_new(_G.tinfo->desk->zone,
                                                   0, 0, 1, 1);
-                e_popup_layer_set(trov->overlay.popup, 101);
+                e_popup_layer_set(trov->overlay.popup, TILING_POPUP_LAYER);
             }
             if (!trov->overlay.obj) {
                 trov->overlay.obj =
@@ -1985,8 +1990,8 @@ static void
 _do_transition_overlay(void)
 {
     int nb_win;
-    char keys[] = "asdfghkl;'qwertyuiop[]\\zxcvbnm,./`1234567890-=";
-    char *c = keys;
+    const char *keys = TILING_KEYS;
+    const char *c = keys;
     Ecore_X_Window parent;
 
     end_special_input();
@@ -2024,7 +2029,7 @@ _do_transition_overlay(void)
                 if (!trov->overlay.popup)
                     continue;
 
-                e_popup_layer_set(trov->overlay.popup, 101);
+                e_popup_layer_set(trov->overlay.popup, TILING_POPUP_LAYER);
                 trov->overlay.obj = edje_object_add(trov->overlay.popup->evas);
                 e_theme_edje_object_set(trov->overlay.obj,
                                         "base/theme/borders",
@@ -2071,7 +2076,7 @@ _do_transition_overlay(void)
             if (!trov->overlay.popup)
                 continue;
 
-            e_popup_layer_set(trov->overlay.popup, 101);
+            e_popup_layer_set(trov->overlay.popup, TILING_POPUP_LAYER);
             trov->overlay.obj = edje_object_add(trov->overlay.popup->evas);
             e_theme_edje_object_set(trov->overlay.obj,
                                     "base/theme/borders",
@@ -2120,7 +2125,8 @@ _do_transition_overlay(void)
         end_special_input();
         return;
     }
-    _G.action_timer = ecore_timer_add(OVERLAY_TIMEOUT, _timeout_cb, NULL);
+    _G.action_timer = ecore_timer_add(TILING_OVERLAY_TIMEOUT,
+                                      _timeout_cb, NULL);
 
     _G.handler_key = ecore_event_handler_add(ECORE_EVENT_KEY_DOWN,
                                              _transition_overlay_key_down,
@@ -2155,7 +2161,7 @@ static Eina_Bool
 _warp_timer(void *_)
 {
     if (_G.warp_timer) {
-        double spd = 0.10;
+        double spd = TILING_WRAP_SPEED;
 
         _G.old_warp_x = _G.warp_x;
         _G.old_warp_y = _G.warp_y;
