@@ -1276,7 +1276,8 @@ _check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
 
             e_popup_layer_set(overlay->popup, TILING_POPUP_LAYER);
             overlay->obj = edje_object_add(overlay->popup->evas);
-            _theme_edje_object_set(overlay->obj, "e-tiling/move/left");
+            _theme_edje_object_set(overlay->obj,
+                                   "modules/e-tiling/move/left");
             edje_object_size_min_calc(overlay->obj, &ew, &eh);
             e_popup_edje_bg_object_set(overlay->popup,
                                        overlay->obj);
@@ -1323,7 +1324,8 @@ _check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
 
             e_popup_layer_set(overlay->popup, TILING_POPUP_LAYER);
             overlay->obj = edje_object_add(overlay->popup->evas);
-            _theme_edje_object_set(overlay->obj, "e-tiling/move/right");
+            _theme_edje_object_set(overlay->obj,
+                                   "modules/e-tiling/move/right");
             edje_object_size_min_calc(overlay->obj, &ew, &eh);
             e_popup_edje_bg_object_set(overlay->popup,
                                        overlay->obj);
@@ -1370,7 +1372,7 @@ _check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
 
             e_popup_layer_set(overlay->popup, TILING_POPUP_LAYER);
             overlay->obj = edje_object_add(overlay->popup->evas);
-            _theme_edje_object_set(overlay->obj, "e-tiling/move/up");
+            _theme_edje_object_set(overlay->obj, "modules/e-tiling/move/up");
             edje_object_size_min_calc(overlay->obj, &ew, &eh);
             e_popup_edje_bg_object_set(overlay->popup,
                                        overlay->obj);
@@ -1417,7 +1419,8 @@ _check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
 
             e_popup_layer_set(overlay->popup, TILING_POPUP_LAYER);
             overlay->obj = edje_object_add(overlay->popup->evas);
-            _theme_edje_object_set(overlay->obj, "e-tiling/move/down");
+            _theme_edje_object_set(overlay->obj,
+                                   "modules/e-tiling/move/down");
             edje_object_size_min_calc(overlay->obj, &ew, &eh);
             e_popup_edje_bg_object_set(overlay->popup,
                                        overlay->obj);
@@ -1951,8 +1954,8 @@ _transition_overlay_key_down(void *data,
                     edje_object_add(trov->overlay.popup->evas);
             }
             _theme_edje_object_set(trov->overlay.obj,
-                bd? "e-tiling/transition/horizontal":
-                    "e-tiling/transition/vertical");
+                bd? "modules/e-tiling/transition/horizontal":
+                    "modules/e-tiling/transition/vertical");
 
             edje_object_size_min_calc(trov->overlay.obj, &ew, &eh);
             e_popup_edje_bg_object_set(trov->overlay.popup,
