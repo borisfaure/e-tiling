@@ -1495,6 +1495,9 @@ _move_up(void)
                   extra_2->expected.y);
 
     _check_moving_anims(bd_1, extra_1, col);
+    ecore_x_pointer_warp(_G.tinfo->desk->zone->container->win,
+                         extra_1->expected.x + extra_1->expected.w/2,
+                         extra_1->expected.y + extra_1->expected.h/2);
 }
 
 static void
@@ -1543,12 +1546,16 @@ _move_down(void)
                   extra_2->expected.y);
 
     _check_moving_anims(bd_1, extra_1, col);
+    ecore_x_pointer_warp(_G.tinfo->desk->zone->container->win,
+                         extra_1->expected.x + extra_1->expected.w/2,
+                         extra_1->expected.y + extra_1->expected.h/2);
 }
 
 static void
 _move_left(void)
 {
     E_Border *bd = _G.focused_bd;
+    Border_Extra *extra;
     int col;
 
     col = get_column(_G.focused_bd);
@@ -1588,7 +1595,16 @@ _move_left(void)
         _reorganize_column(col - 1);
     }
 
-    _check_moving_anims(bd, NULL, col - 1);
+    extra = eina_hash_find(_G.border_extras, &bd);
+    if (!extra) {
+        ERR("No extra for %p", bd);
+        return;
+    }
+
+    _check_moving_anims(bd, extra, col - 1);
+    ecore_x_pointer_warp(_G.tinfo->desk->zone->container->win,
+                         extra->expected.x + extra->expected.w/2,
+                         extra->expected.y + extra->expected.h/2);
 }
 
 static void
@@ -1597,6 +1613,7 @@ _move_right(void)
     E_Border *bd = _G.focused_bd;
     int col;
     int nb_cols;
+    Border_Extra *extra;
 
     col = get_column(bd);
     if (col == TILING_MAX_COLUMNS - 1)
@@ -1608,6 +1625,12 @@ _move_right(void)
 
     EINA_LIST_REMOVE(_G.tinfo->columns[col], bd);
     EINA_LIST_APPEND(_G.tinfo->columns[col + 1], bd);
+
+    extra = eina_hash_find(_G.border_extras, &bd);
+    if (!extra) {
+        ERR("No extra for %p", bd);
+        return;
+    }
 
     if (_G.tinfo->columns[col] && _G.tinfo->columns[col + 1]->next) {
         _reorganize_column(col);
@@ -1640,13 +1663,6 @@ _move_right(void)
         /* Add column */
         int x, y, w, h;
         int width = 0;
-        Border_Extra *extra;
-
-        extra = eina_hash_find(_G.border_extras, &bd);
-        if (!extra) {
-            ERR("No extra for %p", bd);
-            return;
-        }
 
         _reorganize_column(col);
 
@@ -1681,7 +1697,10 @@ _move_right(void)
             _G.tinfo->conf->nb_cols = nb_cols + 1;
     }
 
-    _check_moving_anims(bd, NULL, col + 1);
+    _check_moving_anims(bd, extra, col + 1);
+    ecore_x_pointer_warp(_G.tinfo->desk->zone->container->win,
+                         extra->expected.x + extra->expected.w/2,
+                         extra->expected.y + extra->expected.h/2);
 }
 
 static Eina_Bool
