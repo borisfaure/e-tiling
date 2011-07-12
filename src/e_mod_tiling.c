@@ -1595,7 +1595,7 @@ _move_right(void)
     int col;
     int nb_cols;
 
-    col = get_column(_G.focused_bd);
+    col = get_column(bd);
     if (col == TILING_MAX_COLUMNS - 1)
         return;
 
@@ -1644,6 +1644,8 @@ _move_right(void)
             ERR("No extra for %p", bd);
             return;
         }
+
+        _reorganize_column(col);
 
         e_zone_useful_geometry_get(bd->zone, &x, &y, &w, &h);
 
