@@ -1239,7 +1239,7 @@ _check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
     Eina_List *l = NULL;
 
     if (col < 0) {
-        col = get_column(_G.focused_bd);
+        col = get_column(bd);
         if (col < 0)
             return;
     }
@@ -1696,6 +1696,10 @@ move_key_down(void *data,
 
     if (ev->modifiers)
         return ECORE_CALLBACK_PASS_ON;
+
+    /* reset timer */
+    ecore_timer_delay(_G.action_timer, TILING_OVERLAY_TIMEOUT
+                      - ecore_timer_pending_get(_G.action_timer));
 
     if ((strcmp(ev->key, "Up") == 0)
     ||  (strcmp(ev->key, "k") == 0))
