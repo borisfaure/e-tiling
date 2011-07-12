@@ -1493,6 +1493,8 @@ _move_up(void)
     e_border_move(bd_2,
                   extra_2->expected.x,
                   extra_2->expected.y);
+
+    _check_moving_anims(bd_1, extra_1, col);
 }
 
 static void
@@ -1539,6 +1541,8 @@ _move_down(void)
     e_border_move(bd_2,
                   extra_2->expected.x,
                   extra_2->expected.y);
+
+    _check_moving_anims(bd_1, extra_1, col);
 }
 
 static void
@@ -1583,6 +1587,8 @@ _move_left(void)
         _reorganize_column(col);
         _reorganize_column(col - 1);
     }
+
+    _check_moving_anims(bd, NULL, col - 1);
 }
 
 static void
@@ -1674,6 +1680,8 @@ _move_right(void)
         if (nb_cols + 1 > _G.tinfo->conf->nb_cols)
             _G.tinfo->conf->nb_cols = nb_cols + 1;
     }
+
+    _check_moving_anims(bd, NULL, col + 1);
 }
 
 static Eina_Bool
@@ -2335,7 +2343,8 @@ _e_module_tiling_cb_hook(void *data,
             _move_resize_border_in_column(bd, extra, col, TILING_MOVE);
         }
 
-        if (_G.input_mode == INPUT_MODE_MOVING) {
+        if (_G.input_mode == INPUT_MODE_MOVING
+        &&  bd == _G.focused_bd) {
             _check_moving_anims(bd, extra, col);
         }
     }
