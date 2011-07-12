@@ -182,7 +182,6 @@ check_tinfo(const E_Desk *desk)
 static int
 is_floating_window(const E_Border *bd)
 {
-    check_tinfo(bd->desk);
     return (eina_list_data_find(_G.tinfo->floating_windows, bd) == bd);
 }
 
@@ -880,8 +879,6 @@ _remove_border(E_Border *bd)
 {
     int col;
     int nb_cols;
-
-    check_tinfo(bd->desk);
 
     nb_cols = get_column_count();
 
@@ -2241,6 +2238,9 @@ _e_module_tiling_cb_hook(void *data,
     if (!bd) {
         return;
     }
+
+    check_tinfo(bd->desk);
+
     if (is_floating_window(bd)) {
         return;
     }
@@ -2390,50 +2390,22 @@ _e_module_tiling_desk_before_show(void *data,
 }
 
 static Eina_Bool
-_clear_bd_from_info_hash(const Eina_Hash *hash,
-                         const void      *key,
-                         void            *data,
-                         void            *fdata)
-{
-    Tiling_Info *ti = data;
-    E_Event_Border_Desk_Set *ev = fdata;
-
-    if (!ev || !ti)
-        return EINA_TRUE;
-
-    if (ti->desk == ev->desk) {
-        return EINA_TRUE;
-    }
-
-    if (EINA_LIST_IS_IN(ti->floating_windows, ev->border)) {
-        ti->floating_windows = eina_list_remove(ti->floating_windows,
-                                                ev->border);
-    }
-
-    return EINA_TRUE;
-}
-
-static Eina_Bool
 _e_module_tiling_desk_set(void *data,
                           int   type,
                           void *event)
 {
-    /* TODO: remove this stuff?? */
-    /* We use this event to ensure that border desk changes are done correctly
-     * because a user can move the window to another desk (and events are
-     * fired) involving zone changes or not (depends on the mouse position) */
     E_Event_Border_Desk_Set *ev = event;
-    Tiling_Info *tinfo;
+
+    DBG("Desk set for %p: from %p to %p",
+        ev->border, ev->desk, ev->border->desk);
 
     end_special_input();
 
-    tinfo = eina_hash_find(_G.info_hash, &ev->desk);
+    check_tinfo(ev->desk);
+    _remove_border(ev->border);
 
-    if (!tinfo) {
-        tinfo = _initialize_tinfo(ev->desk);
-    }
-
-    eina_hash_foreach(_G.info_hash, _clear_bd_from_info_hash, ev);
+    check_tinfo(ev->border->desk);
+    _add_border(ev->border);
 
     return EINA_TRUE;
 }
@@ -2505,11 +2477,6 @@ e_modapi_init(E_Module *m)
     _G.handler_desk_before_show =
         ecore_event_handler_add(E_EVENT_DESK_BEFORE_SHOW,
                                 _e_module_tiling_desk_before_show, NULL);
-    /* Callback when the mouse moves */
-    /*
-    _G.handler_mouse_move = ecore_event_handler_add(ECORE_EVENT_MOUSE_MOVE,
-                                            _e_module_tiling_mouse_move, NULL);
-    */
     /* Callback when a border is set to another desk */
     _G.handler_desk_set = ecore_event_handler_add(E_EVENT_BORDER_DESK_SET,
                                               _e_module_tiling_desk_set, NULL);
