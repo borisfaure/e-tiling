@@ -20,8 +20,6 @@ TODO
 ====
 
 - Respect more ICCCM.
-- Focus a specified window by having a way to identify them quickly.
-- Select and Move transitions quickly.
 - Toggle between horizontal and vertical columns.
 - Show how many columns are configured.
 - Remove remaining bugs ☺.
