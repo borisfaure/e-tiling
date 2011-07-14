@@ -2442,14 +2442,15 @@ _e_module_tiling_desk_set(void *data,
     if (!_G.tinfo->conf || !_G.tinfo->conf->nb_cols) {
         Border_Extra *extra;
 
-        extra = eina_hash_find(_G.border_extras, &bd);
+        extra = eina_hash_find(_G.border_extras, &ev->border);
         if (extra) {
-            e_border_move_resize(bd, extra->orig.x,
+            e_border_move_resize(ev->border,
+                                 extra->orig.x,
                                  extra->orig.y,
                                  extra->orig.w,
                                  extra->orig.h);
         }
-        change_window_border(bd, "default");
+        change_window_border(ev->border, "default");
     } else {
         _add_border(ev->border);
     }
