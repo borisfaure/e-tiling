@@ -608,7 +608,11 @@ _add_column(void)
 
     if (_G.tinfo->conf->nb_cols == 1) {
         for (Eina_List *l = e_border_focus_stack_get(); l; l = l->next) {
-            _add_border(l->data);
+            E_Border *bd;
+
+            bd = l->data;
+            if (bd->desk == _G.tinfo->desk)
+                _add_border(bd);
         }
     }
     if (_G.tinfo->columns[_G.tinfo->conf->nb_cols - 2]
