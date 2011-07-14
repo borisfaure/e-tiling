@@ -713,6 +713,9 @@ change_column_number(struct _Config_vdesk *newconf)
     check_tinfo(d);
     old_nb_cols = _G.tinfo->conf->nb_cols;
 
+    if (newconf->nb_cols == old_nb_cols)
+        return;
+
     if (newconf->nb_cols == 0) {
         for (int i = 0; i < TILING_MAX_COLUMNS; i++) {
             for (Eina_List *l = _G.tinfo->columns[i]; l; l = l->next) {
@@ -743,6 +746,7 @@ change_column_number(struct _Config_vdesk *newconf)
             _remove_column();
         }
     }
+    _G.tinfo->conf->nb_cols = newconf->nb_cols;
 }
 
 static void

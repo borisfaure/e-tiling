@@ -233,11 +233,15 @@ _basic_apply_data(E_Config_Dialog      *cfd,
     /* Check if the layout for one of the vdesks has changed */
     for (Eina_List *l = tiling_g.config->vdesks; l; l = l->next) {
         struct _Config_vdesk *vd = l->data,
-        *newvd;
+                             *newvd;
 
-        if (!vd || !(newvd = get_vdesk(cfdata->config.vdesks,
-                                       vd->x, vd->y, vd->zone_num)))
+        if (!vd)
             continue;
+        if (!(newvd = get_vdesk(cfdata->config.vdesks,
+                                vd->x, vd->y, vd->zone_num))) {
+            change_column_number(vd);
+            continue;
+        }
 
         if (newvd->nb_cols != vd->nb_cols) {
             DBG("number of columns for (%d, %d, %d) changed from %d to %d",
