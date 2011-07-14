@@ -728,6 +728,7 @@ change_column_number(struct _Config_vdesk *newconf)
                                          extra->orig.y,
                                          extra->orig.w,
                                          extra->orig.h);
+                change_window_border(bd, "default");
             }
             eina_list_free(_G.tinfo->columns[i]);
             _G.tinfo->columns[i] = NULL;
@@ -2434,7 +2435,20 @@ _e_module_tiling_desk_set(void *data,
     _remove_border(ev->border);
 
     check_tinfo(ev->border->desk);
-    _add_border(ev->border);
+    if (!_G.tinfo->conf || !_G.tinfo->conf->nb_cols) {
+        Border_Extra *extra;
+
+        extra = eina_hash_find(_G.border_extras, &bd);
+        if (extra) {
+            e_border_move_resize(bd, extra->orig.x,
+                                 extra->orig.y,
+                                 extra->orig.w,
+                                 extra->orig.h);
+        }
+        change_window_border(bd, "default");
+    } else {
+        _add_border(ev->border);
+    }
 
     return EINA_TRUE;
 }
