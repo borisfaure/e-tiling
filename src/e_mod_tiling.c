@@ -682,12 +682,26 @@ _remove_column(void)
         }
         e_place_zone_region_smart_cleanup(_G.tinfo->desk->zone);
     } else {
+        int nb_cols = _G.tinfo->conf->nb_cols;
+        int x, y, w, h;
+        int width = 0;
         int col = _G.tinfo->conf->nb_cols;
 
         if (_G.tinfo->columns[col]) {
             _G.tinfo->columns[col-1] = eina_list_merge(
                 _G.tinfo->columns[col-1], _G.tinfo->columns[col]);
             _reorganize_column(col-1);
+        }
+
+        e_zone_useful_geometry_get(_G.tinfo->desk->zone, &x, &y, &w, &h);
+        for (int i = 0; i < nb_cols; i++) {
+
+            width = w / (nb_cols - i);
+
+            _set_column_geometry(i, x, width);
+
+            w -= width;
+            x += width;
         }
     }
 }
