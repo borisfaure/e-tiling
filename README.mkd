@@ -15,12 +15,4 @@ What is needed?
 ===============
 
 An up-to-date enlightenment environment.
-
-TODO
-====
-
-- Respect more ICCCM.
-- Toggle between horizontal and vertical columns.
-- Show how many columns are configured.
-- Remove remaining bugs ☺.
 …
