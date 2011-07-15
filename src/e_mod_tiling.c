@@ -625,7 +625,7 @@ _add_column(void)
 
         e_zone_useful_geometry_get(_G.tinfo->desk->zone, &x, &y, &w, &h);
 
-        for (int i = 0; i < nb_cols; i++) {
+        for (int i = 0; i <= nb_cols; i++) {
 
             width = w / (nb_cols + 1 - i);
 
