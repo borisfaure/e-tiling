@@ -1651,30 +1651,6 @@ _move_right(void)
     if (_G.tinfo->columns[col] && _G.tinfo->columns[col + 1]->next) {
         _reorganize_column(col);
         _reorganize_column(col + 1);
-    } else
-    if (!_G.tinfo->columns[col]) {
-        /* left shift columns on the right */
-        int x, y, w, h;
-        int width = 0;
-
-        /* Remove column */
-        nb_cols--;
-
-        e_zone_useful_geometry_get(bd->zone, &x, &y, &w, &h);
-
-        for (int i = col; i < nb_cols; i++) {
-            _G.tinfo->columns[i] = _G.tinfo->columns[i+1];
-        }
-        _G.tinfo->columns[nb_cols] = NULL;
-        for (int i = 0; i < nb_cols; i++) {
-
-            width = w / (nb_cols - i);
-
-            _set_column_geometry(i, x, width);
-
-            w -= width;
-            x += width;
-        }
     } else {
         /* Add column */
         int x, y, w, h;
