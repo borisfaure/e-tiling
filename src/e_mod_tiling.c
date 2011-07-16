@@ -1683,8 +1683,6 @@ _move_right(void)
                              extra->expected.h);
         e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_VERTICAL);
 
-        EINA_LIST_APPEND(_G.tinfo->columns[nb_cols], bd);
-
         if (nb_cols + 1 > _G.tinfo->conf->nb_cols)
             _G.tinfo->conf->nb_cols = nb_cols + 1;
     }
