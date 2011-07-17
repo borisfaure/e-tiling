@@ -1261,6 +1261,7 @@ _check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
 {
     Eina_List *l = NULL;
     overlay_t *overlay;
+    int nb_cols = get_column_count();
 
     if (col < 0) {
         col = get_column(bd);
@@ -1326,7 +1327,9 @@ _check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
 
     /* move right */
     overlay = &_G.move_overlays[MOVE_RIGHT];
-    if (col != TILING_MAX_COLUMNS - 1) {
+    if (col != TILING_MAX_COLUMNS - 1
+    && ((col == nb_cols - 1 && _G.tinfo->columns[col]->next)
+        || (col != nb_cols - 1))) {
         if (overlay->popup) {
             Evas_Coord ew, eh;
 
