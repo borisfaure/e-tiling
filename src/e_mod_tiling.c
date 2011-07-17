@@ -713,7 +713,7 @@ change_column_number(struct _Config_vdesk *newconf)
     E_Container *c;
     E_Zone *z;
     E_Desk *d;
-    int old_nb_cols;
+    int old_nb_cols = 2;
 
     m = e_manager_current_get();
     if (!m) return;
@@ -725,7 +725,8 @@ change_column_number(struct _Config_vdesk *newconf)
     if (!d) return;
 
     check_tinfo(d);
-    old_nb_cols = _G.tinfo->conf->nb_cols;
+    if (_G.tinfo->conf)
+        old_nb_cols = _G.tinfo->conf->nb_cols;
 
     if (newconf->nb_cols == old_nb_cols)
         return;
