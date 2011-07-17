@@ -1589,7 +1589,6 @@ _move_left(void)
 
         /* Remove column */
         nb_cols = get_column_count();
-        nb_cols--;
 
         e_zone_useful_geometry_get(bd->zone, &x, &y, &w, &h);
 
@@ -1606,6 +1605,7 @@ _move_left(void)
             w -= width;
             x += width;
         }
+        _reorganize_column(col - 1);
     } else {
         _reorganize_column(col);
         _reorganize_column(col - 1);
