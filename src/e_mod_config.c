@@ -230,6 +230,9 @@ static int
 _basic_apply_data(E_Config_Dialog      *cfd,
                   E_Config_Dialog_Data *cfdata)
 {
+
+    tiling_g.config->tile_dialogs = cfdata->config.tile_dialogs;
+
     /* Check if the layout for one of the vdesks has changed */
     for (Eina_List *l = tiling_g.config->vdesks; l; l = l->next) {
         struct _Config_vdesk *vd = l->data,
