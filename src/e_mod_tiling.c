@@ -86,7 +86,6 @@ static struct
                          *handler_desk_before_show,
                          *handler_mouse_move,
                          *handler_desk_set;
-    E_Zone               *current_zone;
 
     Tiling_Info          *tinfo;
     /* This hash holds the Tiling_Info-pointers for each desktop */
@@ -2582,8 +2581,11 @@ e_modapi_init(E_Module *m)
     E_CONFIG_LIMIT(tiling_g.config->float_too_big_windows, 0, 1);
 
     desk = get_current_desk();
-    _G.current_zone = desk->zone;
     _G.tinfo = _initialize_tinfo(desk);
+
+    _G.input_mode = INPUT_MODE_NONE;
+    _G.currently_switching_desktop = 0;
+    _G.action_cb = NULL;
 
     return m;
 }
