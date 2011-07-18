@@ -115,7 +115,7 @@ _fill_zone_config(E_Zone               *zone,
             vd->x = desk->x;
             vd->y = desk->y;
             vd->zone_num = zone->num;
-            vd->nb_cols = 2;
+            vd->nb_cols = 0;
 
             cfdata->config.vdesks = eina_list_append(cfdata->config.vdesks,
                                                      vd);

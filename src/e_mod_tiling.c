@@ -712,7 +712,7 @@ change_column_number(struct _Config_vdesk *newconf)
     E_Container *c;
     E_Zone *z;
     E_Desk *d;
-    int old_nb_cols = 2;
+    int old_nb_cols = 0;
 
     m = e_manager_current_get();
     if (!m) return;
