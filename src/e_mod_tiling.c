@@ -2388,6 +2388,7 @@ _e_module_tiling_hide_hook(void *data,
 
     if (EINA_LIST_IS_IN(_G.tinfo->floating_windows, bd)) {
         EINA_LIST_REMOVE(_G.tinfo->floating_windows, bd);
+        return EINA_TRUE;
     }
 
     _remove_border(bd);
