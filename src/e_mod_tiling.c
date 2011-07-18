@@ -712,7 +712,8 @@ change_column_number(struct _Config_vdesk *newconf)
     E_Container *c;
     E_Zone *z;
     E_Desk *d;
-    int old_nb_cols = 0;
+    int old_nb_cols = 0,
+        new_nb_cols = newconf->nb_cols;
 
     m = e_manager_current_get();
     if (!m) return;
@@ -724,13 +725,17 @@ change_column_number(struct _Config_vdesk *newconf)
     if (!d) return;
 
     check_tinfo(d);
-    if (_G.tinfo->conf)
+    if (_G.tinfo->conf) {
         old_nb_cols = _G.tinfo->conf->nb_cols;
+    } else {
+        _G.tinfo->conf = newconf;
+        newconf->nb_cols = 0;
+    }
 
-    if (newconf->nb_cols == old_nb_cols)
+    if (new_nb_cols == old_nb_cols)
         return;
 
-    if (newconf->nb_cols == 0) {
+    if (new_nb_cols == 0) {
         for (int i = 0; i < TILING_MAX_COLUMNS; i++) {
             for (Eina_List *l = _G.tinfo->columns[i]; l; l = l->next) {
                 E_Border *bd = l->data;
@@ -751,16 +756,16 @@ change_column_number(struct _Config_vdesk *newconf)
             _G.tinfo->columns[i] = NULL;
         }
         e_place_zone_region_smart_cleanup(z);
-    } else if (newconf->nb_cols > old_nb_cols) {
-        for (int i = newconf->nb_cols; i > old_nb_cols; i--) {
+    } else if (new_nb_cols > old_nb_cols) {
+        for (int i = new_nb_cols; i > old_nb_cols; i--) {
             _add_column();
         }
     } else {
-        for (int i = newconf->nb_cols; i < old_nb_cols; i++) {
+        for (int i = new_nb_cols; i < old_nb_cols; i++) {
             _remove_column();
         }
     }
-    _G.tinfo->conf->nb_cols = newconf->nb_cols;
+    _G.tinfo->conf->nb_cols = new_nb_cols;
 }
 
 static void

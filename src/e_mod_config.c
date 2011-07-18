@@ -248,15 +248,23 @@ _basic_apply_data(E_Config_Dialog      *cfd,
                 vd->x, vd->y, vd->zone_num, vd->nb_cols, newvd->nb_cols);
             change_column_number(newvd);
         }
-
     }
 
-    DBG("APPLY DATA");
-    memcpy(tiling_g.config, cfdata, sizeof(Config));
+    for (Eina_List *l = cfdata->config.vdesks; l; l = l->next) {
+        struct _Config_vdesk *vd = l->data;
+
+        if (!vd)
+            continue;
+        if (!get_vdesk(tiling_g.config->vdesks,
+                       vd->x, vd->y, vd->zone_num)) {
+            change_column_number(vd);
+            continue;
+        }
+    }
 
     cfdata->config.vdesks = NULL;
 
-    /* TODO: update tinfo->conf ?? */
+    memcpy(tiling_g.config, cfdata, sizeof(Config));
 
     e_config_save_queue();
 
