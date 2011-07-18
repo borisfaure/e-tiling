@@ -2443,7 +2443,8 @@ _e_module_tiling_desk_set(void *data,
         }
         change_window_border(ev->border, "default");
     } else {
-        _add_border(ev->border);
+        if (get_column(ev->border) < 0)
+            _add_border(ev->border);
     }
 
     return EINA_TRUE;
