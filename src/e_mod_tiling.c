@@ -334,9 +334,6 @@ overlay_key_down(void *data,
     if (ev->event_window != _G.action_input_win)
         return ECORE_CALLBACK_PASS_ON;
 
-    if (ev->modifiers)
-        return ECORE_CALLBACK_PASS_ON;
-
     if (strcmp(ev->key, "Return") == 0)
         goto stop;
     if (strcmp(ev->key, "Escape") == 0)
@@ -1711,9 +1708,6 @@ move_key_down(void *data,
     if (ev->event_window != _G.action_input_win)
         return ECORE_CALLBACK_PASS_ON;
 
-    if (ev->modifiers)
-        return ECORE_CALLBACK_PASS_ON;
-
     /* reset timer */
     ecore_timer_delay(_G.action_timer, TILING_OVERLAY_TIMEOUT
                       - ecore_timer_pending_get(_G.action_timer));
@@ -1911,9 +1905,6 @@ _transition_overlay_key_down(void *data,
     Ecore_Event_Key *ev = event;
 
     if (ev->event_window != _G.action_input_win)
-        return ECORE_CALLBACK_PASS_ON;
-
-    if (ev->modifiers)
         return ECORE_CALLBACK_PASS_ON;
 
     if (strcmp(ev->key, "Return") == 0)
