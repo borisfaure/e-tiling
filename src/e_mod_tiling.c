@@ -2663,8 +2663,6 @@ EAPI int
 e_modapi_save(E_Module *m)
 {
     e_config_domain_save("module.e-tiling", _G.config_edd, tiling_g.config);
-    /* TODO */
-    DBG("SAVE");
 
     return EINA_TRUE;
 }
