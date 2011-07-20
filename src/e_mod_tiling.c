@@ -776,6 +776,8 @@ _e_mod_action_add_column_cb(E_Object   *obj,
     check_tinfo(desk);
 
     _add_column();
+
+    e_config_save_queue();
 }
 
 static void
@@ -789,6 +791,8 @@ _e_mod_action_remove_column_cb(E_Object   *obj,
     check_tinfo(desk);
 
     _remove_column();
+
+    e_config_save_queue();
 }
 
 /* }}} */
@@ -1688,8 +1692,10 @@ _move_right(void)
                              extra->expected.h);
         e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_VERTICAL);
 
-        if (nb_cols + 1 > _G.tinfo->conf->nb_cols)
+        if (nb_cols + 1 > _G.tinfo->conf->nb_cols) {
             _G.tinfo->conf->nb_cols = nb_cols + 1;
+            e_config_save_queue();
+        }
     }
 
     _check_moving_anims(bd, extra, col + 1);
@@ -2657,8 +2663,6 @@ EAPI int
 e_modapi_save(E_Module *m)
 {
     e_config_domain_save("module.e-tiling", _G.config_edd, tiling_g.config);
-    /* TODO */
-    DBG("SAVE");
 
     return EINA_TRUE;
 }

@@ -58,8 +58,8 @@ _create_data(E_Config_Dialog *cfd)
     cfdata->config.vdesks = NULL;
 
     for (Eina_List *l = tiling_g.config->vdesks; l; l = l->next) {
-        struct _Config_vdesk *vd = l->data;
-        struct _Config_vdesk *newvd;
+        struct _Config_vdesk *vd = l->data,
+                             *newvd;
 
         if (!vd)
             continue;
@@ -81,7 +81,11 @@ static void
 _free_data(E_Config_Dialog      *cfd,
            E_Config_Dialog_Data *cfdata)
 {
-    /*TODO: LEAK */
+    struct _Config_vdesk *vd;
+
+    EINA_LIST_FREE(cfdata->config.vdesks, vd) {
+        free(vd);
+    }
     free(cfdata);
 }
 
@@ -230,13 +234,15 @@ static int
 _basic_apply_data(E_Config_Dialog      *cfd,
                   E_Config_Dialog_Data *cfdata)
 {
+    struct _Config_vdesk *vd;
 
     tiling_g.config->tile_dialogs = cfdata->config.tile_dialogs;
 
     /* Check if the layout for one of the vdesks has changed */
     for (Eina_List *l = tiling_g.config->vdesks; l; l = l->next) {
-        struct _Config_vdesk *vd = l->data,
-                             *newvd;
+        struct _Config_vdesk *newvd;
+
+        vd = l->data;
 
         if (!vd)
             continue;
@@ -254,7 +260,7 @@ _basic_apply_data(E_Config_Dialog      *cfd,
     }
 
     for (Eina_List *l = cfdata->config.vdesks; l; l = l->next) {
-        struct _Config_vdesk *vd = l->data;
+        vd = l->data;
 
         if (!vd)
             continue;
@@ -265,9 +271,11 @@ _basic_apply_data(E_Config_Dialog      *cfd,
         }
     }
 
-    cfdata->config.vdesks = NULL;
-
+    EINA_LIST_FREE(tiling_g.config->vdesks, vd) {
+        free(vd);
+    }
     memcpy(tiling_g.config, cfdata, sizeof(Config));
+    cfdata->config.vdesks = NULL; /* we don't want this list to be freed */
 
     e_config_save_queue();
 
