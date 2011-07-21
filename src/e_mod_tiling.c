@@ -181,7 +181,7 @@ check_tinfo(const E_Desk *desk)
 static int
 is_floating_window(const E_Border *bd)
 {
-    return (eina_list_data_find(_G.tinfo->floating_windows, bd) == bd);
+    return EINA_LIST_IS_IN(_G.tinfo->floating_windows, bd);
 }
 
 static int
@@ -1163,21 +1163,31 @@ toggle_floating(E_Border *bd)
 
     check_tinfo(bd->desk);
 
-    if (eina_list_data_find(_G.tinfo->floating_windows, bd) == bd) {
-        _G.tinfo->floating_windows =
-            eina_list_remove(_G.tinfo->floating_windows, bd);
+    if (EINA_LIST_IS_IN(_G.tinfo->floating_windows, bd)) {
+        EINA_LIST_REMOVE(_G.tinfo->floating_windows, bd);
 
         _add_border(bd);
     } else {
-        /* To give the user a bit of feedback we restore the original border */
-        /* TODO: save the original border, don't just restore the default one*/
-        _G.tinfo->floating_windows =
-            eina_list_prepend(_G.tinfo->floating_windows, bd);
+        Border_Extra *extra;
+
+        extra = eina_hash_find(_G.border_extras, &bd);
+        if (extra) {
+            e_border_move_resize(bd,
+                                 extra->orig.x,
+                                 extra->orig.y,
+                                 extra->orig.w,
+                                 extra->orig.h);
+            e_border_unmaximize(bd, E_MAXIMIZE_BOTH);
+        } else {
+            e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_BOTH);
+        }
+        EINA_LIST_APPEND(_G.tinfo->floating_windows, bd);
 
         _remove_border(bd);
 
-        e_border_maximize(bd, E_MAXIMIZE_EXPAND | E_MAXIMIZE_BOTH);
-
+        /* To give the user a bit of feedback we restore the original border */
+        /* TODO: save the original border, don't just restore the default one*/
+        /* TODO: save maximized state */
         change_window_border(bd, "default");
     }
 }
@@ -2273,6 +2283,7 @@ _e_module_tiling_cb_hook(void *data,
 {
     E_Border *bd = border;
     int col = -1;
+    int w, h;
 
     if (_G.input_mode != INPUT_MODE_NONE
     &&  _G.input_mode != INPUT_MODE_MOVING
@@ -2295,6 +2306,12 @@ _e_module_tiling_cb_hook(void *data,
     }
 
     if (!_G.tinfo->conf || !_G.tinfo->conf->nb_cols) {
+        return;
+    }
+
+    e_zone_useful_geometry_get(_G.tinfo->desk->zone, NULL, NULL, &w, &h);
+    if (bd->w > w || bd->h > h || bd->x < 0 || bd->y < 0) {
+        toggle_floating(bd);
         return;
     }
 
@@ -2464,6 +2481,7 @@ _e_module_tiling_desk_set(void *data,
                                  extra->orig.w,
                                  extra->orig.h);
         }
+        e_border_unmaximize(ev->border, E_MAXIMIZE_BOTH);
         change_window_border(ev->border, "default");
     } else {
         if (get_column(ev->border) < 0)
