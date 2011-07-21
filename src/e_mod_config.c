@@ -271,8 +271,13 @@ _basic_apply_data(E_Config_Dialog      *cfd,
         }
     }
 
+    EINA_LIST_FREE(tiling_g.config->vdesks, vd) {
+        free(vd);
+    }
     memcpy(tiling_g.config, cfdata, sizeof(Config));
     cfdata->config.vdesks = NULL; /* we don't want this list to be freed */
+
+    e_tiling_update_conf();
 
     e_config_save_queue();
 
