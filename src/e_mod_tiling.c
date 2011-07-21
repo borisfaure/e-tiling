@@ -243,6 +243,27 @@ _theme_edje_object_set(Evas_Object *obj, const char *group)
     }
 }
 
+static Eina_Bool
+_info_hash_update(const Eina_Hash *hash, const void *key,
+                  void *data, void *fdata)
+{
+    Tiling_Info *tinfo = data;
+
+    if (tinfo->desk) {
+        tinfo->conf = get_vdesk(tiling_g.config->vdesks,
+                                tinfo->desk->x, tinfo->desk->y,
+                                tinfo->desk->zone->num);
+    } else {
+        tinfo->conf = NULL;
+    }
+}
+
+void
+e_tiling_update_conf(void)
+{
+    eina_hash_foreach(_G.info_hash, _info_hash_update, NULL);
+}
+
 /* }}} */
 /* Overlays {{{*/
 
@@ -725,7 +746,6 @@ change_column_number(struct _Config_vdesk *newconf)
     if (_G.tinfo->conf) {
         old_nb_cols = _G.tinfo->conf->nb_cols;
     } else {
-        _G.tinfo->conf = newconf;
         newconf->nb_cols = 0;
     }
 
