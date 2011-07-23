@@ -1,11 +1,11 @@
 # Tiling module (e17), French translation.
 # This file is put in the public domain.
-# batden <batden@orange.fr>, 2009.
+# Boris Faure <billiob@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: Tiling module\n"
 "Report-Msgid-Bugs-To: enlightenment-devel@lists.sourceforge.net\n"
-"POT-Creation-Date: 2011-05-12 21:58+0200\n"
+"POT-Creation-Date: 2011-07-23 19:51+0200\n"
 "PO-Revision-Date: 2010-07-17 10:01+0400\n"
 "Last-Translator: batden <batden@orange.fr>\n"
 "Language-Team: Enlightenment French Team <pourunmondesansgourou@gmail.com>\n"
@@ -18,40 +18,41 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=n>1;\n"
 "X-Poedit-SourceCharset: utf-8\n"
 
-#: src/e_mod_main.c:1062 src/e_mod_main.c:1080 src/e_mod_main.c:1142
-msgid "Tiling"
+#: src/e_mod_tiling.c:2571 src/e_mod_tiling.c:2598 src/e_mod_tiling.c:2664
+#, fuzzy
+msgid "E-Tiling"
 msgstr "Pavage"
 
-#: src/e_mod_main.c:1078
+#: src/e_mod_tiling.c:2596
 msgid "Windows"
 msgstr "Fenêtres"
 
-#: src/e_mod_config.c:130
+#: src/e_mod_config.c:131
 #, c-format
 msgid "%1.0f columns"
-msgstr ""
+msgstr "%1.0f colonnes"
 
-#: src/e_mod_config.c:179
+#: src/e_mod_config.c:180
 msgid "General"
 msgstr "Général"
 
-#: src/e_mod_config.c:181
+#: src/e_mod_config.c:182
 msgid "Tile dialog windows aswell"
-msgstr ""
+msgstr "Également paver les fenêtres de dialogue"
 
-#: src/e_mod_config.c:185
+#: src/e_mod_config.c:186
 msgid "Set too big windows floating automatically"
-msgstr ""
+msgstr "Automatiquement rendre flotantes les fenêtres trop grandes"
 
-#: src/e_mod_config.c:190
+#: src/e_mod_config.c:191
 msgid "Virtual Desktops"
 msgstr "Bureaux virtuels"
 
-#: src/e_mod_config.c:192
+#: src/e_mod_config.c:193
 msgid "Number of columns used to tile per desk (0 → tiling disabled):"
-msgstr ""
+msgstr "Nombre de colonnes à utiliser pour le pavage par bureau (0 → pavage désactivé)"
 
-#: src/e_mod_config.c:286
+#: src/e_mod_config.c:308
 msgid "Tiling Configuration"
 msgstr "Configuration du pavage"
 
