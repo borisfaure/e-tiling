@@ -748,6 +748,8 @@ change_column_number(struct _Config_vdesk *newconf)
     } else {
         newconf->nb_cols = 0;
     }
+    _G.tinfo->conf = newconf;
+    _G.tinfo->conf->nb_cols = old_nb_cols;
 
     if (new_nb_cols == old_nb_cols)
         return;
