@@ -748,6 +748,8 @@ change_column_number(struct _Config_vdesk *newconf)
     } else {
         newconf->nb_cols = 0;
     }
+    _G.tinfo->conf = newconf;
+    _G.tinfo->conf->nb_cols = old_nb_cols;
 
     if (new_nb_cols == old_nb_cols)
         return;
@@ -1341,9 +1343,11 @@ _check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
                                        overlay->obj);
             evas_object_show(overlay->obj);
             e_popup_move_resize(overlay->popup,
-                                extra->expected.x - ew/2,
+                                extra->expected.x - ew/2
+                                                  - overlay->popup->zone->x,
                                 extra->expected.y + extra->expected.h/2
-                                                  - eh/2,
+                                                  - eh/2
+                                                  - overlay->popup->zone->y,
                                 ew,
                                 eh);
             evas_object_resize(overlay->obj, ew, eh);
@@ -1389,9 +1393,11 @@ _check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
                                        overlay->obj);
             evas_object_show(overlay->obj);
             e_popup_move_resize(overlay->popup,
-                                extra->expected.x + extra->expected.w - ew/2,
+                                extra->expected.x + extra->expected.w - ew/2
+                                                  - overlay->popup->zone->x,
                                 extra->expected.y + extra->expected.h/2
-                                                  - eh/2,
+                                                  - eh/2
+                                                  - overlay->popup->zone->y,
                                 ew,
                                 eh);
             evas_object_resize(overlay->obj, ew, eh);
@@ -1435,8 +1441,10 @@ _check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
             evas_object_show(overlay->obj);
             e_popup_move_resize(overlay->popup,
                                 extra->expected.x + extra->expected.w/2
-                                                  - ew/2,
-                                extra->expected.y - eh/2,
+                                                  - ew/2
+                                                  - overlay->popup->zone->x,
+                                extra->expected.y - eh/2
+                                                  - overlay->popup->zone->y,
                                 ew,
                                 eh);
             evas_object_resize(overlay->obj, ew, eh);
@@ -1481,8 +1489,10 @@ _check_moving_anims(E_Border *bd, Border_Extra *extra, int col)
             evas_object_show(overlay->obj);
             e_popup_move_resize(overlay->popup,
                                 extra->expected.x + extra->expected.w/2
-                                                  - ew/2,
-                                extra->expected.y + extra->expected.h - eh/2,
+                                                  - ew/2
+                                                  - overlay->popup->zone->x,
+                                extra->expected.y + extra->expected.h - eh/2
+                                                  - overlay->popup->zone->y,
                                 ew,
                                 eh);
             evas_object_resize(overlay->obj, ew, eh);
@@ -2019,9 +2029,11 @@ _transition_overlay_key_down(void *data,
             if (bd) {
                 e_popup_move_resize(trov->overlay.popup,
                                     extra->expected.x + extra->expected.w/2
-                                                      - ew/2,
+                                            - ew/2
+                                            - trov->overlay.popup->zone->x,
                                     extra->expected.y + extra->expected.h
-                                                      - eh/2,
+                                            - eh/2
+                                            - trov->overlay.popup->zone->y,
                                     ew,
                                     eh);
             } else {

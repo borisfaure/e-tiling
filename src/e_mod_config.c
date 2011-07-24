@@ -256,6 +256,8 @@ _basic_apply_data(E_Config_Dialog      *cfd,
             DBG("number of columns for (%d, %d, %d) changed from %d to %d",
                 vd->x, vd->y, vd->zone_num, vd->nb_cols, newvd->nb_cols);
             change_column_number(newvd);
+            free(vd);
+            l->data = NULL;
         }
     }
 
