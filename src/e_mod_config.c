@@ -181,10 +181,6 @@ _basic_create_widgets(E_Config_Dialog      *cfd,
     e_widget_framelist_object_append(of,
       e_widget_check_add(evas, D_("Tile dialog windows aswell"),
                          &cfdata->config.tile_dialogs));
-    e_widget_framelist_object_append(of,
-      e_widget_check_add(evas,
-                         D_("Set too big windows floating automatically"),
-                         &cfdata->config.float_too_big_windows));
     LIST_ADD(o, of);
 
     /* Virtual desktop settings */
