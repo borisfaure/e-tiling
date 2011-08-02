@@ -29,7 +29,6 @@ struct _Config_vdesk
 struct _Config
 {
     int            tile_dialogs;
-    int            float_too_big_windows;
     Eina_List     *vdesks;
 };
 

@@ -2616,7 +2616,6 @@ e_modapi_init(E_Module *m)
     _G.vdesk_edd = E_CONFIG_DD_NEW("Tiling_Config_VDesk",
                                    struct _Config_vdesk);
     E_CONFIG_VAL(_G.config_edd, Config, tile_dialogs, INT);
-    E_CONFIG_VAL(_G.config_edd, Config, float_too_big_windows, INT);
 
     E_CONFIG_LIST(_G.config_edd, Config, vdesks, _G.vdesk_edd);
     E_CONFIG_VAL(_G.vdesk_edd, struct _Config_vdesk, x, INT);
@@ -2627,12 +2626,10 @@ e_modapi_init(E_Module *m)
     tiling_g.config = e_config_domain_load("module.e-tiling", _G.config_edd);
     if (!tiling_g.config) {
         tiling_g.config = E_NEW(Config, 1);
-        tiling_g.config->float_too_big_windows = 1;
         tiling_g.config->tile_dialogs = 1;
     }
 
     E_CONFIG_LIMIT(tiling_g.config->tile_dialogs, 0, 1);
-    E_CONFIG_LIMIT(tiling_g.config->float_too_big_windows, 0, 1);
 
     desk = get_current_desk();
     _G.tinfo = _initialize_tinfo(desk);
