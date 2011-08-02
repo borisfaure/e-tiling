@@ -2295,7 +2295,6 @@ _e_module_tiling_cb_hook(void *data,
 {
     E_Border *bd = border;
     int col = -1;
-    int w, h;
 
     if (_G.input_mode != INPUT_MODE_NONE
     &&  _G.input_mode != INPUT_MODE_MOVING
@@ -2318,12 +2317,6 @@ _e_module_tiling_cb_hook(void *data,
     }
 
     if (!_G.tinfo->conf || !_G.tinfo->conf->nb_cols) {
-        return;
-    }
-
-    e_zone_useful_geometry_get(_G.tinfo->desk->zone, NULL, NULL, &w, &h);
-    if (bd->w > w || bd->h > h || bd->x < 0 || bd->y < 0) {
-        toggle_floating(bd);
         return;
     }
 
