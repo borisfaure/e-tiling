@@ -1,13 +1,4 @@
-#include "e.h"
-#include "config.h"
 #include "e_mod_tiling.h"
-#include "e_mod_config.h"
-#include "e_border.h"
-#include "e_shelf.h"
-
-#include <math.h>
-#include <stdbool.h>
-#include <assert.h>
 
 /* types {{{ */
 

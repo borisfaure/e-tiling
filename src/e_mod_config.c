@@ -1,8 +1,4 @@
-#include "e.h"
 #include "e_mod_tiling.h"
-#include "e_mod_config.h"
-#include "config.h"
-
 
 /* HACK: Needed to get subobjs of the widget. Is there a better way? */
 typedef struct _E_Widget_Smart_Data E_Widget_Smart_Data;
