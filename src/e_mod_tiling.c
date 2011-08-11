@@ -819,6 +819,9 @@ _add_border(E_Border *bd)
     if (is_untilable_dialog(bd)) {
         return;
     }
+    if (bd->fullscreen) {
+         return;
+    }
 
     if (!_G.tinfo->conf || !_G.tinfo->conf->nb_cols) {
         return;
@@ -2299,6 +2302,9 @@ _e_module_tiling_cb_hook(void *data,
     if (is_untilable_dialog(bd)) {
         return;
     }
+    if (bd->fullscreen) {
+         return;
+    }
 
     if (!_G.tinfo->conf || !_G.tinfo->conf->nb_cols) {
         return;
@@ -2311,11 +2317,11 @@ _e_module_tiling_cb_hook(void *data,
     }
 
     DBG("cb-Hook for %p / %s / %s, changes(size=%d, position=%d, border=%d)"
-        " g:%dx%d+%d+%d bdname:%s (%d) %d",
+        " g:%dx%d+%d+%d bdname:%s (col:%d) maximized:%d fs:%d",
         bd, bd->client.icccm.title, bd->client.netwm.name,
         bd->changes.size, bd->changes.pos, bd->changes.border,
         bd->w, bd->h, bd->x, bd->y, bd->bordername,
-        col, bd->maximized);
+        col, bd->maximized, bd->fullscreen);
 
     if (col < 0) {
         _add_border(bd);
