@@ -119,13 +119,6 @@ static struct
 /* }}} */
 /* Utils {{{ */
 
-#define EINA_LIST_IS_IN(_list, _el) \
-    (eina_list_data_find(_list, _el) == _el)
-#define EINA_LIST_APPEND(_list, _el) \
-    _list = eina_list_append(_list, _el)
-#define EINA_LIST_REMOVE(_list, _el) \
-    _list = eina_list_remove(_list, _el)
-
 /* I wonder why noone has implemented the following one yet? */
 static E_Desk *
 get_current_desk(void)

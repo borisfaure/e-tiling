@@ -88,4 +88,11 @@ get_vdesk(Eina_List *vdesks,
           int y,
           unsigned int zone_num);
 
+#define EINA_LIST_IS_IN(_list, _el) \
+    (eina_list_data_find(_list, _el) == _el)
+#define EINA_LIST_APPEND(_list, _el) \
+    _list = eina_list_append(_list, _el)
+#define EINA_LIST_REMOVE(_list, _el) \
+    _list = eina_list_remove(_list, _el)
+
 #endif
