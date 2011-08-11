@@ -30,7 +30,8 @@ get_vdesk(Eina_List *vdesks,
         if (!vd)
             continue;
 
-        if (vd->x == x && vd->y == y && vd->zone_num == zone_num)
+        if (0 < vd->nb_cols && vd->nb_cols <= TILING_MAX_COLUMNS
+        &&  vd->x == x && vd->y == y && vd->zone_num == zone_num)
             return vd;
     }
 
@@ -79,9 +80,7 @@ _free_data(E_Config_Dialog      *cfd,
 {
     struct _Config_vdesk *vd;
 
-    EINA_LIST_FREE(cfdata->config.vdesks, vd) {
-        free(vd);
-    }
+    eina_list_free(cfdata->config.vdesks);
     free(cfdata);
 }
 
