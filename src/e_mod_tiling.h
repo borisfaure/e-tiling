@@ -3,6 +3,14 @@
 #include <libintl.h>
 #define D_(str) dgettext(PACKAGE, str)
 
+#include <e.h>
+#include <e_border.h>
+#include <e_shelf.h>
+
+#include <stdbool.h>
+
+#include "config.h"
+
 typedef struct _Config      Config;
 typedef struct _Tiling_Info Tiling_Info;
 
@@ -51,6 +59,19 @@ struct _Tiling_Info
     int borders;
 };
 
+struct _E_Config_Dialog_Data
+{
+   struct _Config config;
+   Evas_Object *o_zonelist;
+   Evas_Object *o_desklist;
+   Evas_Object *o_deskscroll;
+   Evas_Object *o_space_between;
+   Evas        *evas;
+};
+
+E_Config_Dialog *e_int_config_tiling_module(E_Container *con,
+                                            const char  *params);
+
 EAPI extern E_Module_Api e_modapi;
 
 EAPI void *e_modapi_init(E_Module *m);
@@ -60,5 +81,18 @@ EAPI int   e_modapi_save(E_Module *m);
 void change_column_number(struct _Config_vdesk *newconf);
 
 void e_tiling_update_conf(void);
+
+struct _Config_vdesk *
+get_vdesk(Eina_List *vdesks,
+          int x,
+          int y,
+          unsigned int zone_num);
+
+#define EINA_LIST_IS_IN(_list, _el) \
+    (eina_list_data_find(_list, _el) == _el)
+#define EINA_LIST_APPEND(_list, _el) \
+    _list = eina_list_append(_list, _el)
+#define EINA_LIST_REMOVE(_list, _el) \
+    _list = eina_list_remove(_list, _el)
 
 #endif
