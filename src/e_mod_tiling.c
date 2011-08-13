@@ -219,13 +219,18 @@ get_window_count(void)
 }
 
 static void
-_theme_edje_object_set(Evas_Object *obj, const char *group)
+_theme_edje_object_set_aux(Evas_Object *obj, const char *group)
 {
     if (!e_theme_edje_object_set(obj, "base/theme/modules/e-tiling",
                                  group)) {
         edje_object_file_set(obj, _G.edj_path, group);
     }
 }
+#define _theme_edje_object_set(_obj, _group)                                 \
+    if (e_config->use_composite)                                             \
+        _theme_edje_object_set_aux(_obj, _group"/composite");                \
+    else                                                                     \
+        _theme_edje_object_set_aux(_obj, _group);
 
 static Eina_Bool
 _info_hash_update(const Eina_Hash *hash, const void *key,
