@@ -2316,8 +2316,8 @@ _e_module_tiling_cb_hook(void *data,
         return;
     }
 
-    DBG("cb-Hook for %p / %s / %s, changes(size=%d, position=%d, border=%d)"
-        " g:%dx%d+%d+%d bdname:%s (col:%d) maximized:%d fs:%d",
+    DBG("Show: %p / '%s' / '%s', changes(size=%d, position=%d, border=%d)"
+        " g:%dx%d+%d+%d bdname:'%s' (col:%d) maximized:%x fs:%d",
         bd, bd->client.icccm.title, bd->client.netwm.name,
         bd->changes.size, bd->changes.pos, bd->changes.border,
         bd->w, bd->h, bd->x, bd->y, bd->bordername,
