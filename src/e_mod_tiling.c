@@ -2321,8 +2321,8 @@ _e_module_tiling_cb_hook(void *data,
         return;
     }
 
-    DBG("cb-Hook for %p / %s / %s, changes(size=%d, position=%d, border=%d)"
-        " g:%dx%d+%d+%d bdname:%s (col:%d) maximized:%d fs:%d",
+    DBG("Show: %p / '%s' / '%s', changes(size=%d, position=%d, border=%d)"
+        " g:%dx%d+%d+%d bdname:'%s' (col:%d) maximized:%x fs:%d",
         bd, bd->client.icccm.title, bd->client.netwm.name,
         bd->changes.size, bd->changes.pos, bd->changes.border,
         bd->w, bd->h, bd->x, bd->y, bd->bordername,
@@ -2369,14 +2369,30 @@ _e_module_tiling_cb_hook(void *data,
         {
             return;
         }
-        if (bd->maximized && (eina_list_count(_G.tinfo->columns[col]) > 1)) {
-            e_border_unmaximize(bd, E_MAXIMIZE_BOTH);
-            e_border_move_resize(bd,
-                                 extra->expected.x,
-                                 extra->expected.y,
-                                 extra->expected.w,
-                                 extra->expected.h);
-            return;
+        if (bd->maximized) {
+            bool changed = false;
+
+            if (col > 0 && bd->maximized & E_MAXIMIZE_HORIZONTAL) {
+                 e_border_unmaximize(bd, E_MAXIMIZE_HORIZONTAL);
+                 e_border_move_resize(bd,
+                                      extra->expected.x,
+                                      extra->expected.y,
+                                      extra->expected.w,
+                                      extra->expected.h);
+                 changed = true;
+            }
+            if (bd->maximized & E_MAXIMIZE_VERTICAL
+            && eina_list_count(_G.tinfo->columns[col]) > 1) {
+                 e_border_unmaximize(bd, E_MAXIMIZE_VERTICAL);
+                 e_border_move_resize(bd,
+                                      extra->expected.x,
+                                      extra->expected.y,
+                                      extra->expected.w,
+                                      extra->expected.h);
+                 changed = true;
+            }
+            if (changed)
+                return;
         }
 
         if (bd->changes.border && bd->changes.size) {
