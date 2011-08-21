@@ -2364,14 +2364,30 @@ _e_module_tiling_cb_hook(void *data,
         {
             return;
         }
-        if (bd->maximized && (eina_list_count(_G.tinfo->columns[col]) > 1)) {
-            e_border_unmaximize(bd, E_MAXIMIZE_BOTH);
-            e_border_move_resize(bd,
-                                 extra->expected.x,
-                                 extra->expected.y,
-                                 extra->expected.w,
-                                 extra->expected.h);
-            return;
+        if (bd->maximized) {
+            bool changed = false;
+
+            if (col > 0 && bd->maximized & E_MAXIMIZE_HORIZONTAL) {
+                 e_border_unmaximize(bd, E_MAXIMIZE_HORIZONTAL);
+                 e_border_move_resize(bd,
+                                      extra->expected.x,
+                                      extra->expected.y,
+                                      extra->expected.w,
+                                      extra->expected.h);
+                 changed = true;
+            }
+            if (bd->maximized & E_MAXIMIZE_VERTICAL
+            && eina_list_count(_G.tinfo->columns[col]) > 1) {
+                 e_border_unmaximize(bd, E_MAXIMIZE_VERTICAL);
+                 e_border_move_resize(bd,
+                                      extra->expected.x,
+                                      extra->expected.y,
+                                      extra->expected.w,
+                                      extra->expected.h);
+                 changed = true;
+            }
+            if (changed)
+                return;
         }
 
         if (bd->changes.border && bd->changes.size) {
