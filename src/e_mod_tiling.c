@@ -1675,19 +1675,20 @@ _move_right(void)
     if (col == nb_cols - 1 && !_G.tinfo->columns[col]->next)
         return;
 
-    EINA_LIST_REMOVE(_G.tinfo->columns[col], bd);
-    EINA_LIST_APPEND(_G.tinfo->columns[col + 1], bd);
-
     extra = eina_hash_find(_G.border_extras, &bd);
     if (!extra) {
         ERR("No extra for %p", bd);
         return;
     }
 
+    EINA_LIST_REMOVE(_G.tinfo->columns[col], bd);
+    EINA_LIST_APPEND(_G.tinfo->columns[col + 1], bd);
+
     if (_G.tinfo->columns[col] && _G.tinfo->columns[col + 1]->next) {
         _reorganize_column(col);
         _reorganize_column(col + 1);
-    } else {
+    } else
+    if (_G.tinfo->columns[col]) {
         /* Add column */
         int x, y, w, h;
         int width = 0;
@@ -1723,6 +1724,25 @@ _move_right(void)
             _G.tinfo->conf->nb_cols = nb_cols + 1;
             e_config_save_queue();
         }
+    } else {
+        int nb_cols = col + 1;
+        int x, y, w, h;
+        int width = 0;
+
+         _G.tinfo->columns[col] = _G.tinfo->columns[col + 1];
+         _G.tinfo->columns[col + 1] = NULL;
+
+        e_zone_useful_geometry_get(_G.tinfo->desk->zone, &x, &y, &w, &h);
+        for (int i = 0; i < nb_cols; i++) {
+
+            width = w / (nb_cols - i);
+
+            _set_column_geometry(i, x, width);
+
+            w -= width;
+            x += width;
+        }
+        _reorganize_column(col);
     }
 
     _check_moving_anims(bd, extra, col + 1);
