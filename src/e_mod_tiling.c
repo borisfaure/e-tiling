@@ -1725,16 +1725,16 @@ _move_right(void)
             e_config_save_queue();
         }
     } else {
-        int nb_cols = col + 1;
         int x, y, w, h;
         int width = 0;
 
-         _G.tinfo->columns[col] = _G.tinfo->columns[col + 1];
-         _G.tinfo->columns[col + 1] = NULL;
+        nb_cols--;
+
 
         e_zone_useful_geometry_get(_G.tinfo->desk->zone, &x, &y, &w, &h);
         for (int i = 0; i < nb_cols; i++) {
 
+             _G.tinfo->columns[i] = _G.tinfo->columns[i + 1];
             width = w / (nb_cols - i);
 
             _set_column_geometry(i, x, width);
@@ -1743,6 +1743,9 @@ _move_right(void)
             x += width;
         }
         _reorganize_column(col);
+        _G.tinfo->columns[nb_cols] = NULL;
+        _G.tinfo->x[nb_cols] = 0;
+        _G.tinfo->w[nb_cols] = 0;
     }
 
     _check_moving_anims(bd, extra, col + 1);
