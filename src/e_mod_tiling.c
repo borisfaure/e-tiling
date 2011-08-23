@@ -1692,6 +1692,7 @@ _move_right(void)
     if (_G.tinfo->columns[col] && _G.tinfo->columns[col + 1]->next) {
         _reorganize_column(col);
         _reorganize_column(col + 1);
+        _check_moving_anims(bd, extra, col + 1);
     } else
     if (_G.tinfo->columns[col]) {
         /* Add column */
@@ -1729,17 +1730,17 @@ _move_right(void)
             _G.tinfo->conf->nb_cols = nb_cols + 1;
             e_config_save_queue();
         }
+        _check_moving_anims(bd, extra, col + 1);
     } else {
         int x, y, w, h;
-        int width = 0;
-
-        nb_cols--;
-
+        int width;
 
         e_zone_useful_geometry_get(_G.tinfo->desk->zone, &x, &y, &w, &h);
-        for (int i = 0; i < nb_cols; i++) {
-
+        for (int i = col; i < nb_cols; i++) {
              _G.tinfo->columns[i] = _G.tinfo->columns[i + 1];
+        }
+        nb_cols--;
+        for (int i = 0; i < nb_cols; i++) {
             width = w / (nb_cols - i);
 
             _set_column_geometry(i, x, width);
@@ -1747,13 +1748,13 @@ _move_right(void)
             w -= width;
             x += width;
         }
-        _reorganize_column(col);
         _G.tinfo->columns[nb_cols] = NULL;
         _G.tinfo->x[nb_cols] = 0;
         _G.tinfo->w[nb_cols] = 0;
+        _reorganize_column(col);
+        _check_moving_anims(bd, extra, col);
     }
 
-    _check_moving_anims(bd, extra, col + 1);
     ecore_x_pointer_warp(_G.tinfo->desk->zone->container->win,
                          extra->expected.x + extra->expected.w/2,
                          extra->expected.y + extra->expected.h/2);
