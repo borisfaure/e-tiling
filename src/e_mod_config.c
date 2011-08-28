@@ -176,6 +176,9 @@ _basic_create_widgets(E_Config_Dialog      *cfd,
     e_widget_framelist_object_append(of,
       e_widget_check_add(evas, D_("Tile dialog windows aswell"),
                          &cfdata->config.tile_dialogs));
+    e_widget_framelist_object_append(of,
+      e_widget_check_add(evas, D_("Show window titles"),
+                         &cfdata->config.show_titles));
     LIST_ADD(o, of);
 
     /* Virtual desktop settings */
@@ -228,6 +231,7 @@ _basic_apply_data(E_Config_Dialog      *cfd,
     struct _Config_vdesk *vd;
 
     tiling_g.config->tile_dialogs = cfdata->config.tile_dialogs;
+    tiling_g.config->show_titles = cfdata->config.show_titles;
 
     /* Check if the layout for one of the vdesks has changed */
     for (Eina_List *l = tiling_g.config->vdesks; l; l = l->next) {

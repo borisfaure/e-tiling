@@ -37,6 +37,7 @@ struct _Config_vdesk
 struct _Config
 {
     int            tile_dialogs;
+    int            show_titles;
     Eina_List     *vdesks;
 };
 

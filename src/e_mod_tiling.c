@@ -758,7 +758,8 @@ change_column_number(struct _Config_vdesk *newconf)
                                          extra->orig.y,
                                          extra->orig.w,
                                          extra->orig.h);
-                change_window_border(bd, "default");
+                if (!tiling_g.config->show_titles)
+                    change_window_border(bd, "default");
             }
             eina_list_free(_G.tinfo->columns[i]);
             _G.tinfo->columns[i] = NULL;
@@ -853,8 +854,9 @@ _add_border(E_Border *bd)
 
     /* New Border! */
 
-    if ((bd->bordername && strcmp(bd->bordername, "pixel"))
-    ||  !bd->bordername)
+    if (!tiling_g.config->show_titles
+        && ((bd->bordername && strcmp(bd->bordername, "pixel"))
+            ||  !bd->bordername))
     {
         change_window_border(bd, "pixel");
     }
@@ -1182,7 +1184,8 @@ toggle_floating(E_Border *bd)
         /* To give the user a bit of feedback we restore the original border */
         /* TODO: save the original border, don't just restore the default one*/
         /* TODO: save maximized state */
-        change_window_border(bd, "default");
+        if (!tiling_g.config->show_titles)
+            change_window_border(bd, "default");
     }
 }
 
@@ -2522,7 +2525,8 @@ _e_module_tiling_desk_set(void *data,
                                  extra->orig.h);
         }
         e_border_unmaximize(ev->border, E_MAXIMIZE_BOTH);
-        change_window_border(ev->border, "default");
+        if (!tiling_g.config->show_titles)
+            change_window_border(ev->border, "default");
     } else {
         if (get_column(ev->border) < 0)
             _add_border(ev->border);
@@ -2644,6 +2648,7 @@ e_modapi_init(E_Module *m)
     _G.vdesk_edd = E_CONFIG_DD_NEW("Tiling_Config_VDesk",
                                    struct _Config_vdesk);
     E_CONFIG_VAL(_G.config_edd, Config, tile_dialogs, INT);
+    E_CONFIG_VAL(_G.config_edd, Config, show_titles, INT);
 
     E_CONFIG_LIST(_G.config_edd, Config, vdesks, _G.vdesk_edd);
     E_CONFIG_VAL(_G.vdesk_edd, struct _Config_vdesk, x, INT);
@@ -2655,9 +2660,11 @@ e_modapi_init(E_Module *m)
     if (!tiling_g.config) {
         tiling_g.config = E_NEW(Config, 1);
         tiling_g.config->tile_dialogs = 1;
+        tiling_g.config->show_titles = 1;
     }
 
     E_CONFIG_LIMIT(tiling_g.config->tile_dialogs, 0, 1);
+    E_CONFIG_LIMIT(tiling_g.config->show_titles, 0, 1);
 
     desk = get_current_desk();
     _G.tinfo = _initialize_tinfo(desk);
